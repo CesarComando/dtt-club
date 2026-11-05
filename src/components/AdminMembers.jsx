@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ApprovedMark } from './Approved.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { RANKS, DISCIPLINES } from '../lib/ranks.js'
@@ -19,7 +21,7 @@ const norm = (t) =>
   (t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[а-яё]/g, (c) => CYR[c] ?? c).replace(/[^a-z ]/g, ' ')
 const stem = (w) => w.replace(/(s|is|js|ijs)$/, '').slice(0, 5) // Andrejs/Андрей → andre
-const tokens = (t) => norm(t).split(/s+/).filter((w) => w.length > 1).map(stem)
+const tokens = (t) => norm(t).split(/\s+/).filter((w) => w.length > 1).map(stem)
 const matchScore = (profile, m) => {
   const pt = tokens(`${profile.first_name} ${profile.last_name}`)
   const names = [`${m.first_name} ${m.last_name}`, ...(m.aliases ?? [])]
@@ -58,7 +60,9 @@ function LinkSuggestions({ members, profiles, linkedIds, onChanged }) {
           .slice(0, 3)
         return (
           <div key={p.id} className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-semibold">{p.first_name} {p.last_name}</span>
+            <Link to={`/admin/athlete/${p.id}`} className="font-semibold hover:text-accent hover:underline">
+              {p.first_name} {p.last_name}
+            </Link>
             <span className="text-neutral-500">→</span>
             {cands.length ? (
               cands.map(({ m }) => (
@@ -132,24 +136,38 @@ function MemberRow({ m, profiles, linkedIds, onChanged }) {
 
   return (
     <li className="py-3">
-      <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-3 text-left">
+      <div className="flex w-full items-center justify-between gap-3 text-left">
         <div className="min-w-0">
           <p className="truncate font-semibold">
-            {m.first_name} {m.last_name}
-            {linked && <span className="ml-2 text-xs text-emerald-400">● в приложении</span>}
+            {/* Имя — переход в карточку ученика */}
+            <Link to={`/admin/member/${m.id}`} className="hover:text-accent hover:underline">
+              {m.first_name} {m.last_name}
+            </Link>
+            {linked &&
+              (linked.approved_at ? (
+                <ApprovedMark approved className="ml-2" />
+              ) : (
+                <span className="ml-2 text-xs text-emerald-400">● в приложении</span>
+              ))}
           </p>
           <p className="truncate text-xs text-neutral-500">
             {[STATUS[m.status], m.discipline && DISCIPLINES[m.discipline], m.parent_name && `родитель: ${m.parent_name}`,
               m.rank_override && RANKS[m.rank_override - 1]?.title].filter(Boolean).join(' · ')}
           </p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="font-display text-lg">{formatPrice(total)}</p>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          title="Оплаты и связка с аккаунтом"
+          className="shrink-0 rounded-md px-2 py-1 text-right hover:bg-white/5"
+        >
+          <p className="font-display text-lg">{formatPrice(total)} <span className="text-xs text-neutral-500">{open ? '▴' : '▾'}</span></p>
           <p className="text-[10px] uppercase tracking-wider text-neutral-500">
             {pays.length} опл.{last ? ` · ${day(last)}` : ''}
           </p>
-        </div>
-      </button>
+        </button>
+      </div>
 
       {open && (
         <div className="mt-3 space-y-3 rounded-md border border-line p-3 text-sm">

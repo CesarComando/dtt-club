@@ -9,6 +9,7 @@ import { deleteMyAccount } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
+import { ApprovedMark } from '../components/Approved.jsx'
 
 function experience(since) {
   const start = new Date(since)
@@ -204,7 +205,13 @@ export default function Dashboard() {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl leading-tight">{profile.first_name} {profile.last_name}</h1>
+          <h1 className="flex items-center gap-2 text-2xl leading-tight">
+            <span className="truncate">{profile.first_name} {profile.last_name}</span>
+            <ApprovedMark approved={profile.approved_at} />
+          </h1>
+          {!profile.approved_at && profile.role !== 'admin' && (
+            <p className="text-xs text-neutral-500">Ожидает подтверждения тренером</p>
+          )}
           <p className="text-sm text-neutral-400">
             В клубе с {formatDate(since)}
             {profile.phone && <> · {formatPhone(profile.phone)}</>}

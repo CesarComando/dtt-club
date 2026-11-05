@@ -10,6 +10,7 @@ import Privacy from './pages/Privacy.jsx'
 import Checkin from './pages/Checkin.jsx'
 import Invite from './pages/Invite.jsx'
 import Diary from './pages/Diary.jsx'
+import AdminStudent from './pages/AdminStudent.jsx'
 
 export default function App() {
   return (
@@ -29,6 +30,8 @@ export default function App() {
           <Route path="/invite/:token" element={<Invite />} />
           {/* Скрытая панель тренера: нет ссылки в навигации, пускает только role = 'admin'. */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+          <Route path="/admin/member/:id" element={<AdminRoute><AdminStudent kind="member" /></AdminRoute>} />
+          <Route path="/admin/athlete/:id" element={<AdminRoute><AdminStudent kind="athlete" /></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <footer className="mt-12 border-t border-line pt-4 text-center text-xs text-neutral-500">

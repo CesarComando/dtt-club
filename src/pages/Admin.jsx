@@ -6,6 +6,14 @@ import AdminSessions from '../components/AdminSessions.jsx'
 import AdminDebtors, { CashPayment, DeleteAthlete } from '../components/AdminDebtors.jsx'
 import CheckinQR from '../components/CheckinQR.jsx'
 import AdminMembers from '../components/AdminMembers.jsx'
+import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
+import { Link, useSearchParams } from 'react-router-dom'
+
+const TABS = [
+  ['gym', 'Зал'],
+  ['students', 'Ученики'],
+  ['debtors', 'Должники'],
+]
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
 // Сюда пускает только <AdminRoute>. Изменения идут через SQL-функции
@@ -55,6 +63,9 @@ export default function Admin() {
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
   const [reloadKey, setReloadKey] = useState(0) // перечитать список должников
+  // Вкладка в адресе (?tab=students) — «Назад» из карточки ученика возвращает на неё.
+  const [params, setParams] = useSearchParams()
+  const tab = TABS.some(([t]) => t === params.get('tab')) ? params.get('tab') : 'gym'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -62,7 +73,7 @@ export default function Admin() {
     const [profilesRes, contactsRes, attendanceRes, subsRes, paysRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url, trainings_count, role, discipline, rank_override, is_sponsor')
+        .select('id, first_name, last_name, avatar_url, trainings_count, role, discipline, rank_override, is_sponsor, approved_at, created_at')
         .neq('role', 'admin')
         .order('last_name'),
       supabase.from('profile_contacts').select('id, phone'),
@@ -227,13 +238,30 @@ export default function Admin() {
         </div>
       </div>
 
+      <div className="grid grid-cols-3 gap-2" role="tablist">
+        {TABS.map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setParams(id === 'gym' ? {} : { tab: id }, { replace: true })}
+            className={`rounded-md border py-2.5 font-display text-sm uppercase tracking-wider ${
+              tab === id ? 'border-accent bg-accent/10 text-white' : 'border-line text-neutral-400 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'students' && <AdminMembers profiles={athletes} />}
+      {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
+
+      {tab === 'gym' && (
+      <>
       <CheckinQR />
 
-      <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />
-
       <AdminSessions />
-
-      <AdminMembers profiles={athletes} />
 
       <input
         type="search"
@@ -286,7 +314,18 @@ export default function Admin() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold">{a.first_name} {a.last_name}</p>
+                    <p className="truncate text-lg font-semibold">
+                      <Link to={`/admin/athlete/${a.id}`} className="hover:text-accent hover:underline">
+                        {a.first_name} {a.last_name}
+                      </Link>
+                      <ApprovedMark approved={a.approved_at} className="ml-2" />
+                    </p>
+                    {!a.approved_at && (
+                      <ApproveButton
+                        athlete={a}
+                        onChange={(at) => setAthletes((list) => list.map((x) => (x.id === a.id ? { ...x, approved_at: at } : x)))}
+                      />
+                    )}
                     <p className="text-sm">
                       {ranked ? (
                         <span className="text-accent">
@@ -396,6 +435,8 @@ export default function Admin() {
             )
           })}
         </ul>
+      )}
+      </>
       )}
     </div>
   )
