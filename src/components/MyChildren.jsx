@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
-import { createChildAccount, getAvatarUrl, normalizePhone, unlinkChild } from '../lib/auth.js'
+import { createChildAccount, getAvatarUrl, normalizePhone, resetChildPassword, unlinkChild } from '../lib/auth.js'
 import { DISCIPLINES, getRank, hasRanks } from '../lib/ranks.js'
 
 // Кабинет родителя → «Мои дети» (слой 24). Родитель добавляет ребёнка: имя, фото, пароль.
@@ -13,7 +13,8 @@ const shortLogin = (login) => String(login).replace(/^371(?=\d{8}-)/, '')
 export default function MyChildren({ profile }) {
   const [kids, setKids] = useState(null)
   const [open, setOpen] = useState(false)
-  const [created, setCreated] = useState(null) // { name, login, password }
+  const [created, setCreated] = useState(null) // { name, login }
+  const [pwFor, setPwFor] = useState(null) // id ребёнка, которому меняем пароль
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
@@ -23,7 +24,12 @@ export default function MyChildren({ profile }) {
       .eq('parent_id', profile.id)
       .order('created_at')
     if (e) throw e
-    const withPhotos = await Promise.all(data.map(async (k) => ({ ...k, photo: await getAvatarUrl(k.avatar_url) })))
+    // Логин ребёнка = его «телефон» в profile_contacts (родителю читать можно — слой 25).
+    const { data: logins } = await supabase.from('profile_contacts').select('id, phone').in('id', data.map((k) => k.id))
+    const loginOf = Object.fromEntries((logins ?? []).map((c) => [c.id, c.phone]))
+    const withPhotos = await Promise.all(
+      data.map(async (k) => ({ ...k, login: loginOf[k.id], photo: await getAvatarUrl(k.avatar_url) })),
+    )
     setKids(withPhotos)
   }, [profile.id])
 
@@ -75,20 +81,33 @@ export default function MyChildren({ profile }) {
           {kids.map((k) => {
             const rank = hasRanks(k.discipline) ? getRank(k.trainings_count, k.rank_override).current : null
             return (
-              <li key={k.id} className="flex items-center gap-3 py-2">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink font-display ring-1 ring-line">
-                  {k.photo ? <img src={k.photo} alt="" className="h-full w-full object-cover" /> : k.first_name?.[0]}
+              <li key={k.id} className="py-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink font-display ring-1 ring-line">
+                    {k.photo ? <img src={k.photo} alt="" className="h-full w-full object-cover" /> : k.first_name?.[0]}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{k.first_name} {k.last_name}</p>
+                    <p className="truncate text-xs text-neutral-500">
+                      {[DISCIPLINES[k.discipline], `${k.trainings_count} трен.`, rank?.title, !k.approved_at && 'ждёт подтверждения тренера']
+                        .filter(Boolean).join(' · ')}
+                    </p>
+                    {k.login && (
+                      <p className="text-xs text-neutral-400">
+                        Логин: <span className="font-display tracking-wider text-white">{shortLogin(k.login)}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <button type="button" onClick={() => setPwFor(pwFor === k.id ? null : k.id)} className="text-xs text-neutral-300 hover:text-accent">
+                      Новый пароль
+                    </button>
+                    <button type="button" onClick={() => unlink(k)} className="text-xs text-neutral-500 hover:text-accent">
+                      Убрать
+                    </button>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{k.first_name} {k.last_name}</p>
-                  <p className="truncate text-xs text-neutral-500">
-                    {[DISCIPLINES[k.discipline], `${k.trainings_count} трен.`, rank?.title, !k.approved_at && 'ждёт подтверждения тренера']
-                      .filter(Boolean).join(' · ')}
-                  </p>
-                </div>
-                <button type="button" onClick={() => unlink(k)} className="shrink-0 text-xs text-neutral-500 hover:text-accent">
-                  Убрать
-                </button>
+                {pwFor === k.id && <NewPassword child={k} onDone={() => setPwFor(null)} />}
               </li>
             )
           })}
@@ -107,6 +126,47 @@ export default function MyChildren({ profile }) {
         />
       )}
     </section>
+  )
+}
+
+// Ребёнок забыл пароль — родитель задаёт новый (слой 25).
+function NewPassword({ child, onDone }) {
+  const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [ok, setOk] = useState(false)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (pw !== pw2) return setMsg('Пароли не совпадают.')
+    setBusy(true)
+    setMsg('')
+    try {
+      await resetChildPassword(child.id, pw)
+      setOk(true)
+      setMsg(`Готово: ${child.first_name} теперь входит с новым паролем.`)
+      setTimeout(onDone, 2500)
+    } catch (err) {
+      setMsg(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-2 space-y-2 rounded-md border border-line p-3">
+      <p className="text-xs text-neutral-400">Новый пароль для {child.first_name} (логин остаётся прежним):</p>
+      <div className="grid grid-cols-2 gap-2">
+        <input type="password" required minLength={6} autoComplete="new-password" placeholder="Новый пароль" aria-label="Новый пароль" value={pw} onChange={(e) => setPw(e.target.value)} className="input" />
+        <input type="password" required minLength={6} autoComplete="new-password" placeholder="Повторите" aria-label="Повторите пароль" value={pw2} onChange={(e) => setPw2(e.target.value)} className="input" />
+      </div>
+      {msg && <p className={`text-sm ${ok ? 'text-emerald-400' : 'text-accent'}`}>{msg}</p>}
+      <div className="flex gap-2">
+        <button type="submit" disabled={busy || ok} className="btn-primary flex-1 disabled:opacity-60">{busy ? 'Сохраняем…' : 'Сохранить пароль'}</button>
+        <button type="button" onClick={onDone} disabled={busy} className="btn-outline">Отмена</button>
+      </div>
+    </form>
   )
 }
 

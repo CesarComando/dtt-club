@@ -120,6 +120,12 @@ export async function createChildAccount({ parentPhone, firstName, lastName, dis
   throw new Error('Не удалось подобрать логин для ребёнка.')
 }
 
+/** Родитель задаёт ребёнку новый пароль (слой 25: только своему ребёнку). */
+export async function resetChildPassword(childId, password) {
+  const { error } = await supabase.rpc('reset_child_password', { p_child: childId, p_password: password })
+  if (error) throw error
+}
+
 export async function unlinkChild(childId) {
   const { error } = await supabase.rpc('unlink_child', { p_child: childId })
   if (error) throw error
