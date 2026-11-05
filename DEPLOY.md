@@ -1,4 +1,4 @@
-# Деплой на GitHub Pages → daugavpilstopteam.lv
+# Деплой на GitHub Pages → app.daugavpilstopteam.lv
 
 Команды для **PowerShell** (Windows). Выполняйте по одной, в папке проекта.
 GitHub CLI (`gh`) уже установлен и вошёл в аккаунт **CesarComando**.
@@ -39,7 +39,7 @@ gh repo create dtt-club --public --source . --push
 
 ## 4. Опубликовать сайт
 Собирает приложение (с ключами из вашего `.env`) и выкладывает папку `dist` в ветку `gh-pages`.
-Файл `CNAME` с доменом `daugavpilstopteam.lv` попадает туда автоматически (из папки `public`).
+Файл `CNAME` с доменом `app.daugavpilstopteam.lv` попадает туда автоматически (из папки `public`).
 ```powershell
 npm run deploy
 ```
@@ -48,20 +48,17 @@ npm run deploy
 github.com/CesarComando/dtt-club → **Settings → Pages**:
 - **Source:** Deploy from a branch
 - **Branch:** `gh-pages` / `(root)` → **Save**
-- **Custom domain:** должно стоять `daugavpilstopteam.lv` (если пусто — впишите и Save)
+- **Custom domain:** должно стоять `app.daugavpilstopteam.lv` (если пусто — впишите и Save)
 
 Пока DNS не настроен, сайт уже открывается по адресу `https://cesarcomando.github.io/dtt-club/`.
 
-## 6. DNS домена daugavpilstopteam.lv (у регистратора домена)
-Удалите старые A/AAAA-записи для корня домена и добавьте:
+## 6. DNS: поддомен app.daugavpilstopteam.lv (у регистратора домена)
+Корневой домен `daugavpilstopteam.lv` занят сайтом-визиткой (репозиторий `CesarComando/daugavpilstopteam`)
+и **не трогается**. Приложение живёт на поддомене — нужна одна новая запись:
 
 | Тип | Имя | Значение |
 |---|---|---|
-| A | @ | 185.199.108.153 |
-| A | @ | 185.199.109.153 |
-| A | @ | 185.199.110.153 |
-| A | @ | 185.199.111.153 |
-| CNAME | www | cesarcomando.github.io |
+| CNAME | app | cesarcomando.github.io |
 
 DNS обновляется от нескольких минут до 24 часов.
 Когда в Settings → Pages появится «DNS check successful» — поставьте галочку **Enforce HTTPS**.
@@ -80,5 +77,5 @@ npm run deploy
 
 ## Важно про Supabase
 - Вход у нас по телефону и паролю, поэтому домен в Supabase прописывать не нужно.
-- Если позже включим вход через письма или OAuth — добавить `https://daugavpilstopteam.lv`
+- Если позже включим вход через письма или OAuth — добавить `https://app.daugavpilstopteam.lv`
   в Supabase → Authentication → URL Configuration.

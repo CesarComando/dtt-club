@@ -42,7 +42,8 @@ React (Vite) · Tailwind CSS · React Router · хостинг GitHub Pages (SPA
   - Взрослые: Вт, Чт (18:00–20:00), Сб (15:00–17:00)
 
 ## 5. Дорожная карта (внедряем строго по слоям)
-1. **Деплой** на GitHub Pages → `daugavpilstopteam.lv` ← текущий этап
+1. **Деплой** на GitHub Pages → `app.daugavpilstopteam.lv` ✅
+   (корень `daugavpilstopteam.lv` — сайт-визитка, репозиторий `CesarComando/daugavpilstopteam`)
 2. **Оплата через приложение — Stripe** (счёт Stripe открывает клуб):
    - абонемент на месяц: MMA/K1 45€, Grappling no-gi 40€ (подписка с автопродлением);
    - разовая тренировка: MMA/K1 6€, Grappling 5€;
