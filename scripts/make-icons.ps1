@@ -1,41 +1,31 @@
-# Генерирует иконки приложения (PWA / Android / iOS) в public/.
+# Генерирует иконки приложения (PWA / Android / iOS) в public/ из логотипа клуба.
 # Запуск: powershell -ExecutionPolicy Bypass -File scripts\make-icons.ps1
-# Это временные фирменные иконки: чёрный фон, красная полоса, «DTT».
-# Когда будет настоящий логотип клуба — замените PNG-файлы в public/ (те же имена и размеры).
+# Исходник: assets/logo-source.jpg (квадратный логотип; лучше 1024×1024 и больше).
+# Чтобы сменить иконку — замените исходник и запустите скрипт ещё раз.
 
 Add-Type -AssemblyName System.Drawing
 
 $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root 'public'
+$src = [System.Drawing.Image]::FromFile((Join-Path $root 'assets\logo-source.jpg'))
+
+# Цвет фона берём из угла логотипа — поля maskable-иконки сливаются с рисунком.
+$bg = ([System.Drawing.Bitmap]$src).GetPixel(4, 4)
 
 function New-Icon([int]$size, [string]$name, [double]$safe) {
-  # $safe — доля холста, в которую вписан рисунок (для maskable-иконок Android обрезает края).
+  # $safe — доля холста под рисунок (Android обрезает края maskable-иконок по кругу/скруглению).
   $bmp = New-Object System.Drawing.Bitmap $size, $size
   $g = [System.Drawing.Graphics]::FromImage($bmp)
+  $g.InterpolationMode = 'HighQualityBicubic'
   $g.SmoothingMode = 'AntiAlias'
-  $g.TextRenderingHint = 'AntiAliasGridFit'
-  $g.Clear([System.Drawing.Color]::FromArgb(10, 10, 10))
+  $g.PixelOffsetMode = 'HighQuality'
+  $g.Clear($bg)
 
-  $inner = $size * $safe
-  $off = ($size - $inner) / 2
-  $red = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(225, 6, 0))
-  $white = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::White)
+  $inner = [int]($size * $safe)
+  $off = [int](($size - $inner) / 2)
+  $g.DrawImage($src, $off, $off, $inner, $inner)
 
-  # Красная вертикальная полоса слева (как в логотипе навбара)
-  $g.FillRectangle($red, [single]($off + $inner * 0.12), [single]($off + $inner * 0.22), [single]($inner * 0.07), [single]($inner * 0.56))
-
-  # «DTT»
-  $font = New-Object System.Drawing.Font('Arial', [single]($inner * 0.30), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-  $fmt = New-Object System.Drawing.StringFormat
-  $fmt.Alignment = 'Near'; $fmt.LineAlignment = 'Center'
-  $rect = New-Object System.Drawing.RectangleF ([single]($off + $inner * 0.24)), ([single]($off + $inner * 0.10)), ([single]($inner * 0.76)), ([single]($inner * 0.62))
-  $g.DrawString('DTT', $font, $white, $rect, $fmt)
-
-  # Красная подчёркивающая линия
-  $g.FillRectangle($red, [single]($off + $inner * 0.27), [single]($off + $inner * 0.68), [single]($inner * 0.56), [single]($inner * 0.05))
-
-  $path = Join-Path $out $name
-  $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+  $bmp.Save((Join-Path $out $name), [System.Drawing.Imaging.ImageFormat]::Png)
   $g.Dispose(); $bmp.Dispose()
   Write-Output "$name ${size}x${size}"
 }
@@ -45,3 +35,5 @@ New-Icon 512 'pwa-512x512.png' 1.0
 New-Icon 512 'maskable-icon-512x512.png' 0.8   # Android: рисунок в безопасной зоне 80%
 New-Icon 180 'apple-touch-icon.png' 1.0        # iOS «На экран Домой»
 New-Icon 64  'favicon-64x64.png' 1.0
+
+$src.Dispose()
