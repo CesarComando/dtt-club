@@ -85,6 +85,14 @@ export default function AdminSessions() {
                       {s.title}
                       {s.venue_id !== 'club' && <span className="text-accent"> · {s.venue_name}</span>}
                     </p>
+                    {/* Кто записался — видно сразу, без раскрытия */}
+                    {!expanded && (
+                      <p className={`mt-0.5 truncate text-xs ${list.length ? 'text-neutral-200' : 'text-neutral-600'}`}>
+                        {list.length
+                          ? list.map((p) => `${p.first_name} ${p.last_name?.[0] ?? ''}.`).join(', ')
+                          : 'Никто не записался'}
+                      </p>
+                    )}
                   </div>
                   <span className={`shrink-0 font-display text-lg tabular-nums ${isFull(s) ? 'text-accent' : ''}`}>
                     {seatsText(s)}
