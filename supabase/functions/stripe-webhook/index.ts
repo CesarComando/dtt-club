@@ -69,6 +69,8 @@ async function recordCheckoutPayment(session: Stripe.Checkout.Session) {
       amount_cents: session.amount_total ?? 0,
       currency: session.currency ?? 'eur',
       status: 'paid',
+      // «Своя сумма» (слой 26): за что платили — ученик написал сам
+      note: session.metadata?.note?.slice(0, 120) || null,
     },
     { onConflict: 'stripe_session_id' },
   )

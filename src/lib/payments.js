@@ -73,6 +73,12 @@ export async function startCheckout(productId) {
   window.location.assign(url)
 }
 
+// «Своя сумма» (слой 26): разовая оплата картой на сумму, которую ввёл ученик (1–500 €).
+export async function startCustomCheckout(amountCents, note) {
+  const { url } = await callFunction('create-checkout', { custom_amount_cents: amountCents, note })
+  window.location.assign(url)
+}
+
 // Stripe Customer Portal: сменить карту, скачать счета, отменить подписку.
 export async function openCustomerPortal() {
   const { url } = await callFunction('customer-portal', {})

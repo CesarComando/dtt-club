@@ -1,4 +1,5 @@
 // POST { product_id } → { url } страницы оплаты Stripe Checkout.
+// POST { custom_amount_cents, note? } → то же, но на свою сумму 1–500 € (слой 26).
 // Цену берём из каталога payment_products; если товара/цены в Stripe ещё нет — создаём.
 import { admin, appUrl, cors, getOrCreateCustomer, getUser, json, stripe } from '../_shared/common.ts'
 
@@ -77,7 +78,36 @@ Deno.serve(async (req) => {
     const user = await getUser(req)
     if (!user) return json(req, { error: 'Войдите в аккаунт' }, 401)
 
-    const { product_id } = await req.json().catch(() => ({}))
+    const body = await req.json().catch(() => ({}))
+    const base = appUrl(req)
+
+    // «Своя сумма» (слой 26): разовая оплата на сумму, которую ввёл ученик, 1–500 €.
+    // Без товара из каталога — на абонемент не влияет; «за что» уходит в metadata.note.
+    if (body.custom_amount_cents != null) {
+      const cents = Number(body.custom_amount_cents)
+      if (!Number.isInteger(cents) || cents < 100 || cents > 50000) {
+        return json(req, { error: 'Сумма должна быть от 1 до 500 €' }, 400)
+      }
+      const note = String(body.note ?? '').replace(/\s+/g, ' ').trim().slice(0, 120)
+      const name = note ? `Оплата клубу DTT — ${note}` : 'Оплата клубу DTT'
+      const customer = await getOrCreateCustomer(user.id)
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer,
+        client_reference_id: user.id,
+        line_items: [{ price_data: { currency: 'eur', unit_amount: cents, product_data: { name } }, quantity: 1 }],
+        metadata: { kind: 'custom', note },
+        payment_intent_data: { description: name, metadata: { kind: 'custom', note } },
+        locale: 'auto',
+        success_url: `${base}/#/dashboard?payment=success`,
+        cancel_url: `${base}/#/dashboard?payment=cancel`,
+        invoice_creation: { enabled: true },
+        integration_identifier: 'dtt-club-checkout-qhvmzpta',
+      })
+      return json(req, { url: session.url })
+    }
+
+    const { product_id } = body
     const { data: product } = await admin
       .from('payment_products').select('*').eq('id', product_id).eq('active', true).maybeSingle()
     if (!product) return json(req, { error: 'Товар не найден' }, 404)
@@ -95,7 +125,6 @@ Deno.serve(async (req) => {
     }
 
     const [priceId, customer] = await Promise.all([ensurePrice(product), getOrCreateCustomer(user.id)])
-    const base = appUrl(req)
 
     const session = await stripe.checkout.sessions.create({
       mode: isSubscription ? 'subscription' : 'payment',

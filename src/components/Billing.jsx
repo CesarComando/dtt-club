@@ -8,6 +8,7 @@ import {
   loadMyBilling,
   openCustomerPortal,
   startCheckout,
+  startCustomCheckout,
 } from '../lib/payments.js'
 
 /**
@@ -103,6 +104,7 @@ export function useBilling(userId, onPaid) {
     error,
     notice,
     checkout: (productId) => go(productId, () => startCheckout(productId)),
+    custom: (cents, note) => go('custom', () => startCustomCheckout(cents, note)),
     portal: () => go('portal', openCustomerPortal),
   }
 }
@@ -176,7 +178,7 @@ function SubscriptionStatus({ sub }) {
 
 /** Блок «Оплата» в личном кабинете. */
 export default function BillingSection({ billing, discipline }) {
-  const { catalog, subscriptions, payments, offline = [], overview, loading, busy, error, notice, checkout, portal } = billing
+  const { catalog, subscriptions, payments, offline = [], overview, loading, busy, error, notice, checkout, custom, portal } = billing
   if (loading) return null
 
   const cardMembership = liveSubscription(subscriptions, 'membership')
@@ -267,6 +269,8 @@ export default function BillingSection({ billing, discipline }) {
         </div>
       )}
 
+      <CustomAmount onPay={custom} busy={busy} />
+
       {hasHistory && (
         <>
           {payments.length > 0 && (
@@ -274,7 +278,7 @@ export default function BillingSection({ billing, discipline }) {
               {payments.slice(0, 5).map((p) => (
                 <li key={p.id} className="flex justify-between gap-3 py-2">
                   <span className="truncate text-neutral-300">
-                    {titles[p.product_id] ?? 'Оплата'} · {formatDay(p.created_at)}
+                    {p.note || titles[p.product_id] || 'Оплата'} · {formatDay(p.created_at)}
                   </span>
                   <span className={p.status === 'paid' ? '' : 'text-accent'}>
                     {p.status === 'failed' ? 'не прошла' : p.status === 'refunded' ? 'возврат' : formatPrice(p.amount_cents, p.currency)}
@@ -313,5 +317,62 @@ export default function BillingSection({ billing, discipline }) {
 
       <p className="text-xs text-neutral-500">Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.</p>
     </section>
+  )
+}
+
+// «Своя сумма» (слой 26): ученик сам вводит сумму (1–500 €) и, по желанию, за что платит.
+function CustomAmount({ onPay, busy }) {
+  const [open, setOpen] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [note, setNote] = useState('')
+  const cents = Math.round(Number(String(amount).replace(',', '.')) * 100)
+  const valid = Number.isFinite(cents) && cents >= 100 && cents <= 50000
+
+  if (!open)
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="btn-outline w-full">
+        Оплатить свою сумму
+      </button>
+    )
+  return (
+    <form
+      className="space-y-2 rounded-md border border-line p-3"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (valid) onPay(cents, note.trim())
+      }}
+    >
+      <p className="text-sm font-semibold">Своя сумма</p>
+      <div className="grid grid-cols-[8rem_1fr] gap-2">
+        <input
+          inputMode="decimal"
+          required
+          autoFocus
+          placeholder="Сумма, €"
+          aria-label="Сумма в евро"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="input"
+        />
+        <input
+          maxLength={120}
+          placeholder="За что (необязательно): 3 тренировки, долг…"
+          aria-label="За что"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="input"
+        />
+      </div>
+      {amount && !valid && <p className="text-xs text-accent">Сумма от 1 до 500 €</p>}
+      <div className="flex gap-2">
+        <button type="submit" disabled={!valid || Boolean(busy)} className="btn-primary flex-1 disabled:opacity-60">
+          {busy === 'custom' ? 'Переход к оплате…' : valid ? `Оплатить ${formatPrice(cents)}` : 'Оплатить'}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} disabled={Boolean(busy)} className="btn-outline">
+          Отмена
+        </button>
+      </div>
+      <p className="text-xs text-neutral-500">Разовая оплата картой. Абонемент так не продлевается — для него кнопки выше.</p>
+    </form>
   )
 }
