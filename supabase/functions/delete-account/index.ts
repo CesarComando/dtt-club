@@ -46,10 +46,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Селфи и прочие файлы пользователя в приватном бакете.
-    const { data: files } = await admin.storage.from('avatars').list(targetId)
-    if (files?.length) {
-      await admin.storage.from('avatars').remove(files.map((f) => `${targetId}/${f.name}`))
+    // 2. Селфи и файлы галереи пользователя в приватных бакетах (папка <user_id>/).
+    for (const bucket of ['avatars', 'gallery']) {
+      const { data: files } = await admin.storage.from(bucket).list(targetId, { limit: 1000 })
+      if (files?.length) {
+        await admin.storage.from(bucket).remove(files.map((f) => `${targetId}/${f.name}`))
+      }
     }
 
     // 3. Пользователь Auth → каскадом profiles, profile_contacts, attendance, bookings, payments…
