@@ -1,8 +1,15 @@
 import { Link } from 'react-router-dom'
 import { CLUB, TEAMS, FIRST_TRAINING_FREE } from '../data/club.js'
 import TeamCard from '../components/TeamCard.jsx'
+import { useAuth } from '../lib/AuthContext.jsx'
 
 export default function Home() {
+  const { profile } = useAuth()
+  // Вошедший ученик видит расписание своего направления (и другого — если включил в кабинете).
+  // Гости и тренер видят обе команды.
+  const ownOnly =
+    profile && profile.role !== 'admin' && ['grappling', 'mma'].includes(profile.discipline) && !profile.cross_training
+  const teams = ownOnly ? TEAMS.filter((t) => t.id === profile.discipline) : TEAMS
   return (
     <div className="space-y-10">
       {/* Hero */}
@@ -13,7 +20,10 @@ export default function Home() {
           <span className="block text-accent">& Grappling Team</span>
         </h1>
         <p className="mt-4 text-neutral-300">
-          {CLUB.address} · Тренер: {CLUB.coach}
+          {CLUB.address} · Тренер: {CLUB.coach} ·{' '}
+          <a href={`tel:${CLUB.coachPhone.replace(/\s/g, '')}`} className="whitespace-nowrap text-white hover:text-accent">
+            {CLUB.coachPhone}
+          </a>
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/register" className="btn-primary">
@@ -33,8 +43,8 @@ export default function Home() {
             </p>
           )}
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {TEAMS.map((t) => (
+        <div className={`grid gap-4 ${teams.length > 1 ? 'md:grid-cols-2' : ''}`}>
+          {teams.map((t) => (
             <TeamCard key={t.id} team={t} />
           ))}
         </div>

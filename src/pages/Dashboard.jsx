@@ -8,6 +8,7 @@ import { formatDay, formatPrice } from '../lib/payments.js'
 import { deleteMyAccount } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
+import CrossTraining from '../components/CrossTraining.jsx'
 
 function experience(since) {
   const start = new Date(since)
@@ -287,8 +288,10 @@ export default function Dashboard() {
       {/* Рост, вес, дата рождения + ИМТ (слой 13, закрытая таблица profile_body) */}
       <BodyStats userId={user.id} />
 
-      {/* Запись на тренировки (слой 8): лимит мест проверяет сервер */}
-      <Booking />
+      {/* Запись на тренировки (слой 8): лимит мест проверяет сервер.
+          key: после переключателя направления список перечитывается. */}
+      <CrossTraining profile={profile} onChange={() => refreshProfile()} />
+      <Booking key={String(profile.cross_training)} />
 
       {/* Оплата (Stripe): абонемент, разовые тренировки, «Поддержать клуб» */}
       <ClubPayments profile={profile} onPaid={() => refreshProfile()} />

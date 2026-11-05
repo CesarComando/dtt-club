@@ -5,6 +5,7 @@ export const CLUB = {
   grapplingName: 'Daugavpils Grappling Team',
   address: 'Dzirnavu iela 20, Daugavpils',
   coach: 'Dainis Miglāns',
+  coachPhone: '+371 27167013',
 }
 
 export const FIRST_TRAINING_FREE = true
