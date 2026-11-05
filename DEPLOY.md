@@ -1,5 +1,12 @@
 # Деплой на GitHub Pages → app.daugavpilstopteam.lv
 
+> **С ноября 2026 код и сайт разделены.**
+> - `CesarComando/dtt-club` — **приватный**, здесь исходный код, SQL и документы.
+> - `CesarComando/dtt-club-app` — **публичный**, только готовая сборка (ветка `gh-pages`). Он и показывает сайт по адресу `app.daugavpilstopteam.lv`.
+>
+> `npm run deploy` сам выкладывает сборку в `dtt-club-app` (см. `package.json`). Настройки Pages и домена теперь в **dtt-club-app → Settings → Pages**.
+> Шаги 3 и 5 ниже описывают первоначальную настройку и устарели.
+
 Команды для **PowerShell** (Windows). Выполняйте по одной, в папке проекта.
 GitHub CLI (`gh`) уже установлен и вошёл в аккаунт **CesarComando**.
 
