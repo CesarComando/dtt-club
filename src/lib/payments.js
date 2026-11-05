@@ -32,10 +32,12 @@ export async function loadMyBilling(userId) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10),
-    // Оплаты до приложения / наличными (список учеников клуба, слой 10).
+    // Оплаты до приложения / наличными (список учеников клуба, слой 10) — только свои.
+    // Явный отбор по связанному ученику: тренеру RLS отдаёт оплаты всего клуба.
     supabase
       .from('member_payments')
-      .select('id, paid_on, amount_cents, kind, method')
+      .select('id, paid_on, amount_cents, kind, method, member:club_members!inner(profile_id)')
+      .eq('member.profile_id', userId)
       .order('paid_on', { ascending: false }),
   ])
   if (subs.error) throw subs.error

@@ -72,6 +72,18 @@ export function useBilling(userId, onPaid) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // «Назад» со страницы Stripe: браузер достаёт страницу из памяти (bfcache) вместе
+  // с кнопкой «Переход к оплате…». Снимаем блокировку и перечитываем статус.
+  useEffect(() => {
+    const onShow = (e) => {
+      if (!e.persisted) return
+      setBusy(null)
+      refresh()
+    }
+    window.addEventListener('pageshow', onShow)
+    return () => window.removeEventListener('pageshow', onShow)
+  }, [refresh])
+
   const go = async (key, action) => {
     setError('')
     setBusy(key)
