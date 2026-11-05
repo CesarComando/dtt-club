@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, autoRank, RANKS, DISCIPLINES } from '../lib/ranks.js'
+import { LIVE_STATUSES } from '../lib/payments.js'
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
 // Сюда пускает только <AdminRoute>. Изменения идут через SQL-функции
@@ -12,11 +13,38 @@ const startOfToday = () => {
   return d.toISOString()
 }
 
+const shortDate = (iso) => new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+
+// Статус оплаты ученика для CRM: абонемент (подписка) + разовые за 30 дней.
+function PaymentBadge({ billing }) {
+  const sub = billing?.membership
+  const singles = billing?.singles ?? 0
+  let text = 'Не оплачен'
+  let cls = 'border-line text-neutral-500'
+  if (sub?.status === 'past_due') {
+    text = 'Долг по абонементу'
+    cls = 'border-accent text-accent'
+  } else if (sub) {
+    text = `Оплачен до ${sub.current_period_end ? shortDate(sub.current_period_end) : '—'}`
+    cls = 'border-emerald-600 text-emerald-400'
+  } else if (singles) {
+    text = `Разовые: ${singles} за 30 дн.`
+    cls = 'border-neutral-500 text-neutral-300'
+  }
+  return (
+    <span className={`inline-block rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${cls}`}>
+      {text}
+      {billing?.sponsor && <span className="text-accent"> · ♥</span>}
+    </span>
+  )
+}
+
 const formatPhone = (p) => (p?.startsWith('371') && p.length === 11 ? `+371 ${p.slice(3, 7)} ${p.slice(7)}` : p ? `+${p}` : '')
 
 export default function Admin() {
   const [athletes, setAthletes] = useState([])
   const [today, setToday] = useState({}) // athlete_id → сколько отметок сегодня
+  const [billing, setBilling] = useState({}) // athlete_id → { membership, singles, sponsor }
   const [pending, setPending] = useState({}) // athlete_id → true, пока идёт запрос
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -26,14 +54,23 @@ export default function Admin() {
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-    const [profilesRes, contactsRes, attendanceRes] = await Promise.all([
+    const [profilesRes, contactsRes, attendanceRes, subsRes, paysRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url, trainings_count, role, discipline, rank_override')
+        .select('id, first_name, last_name, avatar_url, trainings_count, role, discipline, rank_override, is_sponsor')
         .neq('role', 'admin')
         .order('last_name'),
       supabase.from('profile_contacts').select('id, phone'),
       supabase.from('attendance').select('athlete_id').gte('created_at', startOfToday()),
+      supabase
+        .from('subscriptions')
+        .select('user_id, status, current_period_end, product:payment_products(kind)')
+        .in('status', LIVE_STATUSES),
+      supabase
+        .from('payments')
+        .select('user_id, product:payment_products(kind)')
+        .eq('status', 'paid')
+        .gte('created_at', new Date(Date.now() - 30 * 864e5).toISOString()),
     ])
     const firstError = profilesRes.error || contactsRes.error || attendanceRes.error
     if (firstError) {
@@ -57,6 +94,17 @@ export default function Admin() {
     const counts = {}
     attendanceRes.data.forEach((a) => (counts[a.athlete_id] = (counts[a.athlete_id] ?? 0) + 1))
     setToday(counts)
+
+    // Оплата: если слой 7 ещё не выполнен в базе — просто не показываем статусы.
+    const bill = {}
+    const entry = (id) => (bill[id] ??= { membership: null, singles: 0, sponsor: false })
+    subsRes.data?.forEach((s) => {
+      if (s.product?.kind === 'membership') entry(s.user_id).membership = s
+      if (s.product?.kind === 'support') entry(s.user_id).sponsor = true
+    })
+    paysRes.data?.forEach((p) => p.product?.kind === 'single' && entry(p.user_id).singles++)
+    profilesRes.data.forEach((p) => p.is_sponsor && (entry(p.id).sponsor = true))
+    setBilling(subsRes.error ? {} : bill)
     setLoading(false)
   }, [])
 
@@ -225,6 +273,9 @@ export default function Admin() {
                         <span className="text-neutral-400">{DISCIPLINES[a.discipline]}</span>
                       )}
                     </p>
+                    <div className="mt-1">
+                      <PaymentBadge billing={billing[a.id]} />
+                    </div>
                     {a.phone && (
                       <a href={`tel:+${a.phone}`} className="text-xs text-neutral-500 hover:text-white">
                         {formatPhone(a.phone)}

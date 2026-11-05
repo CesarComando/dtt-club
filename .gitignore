@@ -6,3 +6,5 @@ dist
 .DS_Store
 # локальные настройки Claude Code (dev-сервер превью)
 .claude/
+# служебные файлы Supabase CLI
+supabase/.temp/

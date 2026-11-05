@@ -1,8 +1,9 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRank, hasRanks, RANKS, DISCIPLINES, TRAININGS_PER_YEAR } from '../lib/ranks.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
+import BillingSection, { liveSubscription, useBilling } from '../components/Billing.jsx'
+import { formatDay, formatPrice } from '../lib/payments.js'
 
 function experience(since) {
   const start = new Date(since)
@@ -24,35 +25,59 @@ const HeartIcon = ({ className }) => (
   </svg>
 )
 
-// Кнопка-заглушка подписки «Поддержать клуб». Оплату подключим в отдельном спринте.
-function SupportClub({ isSponsor }) {
-  const [clicked, setClicked] = useState(false)
+// Подписка «Поддержать клуб» 5€/мес через Stripe. Флаг profiles.is_sponsor
+// ставит сервер (вебхук → таблица subscriptions → триггер), не фронтенд.
+function SupportClub({ isSponsor, billing }) {
+  const product = billing.catalog.find((p) => p.kind === 'support')
+  const sub = liveSubscription(billing.subscriptions, 'support')
 
-  if (isSponsor) {
+  if (isSponsor || sub) {
     return (
       <section className="card flex items-center gap-3 border-accent/60">
-        <HeartIcon className="h-6 w-6 text-accent" />
-        <p className="font-semibold">Спасибо, что поддерживаете клуб!</p>
+        <HeartIcon className="h-6 w-6 shrink-0 text-accent" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">Спасибо, что поддерживаете клуб!</p>
+          {sub?.cancel_at_period_end && sub.current_period_end && (
+            <p className="text-sm text-neutral-400">Поддержка действует до {formatDay(sub.current_period_end)}.</p>
+          )}
+        </div>
+        {sub && (
+          <button type="button" onClick={billing.portal} className="text-xs text-neutral-500 hover:text-white">
+            Управлять
+          </button>
+        )}
       </section>
     )
   }
+
+  if (!product) return null
 
   return (
     <section>
       <button
         type="button"
-        onClick={() => setClicked(true)}
-        className="group flex w-full items-center justify-center gap-3 rounded-lg bg-accent px-5 py-4 font-display text-lg uppercase tracking-wider text-white shadow-[0_0_24px_-6px] shadow-accent/60 transition hover:bg-accent-dark active:scale-[0.99]"
+        disabled={Boolean(billing.busy)}
+        onClick={() => billing.checkout(product.id)}
+        className="group flex w-full items-center justify-center gap-3 rounded-lg bg-accent px-5 py-4 font-display text-lg uppercase tracking-wider text-white shadow-[0_0_24px_-6px] shadow-accent/60 transition hover:bg-accent-dark active:scale-[0.99] disabled:opacity-60"
       >
         <HeartIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
-        Поддержать клуб · 5€/мес
+        {billing.busy === product.id
+          ? 'Переход к оплате…'
+          : `Поддержать клуб · ${formatPrice(product.amount_cents, product.currency)}/мес`}
       </button>
-      {clicked && (
-        <p className="mt-2 text-center text-sm text-neutral-400" role="status">
-          Онлайн-подписка скоро появится. Пока можно поддержать клуб у тренера на тренировке.
-        </p>
-      )}
     </section>
+  )
+}
+
+// Оплата (абонемент, разовые, поддержка) — отдельный компонент, чтобы хук
+// useBilling вызывался только для вошедшего пользователя.
+function ClubPayments({ profile, onPaid }) {
+  const billing = useBilling(profile.id, onPaid)
+  return (
+    <>
+      <BillingSection billing={billing} discipline={profile.discipline} />
+      <SupportClub isSponsor={profile.is_sponsor} billing={billing} />
+    </>
   )
 }
 
@@ -197,8 +222,8 @@ export default function Dashboard() {
         </section>
       )}
 
-      {/* Поддержка клуба — заглушка до подключения оплаты */}
-      <SupportClub isSponsor={profile.is_sponsor} />
+      {/* Оплата (Stripe): абонемент, разовые тренировки, «Поддержать клуб» */}
+      <ClubPayments profile={profile} onPaid={() => refreshProfile()} />
 
       {/* Мерч GERA — неактивная карточка-анонс */}
       <section
