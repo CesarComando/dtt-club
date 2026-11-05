@@ -9,6 +9,7 @@ import Admin from './pages/Admin.jsx'
 import Privacy from './pages/Privacy.jsx'
 import Checkin from './pages/Checkin.jsx'
 import Invite from './pages/Invite.jsx'
+import Diary from './pages/Diary.jsx'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/diary" element={<Diary />} />
           <Route path="/privacy" element={<Privacy />} />
           {/* QR-чекин: телефон ученика открывает ссылку из QR на экране тренера */}
           <Route path="/checkin/:token" element={<Checkin />} />

@@ -11,6 +11,7 @@ const ICONS = {
   home: 'M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z',
   schedule: 'M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
   profile: 'M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z',
+  diary: 'M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM18 20a2 2 0 0 0 2-2V7M8 8h6M8 12h6',
   login: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
   coach: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
   logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
@@ -28,6 +29,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   // Вошедшему пользователю вместо «Вход» показываем «Выйти».
   const links = user ? LINKS.filter((l) => l.to !== '/login') : [...LINKS]
+  if (user) links.splice(2, 0, { to: '/diary', label: 'Дневник', icon: 'diary' })
   // Ссылку на CRM видит только тренер; спортсменам панель по-прежнему не видна.
   if (profile?.role === 'admin') links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
   const onSignOut = async () => {

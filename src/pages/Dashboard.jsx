@@ -7,6 +7,7 @@ import BillingSection, { liveSubscription, useBilling } from '../components/Bill
 import { formatDay, formatPrice } from '../lib/payments.js'
 import { deleteMyAccount } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
+import BodyStats from '../components/BodyStats.jsx'
 
 function experience(since) {
   const start = new Date(since)
@@ -282,6 +283,9 @@ export default function Dashboard() {
           <p className="mt-2 text-sm text-neutral-400">Система рангов пока действует только в грепплинге.</p>
         </section>
       )}
+
+      {/* Рост, вес, дата рождения + ИМТ (слой 13, закрытая таблица profile_body) */}
+      <BodyStats userId={user.id} />
 
       {/* Запись на тренировки (слой 8): лимит мест проверяет сервер */}
       <Booking />
