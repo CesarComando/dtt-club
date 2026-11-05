@@ -15,6 +15,9 @@ const Invite = lazy(() => import('./pages/Invite.jsx'))
 const Diary = lazy(() => import('./pages/Diary.jsx'))
 const AdminStudent = lazy(() => import('./pages/AdminStudent.jsx'))
 const Gallery = lazy(() => import('./pages/Gallery.jsx'))
+const Articles = lazy(() => import('./pages/Articles.jsx'))
+const Article = lazy(() => import('./pages/Article.jsx'))
+const ArticleEdit = lazy(() => import('./pages/ArticleEdit.jsx'))
 
 export default function App() {
   return (
@@ -34,6 +37,10 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/articles/new" element={<AdminRoute adminOnly><ArticleEdit /></AdminRoute>} />
+          <Route path="/articles/:id" element={<Article />} />
+          <Route path="/articles/:id/edit" element={<AdminRoute adminOnly><ArticleEdit /></AdminRoute>} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/diary" element={<Diary />} />
           <Route path="/gallery" element={<Gallery />} />

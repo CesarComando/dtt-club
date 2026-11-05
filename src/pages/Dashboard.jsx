@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getRank, hasRanks, RANKS, DISCIPLINES, TRAININGS_PER_YEAR } from '../lib/ranks.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
@@ -173,7 +173,8 @@ function Centered({ children }) {
 }
 
 export default function Dashboard() {
-  const { user, profile, loading, error, refreshProfile } = useAuth()
+  const { user, profile, loading, error, refreshProfile, signOut } = useAuth()
+  const navigate = useNavigate()
 
   if (!isSupabaseConfigured) {
     return <Centered><p className="text-neutral-400">Supabase не настроен — заполните .env</p></Centered>
@@ -355,6 +356,18 @@ export default function Dashboard() {
         <h2 className="text-lg">Мои награды и соревнования</h2>
         <p className="card text-neutral-400">Пока нет наград — всё впереди!</p>
       </section>
+
+      {/* На телефоне «Выйти» — здесь (в нижнем меню не помещается); на компьютере — в шапке */}
+      <button
+        type="button"
+        onClick={async () => {
+          await signOut()
+          navigate('/')
+        }}
+        className="btn-outline w-full md:hidden"
+      >
+        Выйти из аккаунта
+      </button>
 
       <DeleteAccount isAdmin={profile.role === 'admin'} />
     </div>

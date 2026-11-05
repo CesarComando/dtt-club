@@ -18,6 +18,7 @@ const ICONS = {
   profile: 'M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z',
   diary: 'M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM18 20a2 2 0 0 0 2-2V7M8 8h6M8 12h6',
   gallery: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 16l5-5 4 4 3-3 6 6M15.5 9.5h.01',
+  articles: 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7M9 8h3',
   login: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
   coach: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
   logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
@@ -26,6 +27,7 @@ const ICONS = {
 // Админка намеренно не в списке — панель тренера скрыта.
 const LINKS = [
   { to: '/', label: 'Главная', icon: 'home', end: true },
+  { to: '/articles', label: 'Статьи', icon: 'articles' },
   { to: '/dashboard', label: 'Кабинет', icon: 'profile' },
   { to: '/login', label: 'Вход', icon: 'login' },
 ]
@@ -36,7 +38,7 @@ export default function Navbar() {
   // Вошедшему пользователю вместо «Вход» показываем «Выйти».
   const links = user ? LINKS.filter((l) => l.to !== '/login') : [...LINKS]
   if (user)
-    links.splice(2, 0, { to: '/diary', label: 'Дневник', icon: 'diary' }, { to: '/gallery', label: 'Галерея', icon: 'gallery' })
+    links.splice(3, 0, { to: '/diary', label: 'Дневник', icon: 'diary' }, { to: '/gallery', label: 'Галерея', icon: 'gallery' })
   // Ссылку на CRM видит только тренер; спортсменам панель по-прежнему не видна.
   const staff = ['admin', 'coach'].includes(profile?.role)
   if (staff) links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
@@ -46,7 +48,8 @@ export default function Navbar() {
   const closeScanner = useCallback(() => setScanning(false), [])
   const scanAt = canScan ? Math.min(2, links.length) : -1
   // 6+ пунктов в нижнем меню — подписи мельче, чтобы не налезали.
-  const tabText = links.length + (user ? 1 : 0) + (canScan ? 1 : 0) > 5 ? 'text-[10px] tracking-normal' : 'text-[11px] tracking-wider'
+  // «Выйти» на телефоне — в кабинете (в нижнем меню не помещается); на компьютере — в шапке.
+  const tabText = links.length + (canScan ? 1 : 0) > 5 ? 'text-[10px] tracking-normal' : 'text-[11px] tracking-wider'
   const onSignOut = async () => {
     await signOut()
     navigate('/')
@@ -137,15 +140,6 @@ export default function Navbar() {
             )}
           </NavLink>,
         ].filter(Boolean))}
-        {user && (
-          <button
-            onClick={onSignOut}
-            className={`flex flex-col items-center gap-1 py-2.5 font-semibold uppercase ${tabText} text-neutral-400`}
-          >
-            <Icon d={ICONS.logout} />
-            Выйти
-          </button>
-        )}
       </nav>
 
       {scanning && (
