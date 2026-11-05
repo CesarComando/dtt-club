@@ -86,7 +86,7 @@ export default function Diary() {
       {tab === 'diary' ? (
         <DiaryEntries userId={user.id} techniques={mine} />
       ) : tab === 'ratings' ? (
-        <PeerRatings userId={user.id} />
+        <PeerRatings userId={user.id} isAdmin={profile?.role === 'admin'} />
       ) : (
         <MyTechniques userId={user.id} techniques={mine} learned={learned} setLearnedMap={setLearnedMap} onError={setError} />
       )}

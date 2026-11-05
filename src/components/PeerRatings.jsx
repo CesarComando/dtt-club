@@ -1,8 +1,46 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CRITERIA, MIN_RATINGS, deleteRating, loadMyGiven, loadSummary, loadTeammates, saveRating } from '../lib/ratings.js'
 
 // Дневник → «Оценки»: мои средние от партнёров + оценить партнёра по всем критериям (CRITERIA).
-export default function PeerRatings({ userId }) {
+// Оценивают только ученики друг друга (RLS в layer14) — тренеру показываем пояснение.
+export default function PeerRatings({ userId, isAdmin }) {
+  if (isAdmin) return <CoachNote userId={userId} />
+  return <AthleteRatings userId={userId} />
+}
+
+function CoachNote({ userId }) {
+  const [mates, setMates] = useState(null)
+  useEffect(() => {
+    loadTeammates(userId).then(setMates).catch(() => setMates([]))
+  }, [userId])
+  return (
+    <section className="card space-y-3">
+      <h2 className="text-xl">Оценки ставят ученики</h2>
+      <p className="text-sm text-neutral-400">
+        Тренер оценки не ставит — так средние честно показывают мнение партнёров. Средние баллы и кто кого оценил видны в
+        карточке ученика:
+      </p>
+      <ul className="divide-y divide-line">
+        {(mates ?? []).map((m) => (
+          <li key={m.id} className="py-2">
+            <Link to={`/admin/athlete/${m.id}`} className="hover:text-accent hover:underline">
+              {m.first_name} {m.last_name}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+// Ошибки базы — понятным языком.
+const friendly = (e) =>
+  /row-level security/i.test(e?.message ?? '')
+    ? 'Эту оценку поставить нельзя: оценивают только ученики друг друга (не себя и не тренера).'
+    : e.message
+
+function AthleteRatings({ userId }) {
   const [summary, setSummary] = useState(null)
   const [mates, setMates] = useState(null)
   const [given, setGiven] = useState({})
@@ -136,7 +174,7 @@ function RateForm({ initial, onSave, onDelete }) {
     try {
       await fn()
     } catch (e) {
-      setError(e.message)
+      setError(friendly(e))
       setBusy(false)
     }
   }
