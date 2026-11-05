@@ -1,5 +1,10 @@
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
+
+// Сканер с камерой грузится только по нажатию кнопки QR в таб-баре.
+const QrScanner = lazy(() => import('./QrScanner.jsx'))
+const QR_ICON = 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10'
 
 const Icon = ({ d }) => (
   <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,9 +38,15 @@ export default function Navbar() {
   if (user)
     links.splice(2, 0, { to: '/diary', label: 'Дневник', icon: 'diary' }, { to: '/gallery', label: 'Галерея', icon: 'gallery' })
   // Ссылку на CRM видит только тренер; спортсменам панель по-прежнему не видна.
-  if (['admin', 'coach'].includes(profile?.role)) links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
-  // 6 пунктов в нижнем меню (тренер) — подписи мельче, чтобы не налезали.
-  const tabText = links.length + (user ? 1 : 0) > 5 ? 'text-[10px] tracking-normal' : 'text-[11px] tracking-wider'
+  const staff = ['admin', 'coach'].includes(profile?.role)
+  if (staff) links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
+  // Ученик отмечается по QR: круглая кнопка в середине нижнего меню (тренер код показывает, а не сканирует).
+  const canScan = Boolean(user && profile && !staff)
+  const [scanning, setScanning] = useState(false)
+  const closeScanner = useCallback(() => setScanning(false), [])
+  const scanAt = canScan ? Math.min(2, links.length) : -1
+  // 6+ пунктов в нижнем меню — подписи мельче, чтобы не налезали.
+  const tabText = links.length + (user ? 1 : 0) + (canScan ? 1 : 0) > 5 ? 'text-[10px] tracking-normal' : 'text-[11px] tracking-wider'
   const onSignOut = async () => {
     await signOut()
     navigate('/')
@@ -90,7 +101,23 @@ export default function Navbar() {
 
       {/* Mobile: нижний таб-бар */}
       <nav className="fixed inset-x-0 bottom-0 z-50 grid auto-cols-fr grid-flow-col border-t border-line bg-ink pb-[env(safe-area-inset-bottom)] md:hidden">
-        {links.map((l) => (
+        {links.flatMap((l, i) => [
+          i === scanAt && (
+            <button
+              key="qr"
+              type="button"
+              onClick={() => setScanning(true)}
+              aria-label="Отметиться по QR-коду"
+              className={`flex flex-col items-center gap-1 pb-2.5 font-semibold uppercase ${tabText} text-white`}
+            >
+              <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent shadow-[0_0_20px_-4px] shadow-accent/70 ring-4 ring-ink active:scale-95">
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                  <path d={QR_ICON} />
+                </svg>
+              </span>
+              QR
+            </button>
+          ),
           <NavLink
             key={l.to}
             to={l.to}
@@ -108,8 +135,8 @@ export default function Navbar() {
                 {l.label}
               </>
             )}
-          </NavLink>
-        ))}
+          </NavLink>,
+        ].filter(Boolean))}
         {user && (
           <button
             onClick={onSignOut}
@@ -120,6 +147,12 @@ export default function Navbar() {
           </button>
         )}
       </nav>
+
+      {scanning && (
+        <Suspense fallback={null}>
+          <QrScanner onClose={closeScanner} />
+        </Suspense>
+      )}
     </>
   )
 }
