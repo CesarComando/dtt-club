@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRank, hasRanks, RANKS, DISCIPLINES, TRAININGS_PER_YEAR } from '../lib/ranks.js'
 import { useAuth } from '../lib/AuthContext.jsx'
@@ -10,6 +10,28 @@ import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
+// Сканер с камерой грузится только по нажатию кнопки.
+const QrScanner = lazy(() => import('../components/QrScanner.jsx'))
+
+// Кнопка «Отметиться по QR»: камера прямо в приложении (обычная камера телефона тоже работает).
+function ScanButton() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="btn-primary flex w-full items-center justify-center gap-2">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10" />
+        </svg>
+        Сканировать QR — отметиться
+      </button>
+      {open && (
+        <Suspense fallback={null}>
+          <QrScanner onClose={() => setOpen(false)} />
+        </Suspense>
+      )}
+    </>
+  )
+}
 
 function experience(since) {
   const start = new Date(since)
@@ -218,6 +240,8 @@ export default function Dashboard() {
           </p>
         </div>
       </section>
+
+      {profile.role === 'athlete' && <ScanButton />}
 
       {/* Статистика */}
       <section className="grid grid-cols-3 gap-3">
