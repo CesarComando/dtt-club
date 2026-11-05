@@ -10,6 +10,7 @@ import {
   loadTechniques,
   setLearned,
 } from '../lib/diary.js'
+import PeerRatings from '../components/PeerRatings.jsx'
 
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Riga' })
 const dayLabel = (iso) => {
@@ -62,10 +63,11 @@ export default function Diary() {
   return (
     <div className="space-y-5">
       <h1 className="text-3xl">Дневник</h1>
-      <div className="grid grid-cols-2 gap-2" role="tablist">
+      <div className="grid grid-cols-3 gap-2" role="tablist">
         {[
           ['diary', 'Записи'],
           ['techniques', 'Мои приёмы'],
+          ['ratings', 'Оценки'],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -83,6 +85,8 @@ export default function Diary() {
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
       {tab === 'diary' ? (
         <DiaryEntries userId={user.id} techniques={mine} />
+      ) : tab === 'ratings' ? (
+        <PeerRatings userId={user.id} />
       ) : (
         <MyTechniques userId={user.id} techniques={mine} learned={learned} setLearnedMap={setLearnedMap} onError={setError} />
       )}
