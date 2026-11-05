@@ -149,10 +149,10 @@ Deno.serve(async (req) => {
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature!, WEBHOOK_SECRET, undefined, cryptoProvider)
   } catch (e) {
-    console.error('Bad signature', (e as Error).message)
-    // Диагностика без раскрытия секрета: только его формат.
-    const hint = WEBHOOK_SECRET.startsWith('whsec_') ? `secret format ok (len ${WEBHOOK_SECRET.length})` : 'secret missing or not whsec_'
-    return new Response(`Bad signature: ${hint}`, { status: 400 })
+    // Подробности — только в логах функции (Supabase Dashboard), наружу — без деталей о секрете.
+    const format = WEBHOOK_SECRET.startsWith('whsec_') ? 'whsec_ ok' : 'missing or not whsec_'
+    console.error('Bad signature', (e as Error).message, `secret: ${format}`)
+    return new Response('Bad signature', { status: 400 })
   }
 
   // Повторная доставка уже обработанного события — просто подтверждаем.

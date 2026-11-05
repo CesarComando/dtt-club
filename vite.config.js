@@ -11,8 +11,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // Новая версия сайта подхватывается сама при следующем открытии.
+      // Новая версия ставится сама и страница перезагружается (src/lib/pwa.js проверяет
+      // обновления при открытии и при возврате в приложение).
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['apple-touch-icon.png', 'favicon-64x64.png'],
       manifest: {
         name: 'Daugavpils Top Team',

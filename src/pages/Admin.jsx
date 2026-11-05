@@ -138,6 +138,15 @@ export default function Admin() {
       }
     })
     profilesRes.data.forEach((p) => p.is_sponsor && (entry(p.id).sponsor = true))
+    // Абонемент переводом/наличными из списка клуба (слой 17) — только тренеру.
+    const overview = await supabase.rpc('membership_overview', { p_only_me: false })
+    overview.data?.forEach((r) => {
+      if (!r.profile_id || !r.active) return
+      const e = entry(r.profile_id)
+      if (!e.membership || (e.membership.status === 'cash' && r.valid_until > e.membership.current_period_end)) {
+        e.membership = { status: r.source, current_period_end: r.valid_until }
+      }
+    })
     setBilling(subsRes.error ? {} : bill)
     setLoading(false)
   }, [])
