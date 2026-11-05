@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { registerAthlete } from '../lib/auth.js'
 import { useAuth } from '../lib/AuthContext.jsx'
@@ -6,7 +6,7 @@ import { DISCIPLINES, hasRanks } from '../lib/ranks.js'
 
 // Регистрация (APP_PASSPORT §2): Имя, Фамилия, Телефон + обязательное селфи.
 // Supabase: auth.signUp → триггер создаёт profiles → селфи в Storage (бакет avatars).
-const EMPTY = { firstName: '', lastName: '', phone: '', password: '', discipline: 'grappling' }
+const EMPTY = { firstName: '', lastName: '', phone: '', password: '', password2: '', discipline: 'grappling' }
 
 export default function Register() {
   const [form, setForm] = useState(EMPTY)
@@ -15,7 +15,6 @@ export default function Register() {
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
-  const fileRef = useRef(null)
   // ?next=/invite/… — после регистрации вернуть туда (только внутренние пути).
   const [params] = useSearchParams()
   const next = params.get('next')?.startsWith('/') ? params.get('next') : null
@@ -34,6 +33,7 @@ export default function Register() {
 
   const onFile = (e) => {
     const file = e.target.files?.[0]
+    e.target.value = '' // чтобы повторный выбор того же файла снова сработал
     if (!file) return
     if (!file.type.startsWith('image/')) {
       setError('Нужна фотография (изображение).')
@@ -48,13 +48,18 @@ export default function Register() {
   const onSubmit = async (e) => {
     e.preventDefault()
     if (!selfie) {
-      setError('Сделайте селфи — тренеру нужно узнать вас на тренировке.')
+      setError('Добавьте фото — тренеру нужно узнать вас на тренировке.')
+      return
+    }
+    if (form.password !== form.password2) {
+      setError('Пароли не совпадают — введите пароль ещё раз.')
       return
     }
     setError('')
     setLoading(true)
     try {
-      const user = await registerAthlete({ ...form, selfie })
+      const { password2: _, ...data } = form
+      const user = await registerAthlete({ ...data, selfie })
       // Профиль мог загрузиться до того, как селфи записалось — перечитываем.
       await refreshProfile(user.id)
       setSubmitted(true)
@@ -103,28 +108,23 @@ export default function Register() {
             )}
           </div>
 
-          {/* capture="user" — на телефоне сразу открывает фронтальную камеру.
-              Работает в браузере, в установленной PWA и в Android-сборке Capacitor
-              (WebView Capacitor обрабатывает <input type="file"> и capture сам).
+          {/* Два способа добавить фото: камера (capture="user" — сразу фронтальная) или галерея (без capture).
+              Работает в браузере, в установленной PWA и в Android-сборке Capacitor.
               Логика ниже не зависит от источника фото: onFile получает обычный File/Blob.
-              TODO: Replace with @capacitor/camera for native build — родной экран камеры,
-              запрос разрешения и стабильная работа на iOS. Тогда вызывать
-              Camera.getPhoto({ source: CameraSource.Camera, direction: CameraDirection.Front })
+              TODO: Replace with @capacitor/camera for native build — Camera.getPhoto({ source: CameraSource.Prompt })
               только при Capacitor.isNativePlatform(), результат превращать в Blob и передавать в setSelfie. */}
-          <input
-            ref={fileRef}
-            id="selfie"
-            type="file"
-            accept="image/*"
-            capture="user"
-            className="sr-only"
-            onChange={onFile}
-          />
-          <label htmlFor="selfie" className={preview ? 'btn-outline cursor-pointer' : 'btn-primary cursor-pointer'}>
-            {preview ? 'Переснять селфи' : 'Сделать селфи *'}
-          </label>
+          <input id="selfie" type="file" accept="image/*" capture="user" className="sr-only" onChange={onFile} />
+          <input id="photo" type="file" accept="image/*" className="sr-only" onChange={onFile} />
+          <div className="flex flex-wrap justify-center gap-2">
+            <label htmlFor="selfie" className={preview ? 'btn-outline cursor-pointer' : 'btn-primary cursor-pointer'}>
+              {preview ? 'Переснять' : 'Сделать селфи *'}
+            </label>
+            <label htmlFor="photo" className="btn-outline cursor-pointer">
+              Из галереи
+            </label>
+          </div>
           <p className="text-center text-xs text-neutral-500">
-            Фото нужно тренеру, чтобы быстро узнать вас на тренировке
+            Фото нужно тренеру, чтобы быстро узнать вас на тренировке — лицо должно быть хорошо видно
           </p>
         </div>
 
@@ -190,6 +190,24 @@ export default function Register() {
             autoComplete="new-password"
             placeholder="Минимум 6 символов"
           />
+        </div>
+        <div>
+          <label className="label" htmlFor="password2">Повторите пароль *</label>
+          <input
+            id="password2"
+            name="password2"
+            type="password"
+            value={form.password2}
+            onChange={onChange}
+            className="input"
+            required
+            minLength={6}
+            autoComplete="new-password"
+            aria-invalid={form.password2 !== '' && form.password2 !== form.password}
+          />
+          {form.password2 !== '' && form.password2 !== form.password && (
+            <p className="mt-1 text-xs text-accent">Пароли не совпадают</p>
+          )}
         </div>
 
         <p className="text-xs text-neutral-500">
