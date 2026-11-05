@@ -36,6 +36,38 @@ export const useSection = () =>
     () => null,
   )
 
+// «MMA дети» — отдельный вход (родитель за ребёнка): направление то же (mma),
+// но в записи на тренировки показываются только детские занятия, а во взрослом MMA — без них.
+const KIDS_KEY = 'dtt-kids'
+const kidsListeners = new Set()
+export function getKids() {
+  try {
+    return localStorage.getItem(KIDS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+export function setKids(on) {
+  try {
+    if (on) localStorage.setItem(KIDS_KEY, '1')
+    else localStorage.removeItem(KIDS_KEY)
+  } catch {
+    /* приватный режим */
+  }
+  kidsListeners.forEach((fn) => fn())
+}
+export const useKids = () =>
+  useSyncExternalStore(
+    (fn) => {
+      kidsListeners.add(fn)
+      return () => kidsListeners.delete(fn)
+    },
+    getKids,
+    () => false,
+  )
+/** Детское занятие (слоты mma-kids-*, слой 23). */
+export const isKidsSession = (s) => String(s.slot_id ?? '').startsWith('mma-kids')
+
 /** Может ли ученик ходить в оба направления (тогда раздел переключается). */
 export const seesBoth = (profile) =>
   Boolean(profile) && (profile.role !== 'athlete' || profile.discipline === 'both' || profile.cross_training)

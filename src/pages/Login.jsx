@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { signInWithPhone } from '../lib/auth.js'
 import { supabase } from '../lib/supabaseClient.js'
-import { SECTIONS, getSection, setSection } from '../lib/section.js'
+import { SECTIONS, getKids, getSection, setKids, setSection } from '../lib/section.js'
 
-// Вход: выбор раздела — Grappling, MMA / K1 или «Тренер» (отдельный вход для тренера и помощника).
-const MODES = [...Object.entries(SECTIONS), ['coach', 'Тренер']]
+// Вход: выбор раздела — Grappling, MMA / K1, MMA дети или «Тренер» (отдельный вход для тренера и помощника).
+const MODES = [...Object.entries(SECTIONS), ['mma_kids', 'MMA дети'], ['coach', 'Тренер']]
+const LABELS = Object.fromEntries(MODES)
 
 export default function Login() {
   const navigate = useNavigate()
   // ?next=/checkin/… — вернуть туда, откуда пришли (только внутренние пути).
   const [params] = useSearchParams()
   const nextParam = params.get('next')?.startsWith('/') ? params.get('next') : null
-  const [mode, setMode] = useState(() => getSection() ?? 'grappling')
+  const [mode, setMode] = useState(() => (getKids() ? 'mma_kids' : getSection() ?? 'grappling'))
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -33,7 +34,9 @@ export default function Login() {
         }
         navigate(nextParam ?? '/admin', { replace: true })
       } else {
-        setSection(mode)
+        // MMA дети — то же направление MMA, но только детские занятия
+        setSection(mode === 'mma_kids' ? 'mma' : mode)
+        setKids(mode === 'mma_kids')
         navigate(nextParam ?? '/dashboard', { replace: true })
       }
     } catch (err) {
@@ -47,7 +50,7 @@ export default function Login() {
     <div className="mx-auto max-w-sm">
       <h1 className="mb-6 text-3xl">Вход</h1>
 
-      <div className="mb-4 grid grid-cols-3 gap-2" role="tablist" aria-label="Куда входим">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist" aria-label="Куда входим">
         {MODES.map(([id, label]) => (
           <button
             key={id}
@@ -68,7 +71,9 @@ export default function Login() {
           ? 'Вход для тренеров — сразу в панель тренера.'
           : mode === 'grappling'
             ? 'Daugavpils Grappling Team'
-            : 'Daugavpils Top Team — MMA и K1'}
+            : mode === 'mma_kids'
+              ? 'Детское MMA · Вт и Чт 16:30–17:45. Входит родитель с аккаунтом ребёнка.'
+              : 'Daugavpils Top Team — MMA и K1'}
       </p>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
@@ -99,7 +104,7 @@ export default function Login() {
         </div>
         {error && <p className="text-sm font-semibold text-accent">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? 'Входим…' : coach ? 'Войти как тренер' : `Войти · ${SECTIONS[mode]}`}
+          {loading ? 'Входим…' : coach ? 'Войти как тренер' : `Войти · ${LABELS[mode]}`}
         </button>
       </form>
       {!coach && (

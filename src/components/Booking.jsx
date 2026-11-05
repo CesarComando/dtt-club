@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext.jsx'
-import { SECTIONS, activeSection, seesBoth, setSection, useSection } from '../lib/section.js'
+import { SECTIONS, activeSection, isKidsSession, seesBoth, setSection, useKids, useSection } from '../lib/section.js'
 import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime, shareInvite } from '../lib/booking.js'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
@@ -9,6 +9,7 @@ export default function Booking() {
   const chosen = useSection()
   const both = seesBoth(profile)
   const section = activeSection(profile, chosen)
+  const kids = useKids()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
@@ -81,7 +82,7 @@ export default function Booking() {
         <p className="card text-neutral-400">На ближайшую неделю тренировок нет.</p>
       ) : (
         <ul className="space-y-2">
-          {sessions.filter((s) => !both || !section || s.discipline === section).map((s) => {
+          {sessions.filter((s) => (!both || !section || s.discipline === section) && (s.discipline !== 'mma' || isKidsSession(s) === kids)).map((s) => {
             const full = isFull(s) && !s.is_booked
             const started = new Date(s.starts_at) <= new Date()
             const pct = s.capacity ? Math.min(100, Math.round((s.booked / s.capacity) * 100)) : 0
