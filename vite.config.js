@@ -40,6 +40,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // Новая версия включается сама, не дожидаясь сигнала от страницы:
+        // иначе старая открытая страница (без нового кода обновления) держала её в «ожидании».
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],
