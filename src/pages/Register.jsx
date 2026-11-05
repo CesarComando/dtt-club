@@ -100,7 +100,14 @@ export default function Register() {
             )}
           </div>
 
-          {/* capture="user" — на телефоне сразу открывает фронтальную камеру */}
+          {/* capture="user" — на телефоне сразу открывает фронтальную камеру.
+              Работает в браузере, в установленной PWA и в Android-сборке Capacitor
+              (WebView Capacitor обрабатывает <input type="file"> и capture сам).
+              Логика ниже не зависит от источника фото: onFile получает обычный File/Blob.
+              TODO: Replace with @capacitor/camera for native build — родной экран камеры,
+              запрос разрешения и стабильная работа на iOS. Тогда вызывать
+              Camera.getPhoto({ source: CameraSource.Camera, direction: CameraDirection.Front })
+              только при Capacitor.isNativePlatform(), результат превращать в Blob и передавать в setSelfie. */}
           <input
             ref={fileRef}
             id="selfie"

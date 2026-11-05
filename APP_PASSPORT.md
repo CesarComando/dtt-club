@@ -41,7 +41,13 @@ React (Vite) · Tailwind CSS · React Router · хостинг GitHub Pages (SPA
 - Расписание (Daugavpils Grappling Team):
   - Взрослые: Вт, Чт (18:00–20:00), Сб (15:00–17:00)
 
-## 5. Дорожная карта (внедряем строго по слоям)
+## 5. Мобильные приложения
+Цель — Google Play и App Store. **Путь: PWA + Capacitor**, без переписывания на React Native.
+- PWA: `vite-plugin-pwa` (манифест, сервис-воркер, иконки в `public/`).
+- Capacitor: `capacitor.config.json`, appId `lv.daugavpilstopteam.app` (после публикации в сторах менять нельзя).
+- Нативные функции (камера и т.п.) — через плагины `@capacitor/*`, только при `Capacitor.isNativePlatform()`.
+
+## 6. Дорожная карта (внедряем строго по слоям)
 1. **Деплой** на GitHub Pages → `app.daugavpilstopteam.lv` ✅
    (корень `daugavpilstopteam.lv` — сайт-визитка, репозиторий `CesarComando/daugavpilstopteam`)
 2. **Оплата через приложение — Stripe** (счёт Stripe открывает клуб):
