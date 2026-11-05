@@ -10,6 +10,7 @@ import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
 import MyChildren from '../components/MyChildren.jsx'
+import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 // Сканер с камерой грузится только по нажатию кнопки.
 const QrScanner = lazy(() => import('../components/QrScanner.jsx'))
@@ -174,6 +175,7 @@ function Centered({ children }) {
 
 export default function Dashboard() {
   const { user, profile, loading, error, refreshProfile, signOut } = useAuth()
+  const [bookingKey, setBookingKey] = useState(0) // перечитать запись после «Записаться» по приглашению
   const navigate = useNavigate()
 
   if (!isSupabaseConfigured) {
@@ -219,6 +221,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Приглашения от друзей (слой 29) */}
+      <FriendInvites onBooked={() => setBookingKey((k) => k + 1)} />
+
       {/* Профиль */}
       <section className="card flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink font-display text-xl ring-2 ring-accent">
@@ -324,7 +329,8 @@ export default function Dashboard() {
       {/* Запись на тренировки (слой 8): лимит мест проверяет сервер.
           key: после переключателя направления список перечитывается. */}
       <CrossTraining profile={profile} onChange={() => refreshProfile()} />
-      <Booking key={String(profile.cross_training)} />
+      <Booking key={`${profile.cross_training}-${bookingKey}`} />
+      <HideProfile profile={profile} onChange={() => refreshProfile()} />
       <MyChildren profile={profile} />
 
       {/* Оплата (Stripe): абонемент, разовые тренировки, «Поддержать клуб» */}

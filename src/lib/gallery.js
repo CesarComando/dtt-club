@@ -1,6 +1,7 @@
 // Слой 19: галерея. Файлы — приватный бакет gallery (папка <user_id>/),
 // записи — gallery_items. Ученик добавляет «на проверку», тренер одобряет.
 import { supabase } from './supabaseClient.js'
+import { loadClubPeople } from './friends.js'
 
 export const GALLERY_BUCKET = 'gallery'
 export const ALBUMS = { training: 'Тренировки', competition: 'Соревнования', other: 'Разное' }
@@ -23,7 +24,9 @@ export async function loadGallery() {
   if (!items.length) return []
   const { data: urls } = await supabase.storage.from(GALLERY_BUCKET).createSignedUrls(items.map((i) => i.path), 3600)
   const byPath = Object.fromEntries((urls ?? []).map((u) => [u.path, u.signedUrl]))
-  return items.map((i) => ({ ...i, url: byPath[i.path] ?? null }))
+  // Имя автора: чужие профили ученик читает только через club_people() (слой 29).
+  const people = Object.fromEntries((await loadClubPeople().catch(() => [])).map((p) => [p.id, p]))
+  return items.map((i) => ({ ...i, author: i.author ?? people[i.author_id] ?? null, url: byPath[i.path] ?? null }))
 }
 
 // Фото ужимаем на телефоне до 1920 px по длинной стороне (JPEG) — быстрее грузится, меньше места.

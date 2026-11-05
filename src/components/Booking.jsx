@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { SECTIONS, activeSection, isKidsSession, seesBoth, setSection, useKids, useSection } from '../lib/section.js'
-import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime, shareInvite } from '../lib/booking.js'
+import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime } from '../lib/booking.js'
+import FriendPicker from './FriendPicker.jsx'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
 export default function Booking() {
@@ -14,7 +15,7 @@ export default function Booking() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
-  const [shared, setShared] = useState({}) // session_id → 'Ссылка скопирована' и т.п.
+  const [picking, setPicking] = useState(null) // занятие, на которое зовём друга
 
   const refresh = useCallback(async () => {
     try {
@@ -44,16 +45,6 @@ export default function Booking() {
     }
   }
 
-  const invite = async (s) => {
-    setError('')
-    try {
-      const r = await shareInvite(s)
-      if (r !== 'cancelled')
-        setShared((m) => ({ ...m, [s.id]: r === 'copied' ? 'Ссылка скопирована — отправьте другу' : 'Приглашение отправлено' }))
-    } catch (e) {
-      setError(e.message)
-    }
-  }
 
   return (
     <section className="space-y-3">
@@ -102,8 +93,8 @@ export default function Booking() {
                     {s.cancelled ? 'Тренировка отменена' : seatsText(s)}
                   </p>
                   {!s.cancelled && !started && !isFull(s) && (
-                    <button type="button" onClick={() => invite(s)} className="mt-1 text-xs font-semibold text-accent hover:underline">
-                      {shared[s.id] ?? '＋ Позвать друга'}
+                    <button type="button" onClick={() => setPicking(s)} className="mt-1 text-xs font-semibold text-accent hover:underline">
+                      ＋ Позвать друга
                     </button>
                   )}
                   {s.capacity && (
@@ -133,6 +124,7 @@ export default function Booking() {
           })}
         </ul>
       )}
+      {picking && <FriendPicker session={picking} onClose={() => setPicking(null)} />}
     </section>
   )
 }

@@ -1,6 +1,7 @@
 // Слой 14 + 18: оценки партнёров (1–5) по 8 критериям (гигиена — слой 18).
 // Кто поставил оценку, видят только автор и тренер; свои средние ученик видит при 3+ оценках.
 import { supabase } from './supabaseClient.js'
+import { loadClubPeople } from './friends.js'
 
 export const CRITERIA = [
   { key: 'technique', label: 'Техника' },
@@ -21,15 +22,8 @@ const must = ({ data, error }) => {
 }
 
 /** Ученики клуба, которых можно оценить (без себя и тренера). */
-export const loadTeammates = async (myId) =>
-  must(
-    await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, discipline')
-      .eq('role', 'athlete')
-      .neq('id', myId)
-      .order('first_name'),
-  )
+// Чужие профили — только через club_people() (слой 29).
+export const loadTeammates = async (myId) => (await loadClubPeople()).filter((p) => p.id !== myId)
 
 /** Мои выставленные оценки: target_id → { technique: 4, … }. */
 export async function loadMyGiven(myId) {
