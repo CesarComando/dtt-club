@@ -72,20 +72,23 @@ export default function Login() {
           : mode === 'grappling'
             ? 'Daugavpils Grappling Team'
             : mode === 'mma_kids'
-              ? 'Детское MMA · Вт и Чт 16:30–17:45. Входит родитель с аккаунтом ребёнка.'
+              ? 'Детское MMA · Вт и Чт 16:30–17:45. Ребёнок входит по логину от родителя (например 27167013-1).'
               : 'Daugavpils Top Team — MMA и K1'}
       </p>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
         <div>
-          <label className="label" htmlFor="phone">Номер телефона</label>
+          <label className="label" htmlFor="phone">
+            {mode === 'mma_kids' ? 'Телефон или логин ребёнка' : 'Номер телефона'}
+          </label>
+          {/* Ребёнок входит по логину «телефон родителя-номер», например 27167013-1 (слой 24) */}
           <input
             id="phone"
             type="tel"
             className="input"
             required
-            autoComplete="tel"
-            placeholder="+371 2X XXX XXX"
+            autoComplete="username"
+            placeholder={mode === 'mma_kids' ? '2X XXX XXX-1' : '+371 2X XXX XXX'}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />

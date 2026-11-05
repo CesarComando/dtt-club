@@ -9,6 +9,7 @@ import { deleteMyAccount } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
+import MyChildren from '../components/MyChildren.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 // Сканер с камерой грузится только по нажатию кнопки.
 const QrScanner = lazy(() => import('../components/QrScanner.jsx'))
@@ -323,6 +324,7 @@ export default function Dashboard() {
           key: после переключателя направления список перечитывается. */}
       <CrossTraining profile={profile} onChange={() => refreshProfile()} />
       <Booking key={String(profile.cross_training)} />
+      <MyChildren profile={profile} />
 
       {/* Оплата (Stripe): абонемент, разовые тренировки, «Поддержать клуб» */}
       <ClubPayments profile={profile} onPaid={() => refreshProfile()} />

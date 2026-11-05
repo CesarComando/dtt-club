@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured, AVATARS_BUCKET } from './supabaseClient.js'
 
 // Вход по номеру телефона: Supabase Auth требует email,
@@ -5,7 +6,11 @@ import { supabase, isSupabaseConfigured, AVATARS_BUCKET } from './supabaseClient
 const EMAIL_DOMAIN = 'dtt.local'
 
 // '+371 20 000 000' / '20000000' → '37120000000'
+// Детский логин: телефон родителя + «-номер» ('27167013-1' → '37127167013-1', слой 24).
 export function normalizePhone(raw) {
+  // Детский — только «полный номер-1..99» (номер, набранный через дефисы, сюда не попадает)
+  const kid = String(raw).trim().match(/^([^-]*\d)\s*-\s*(\d{1,2})$/)
+  if (kid && normalizePhone(kid[1]).length >= 10) return `${normalizePhone(kid[1])}-${Number(kid[2])}`
   let digits = String(raw).replace(/\D/g, '')
   if (digits.startsWith('00')) digits = digits.slice(2)
   // Латвийский номер без кода страны: 8 цифр, начинается с 2 (моб.) или 6 (стац.)
@@ -77,6 +82,49 @@ export async function registerAthlete({ firstName, lastName, phone, password, di
   return data.user
 }
 
+/**
+ * Родитель добавляет ребёнка (слой 24). Аккаунт создаётся во временном клиенте без сохранения
+ * сессии — родитель остаётся в своём аккаунте. Логин ребёнка: <телефон родителя>-<n>;
+ * триггер в базе сам привязывает ребёнка к родителю по этому логину.
+ * Возвращает логин для входа ребёнка.
+ */
+export async function createChildAccount({ parentPhone, firstName, lastName, discipline, password, photo }) {
+  ensureConfigured()
+  const base = normalizePhone(parentPhone ?? '')
+  if (!/^\d{8,15}$/.test(base)) throw new Error('В вашем профиле нет номера телефона — добавить ребёнка нельзя.')
+  const tmp = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'dtt-child-tmp' },
+  })
+  const blob = photo ? await compressImage(photo) : null
+  // Свободный номер: 1, 2, 3… (занят — пробуем следующий)
+  for (let n = 1; n <= 20; n++) {
+    const login = `${base}-${n}`
+    const { data, error } = await tmp.auth.signUp({
+      email: `${login}@${EMAIL_DOMAIN}`,
+      password,
+      options: { data: { first_name: firstName.trim(), last_name: lastName.trim(), discipline } },
+    })
+    if (error) {
+      if (/already registered|already been registered/i.test(error.message)) continue
+      throw translateAuthError(error)
+    }
+    if (!data.session) throw new Error('Аккаунт создан, но требуется подтверждение email (Confirm email в Supabase).')
+    if (blob) {
+      const path = `${data.user.id}/selfie.jpg`
+      const up = await tmp.storage.from(AVATARS_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+      if (!up.error) await tmp.from('profiles').update({ avatar_url: path }).eq('id', data.user.id)
+    }
+    await tmp.auth.signOut()
+    return login
+  }
+  throw new Error('Не удалось подобрать логин для ребёнка.')
+}
+
+export async function unlinkChild(childId) {
+  const { error } = await supabase.rpc('unlink_child', { p_child: childId })
+  if (error) throw error
+}
+
 export async function signInWithPhone(phone, password) {
   ensureConfigured()
   const { data, error } = await supabase.auth.signInWithPassword({ email: phoneToEmail(phone), password })
@@ -94,6 +142,8 @@ export async function getAvatarUrl(path, expiresIn = 3600) {
 function translateAuthError(error) {
   const msg = error.message || ''
   if (/already registered|already been registered/i.test(msg)) return new Error('Этот номер уже зарегистрирован. Войдите.')
+  if (/Аккаунт родителя не найден|Database error saving new user/i.test(msg))
+    return new Error('Аккаунт родителя не найден — сначала родитель регистрируется сам.')
   if (/invalid login credentials/i.test(msg)) return new Error('Неверный номер телефона или пароль.')
   if (/password should be at least/i.test(msg)) return new Error('Пароль слишком короткий (минимум 6 символов).')
   if (/rate limit/i.test(msg)) return new Error('Слишком много попыток. Подождите минуту.')
