@@ -3,7 +3,7 @@ import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, autoRank, RANKS, DISCIPLINES } from '../lib/ranks.js'
 import { LIVE_STATUSES } from '../lib/payments.js'
 import AdminSessions from '../components/AdminSessions.jsx'
-import AdminDebtors, { CashPayment } from '../components/AdminDebtors.jsx'
+import AdminDebtors, { CashPayment, DeleteAthlete } from '../components/AdminDebtors.jsx'
 import CheckinQR from '../components/CheckinQR.jsx'
 import AdminMembers from '../components/AdminMembers.jsx'
 
@@ -374,6 +374,17 @@ export default function Admin() {
                       <CashPayment
                         athlete={a}
                         onDone={() => {
+                          load()
+                          setReloadKey((k) => k + 1)
+                        }}
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <DeleteAthlete
+                        athlete={a}
+                        onDeleted={() => {
+                          setOpenSettings(null)
+                          setNotice(`Аккаунт ${a.first_name} ${a.last_name} удалён`)
                           load()
                           setReloadKey((k) => k + 1)
                         }}

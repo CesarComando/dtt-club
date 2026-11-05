@@ -22,9 +22,9 @@ export const recordCashPayment = (athleteId, productId) =>
   rpc('record_cash_payment', { p_athlete: athleteId, p_product: productId })
 export const loadDebtors = () => rpc('payment_debtors')
 
-// Удаление своего аккаунта (Edge Function delete-account)
-export async function deleteMyAccount() {
-  const { data, error } = await supabase.functions.invoke('delete-account', { body: { confirm: 'УДАЛИТЬ' } })
+// Удаление аккаунта (Edge Function delete-account): своего или — тренером — ученика.
+async function callDelete(body) {
+  const { data, error } = await supabase.functions.invoke('delete-account', { body: { confirm: 'УДАЛИТЬ', ...body } })
   if (error) {
     let message = 'Не удалось удалить аккаунт'
     try {
@@ -34,6 +34,13 @@ export async function deleteMyAccount() {
     }
     throw new Error(message)
   }
+  return data
+}
+
+export async function deleteMyAccount() {
+  const data = await callDelete({})
   await supabase.auth.signOut()
   return data
 }
+
+export const deleteAthleteAccount = (athleteId) => callDelete({ athlete_id: athleteId })

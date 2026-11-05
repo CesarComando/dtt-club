@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { formatDay, formatPrice, loadCatalog } from '../lib/payments.js'
-import { loadDebtors, recordCashPayment } from '../lib/club-ops.js'
+import { deleteAthleteAccount, loadDebtors, recordCashPayment } from '../lib/club-ops.js'
 
 let catalogCache = null
 const useCashProducts = () => {
@@ -129,5 +129,48 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
         Должник — не прошло списание по карте или за 30 дней тренировок больше, чем оплачено (первая тренировка бесплатно).
       </p>
     </section>
+  )
+}
+
+/** Тренер удаляет аккаунт ученика (двойное подтверждение). */
+export function DeleteAthlete({ athlete, onDeleted }) {
+  const [step, setStep] = useState(0) // 0 — кнопка, 1 — подтверждение
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const remove = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      await deleteAthleteAccount(athlete.id)
+      onDeleted?.()
+    } catch (e) {
+      setError(e.message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2 border-t border-line pt-3 text-sm">
+      {step === 0 ? (
+        <button type="button" onClick={() => setStep(1)} className="text-neutral-500 hover:text-accent">
+          Удалить аккаунт ученика
+        </button>
+      ) : (
+        <>
+          <p className="text-accent">
+            Удалить аккаунт {athlete.first_name} {athlete.last_name} навсегда? Удалятся профиль, телефон, селфи,
+            посещения и записи; подписки по карте отменятся. Запись в «Ученики и оплаты» останется.
+          </p>
+          <div className="flex gap-2">
+            <button type="button" onClick={remove} disabled={busy} className="btn-primary disabled:opacity-60">
+              {busy ? 'Удаляем…' : 'Да, удалить'}
+            </button>
+            <button type="button" onClick={() => setStep(0)} disabled={busy} className="btn-outline">Отмена</button>
+          </div>
+        </>
+      )}
+      {error && <p className="text-accent" role="alert">{error}</p>}
+    </div>
   )
 }
