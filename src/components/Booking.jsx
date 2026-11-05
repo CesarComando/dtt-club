@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useAuth } from '../lib/AuthContext.jsx'
+import { SECTIONS, activeSection, seesBoth, setSection, useSection } from '../lib/section.js'
 import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime, shareInvite } from '../lib/booking.js'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
 export default function Booking() {
+  const { profile } = useAuth()
+  const chosen = useSection()
+  const both = seesBoth(profile)
+  const section = activeSection(profile, chosen)
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
@@ -50,7 +56,24 @@ export default function Booking() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg">Запись на тренировки</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg">Запись на тренировки</h2>
+        {/* Раздел из входа; кто ходит в оба направления — переключает здесь */}
+        {both && (
+          <div className="flex gap-1">
+            {Object.entries(SECTIONS).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSection(id)}
+                className={`rounded-full border px-3 py-1 text-xs ${section === id ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-400'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
       {loading ? (
         <p className="card text-neutral-400">Загружаем расписание…</p>
@@ -58,7 +81,7 @@ export default function Booking() {
         <p className="card text-neutral-400">На ближайшую неделю тренировок нет.</p>
       ) : (
         <ul className="space-y-2">
-          {sessions.map((s) => {
+          {sessions.filter((s) => !both || !section || s.discipline === section).map((s) => {
             const full = isFull(s) && !s.is_booked
             const started = new Date(s.starts_at) <= new Date()
             const pct = s.capacity ? Math.min(100, Math.round((s.booked / s.capacity) * 100)) : 0

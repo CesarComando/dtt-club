@@ -33,7 +33,7 @@ export default function Navbar() {
   if (user)
     links.splice(2, 0, { to: '/diary', label: 'Дневник', icon: 'diary' }, { to: '/gallery', label: 'Галерея', icon: 'gallery' })
   // Ссылку на CRM видит только тренер; спортсменам панель по-прежнему не видна.
-  if (profile?.role === 'admin') links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
+  if (['admin', 'coach'].includes(profile?.role)) links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
   // 6 пунктов в нижнем меню (тренер) — подписи мельче, чтобы не налезали.
   const tabText = links.length + (user ? 1 : 0) > 5 ? 'text-[10px] tracking-normal' : 'text-[11px] tracking-wider'
   const onSignOut = async () => {

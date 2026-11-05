@@ -9,6 +9,7 @@ import AdminMembers from '../components/AdminMembers.jsx'
 import AdminMemberships from '../components/AdminMemberships.jsx'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext.jsx'
 
 const TABS = [
   ['gym', 'Зал'],
@@ -56,6 +57,10 @@ function PaymentBadge({ billing }) {
 const formatPhone = (p) => (p?.startsWith('371') && p.length === 11 ? `+371 ${p.slice(3, 7)} ${p.slice(7)}` : p ? `+${p}` : '')
 
 export default function Admin() {
+  // Помощник тренера (role = 'coach') видит только «Зал»: посещения, QR, записи.
+  const { profile: me } = useAuth()
+  const isAdmin = me?.role === 'admin'
+  const tabs = isAdmin ? TABS : TABS.slice(0, 1)
   const [athletes, setAthletes] = useState([])
   const [today, setToday] = useState({}) // athlete_id → сколько отметок сегодня
   const [billing, setBilling] = useState({}) // athlete_id → { membership, singles, sponsor }
@@ -67,7 +72,7 @@ export default function Admin() {
   const [reloadKey, setReloadKey] = useState(0) // перечитать список должников
   // Вкладка в адресе (?tab=students) — «Назад» из карточки ученика возвращает на неё.
   const [params, setParams] = useSearchParams()
-  const tab = TABS.some(([t]) => t === params.get('tab')) ? params.get('tab') : 'gym'
+  const tab = tabs.some(([t]) => t === params.get('tab')) ? params.get('tab') : 'gym'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -76,7 +81,7 @@ export default function Admin() {
       supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url, trainings_count, role, discipline, rank_override, is_sponsor, approved_at, created_at')
-        .neq('role', 'admin')
+        .eq('role', 'athlete')
         .order('last_name'),
       supabase.from('profile_contacts').select('id, phone'),
       supabase.from('attendance').select('athlete_id').gte('created_at', startOfToday()),
@@ -240,8 +245,9 @@ export default function Admin() {
         </div>
       </div>
 
+      {isAdmin && (
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist">
-        {TABS.map(([id, label]) => (
+        {tabs.map(([id, label]) => (
           <button
             key={id}
             role="tab"
@@ -255,6 +261,7 @@ export default function Admin() {
           </button>
         ))}
       </div>
+      )}
 
       {tab === 'students' && <AdminMembers profiles={athletes} />}
       {tab === 'memberships' && <AdminMemberships />}
@@ -318,12 +325,16 @@ export default function Admin() {
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-lg font-semibold">
-                      <Link to={`/admin/athlete/${a.id}`} className="hover:text-accent hover:underline">
-                        {a.first_name} {a.last_name}
-                      </Link>
+                      {isAdmin ? (
+                        <Link to={`/admin/athlete/${a.id}`} className="hover:text-accent hover:underline">
+                          {a.first_name} {a.last_name}
+                        </Link>
+                      ) : (
+                        <>{a.first_name} {a.last_name}</>
+                      )}
                       <ApprovedMark approved={a.approved_at} className="ml-2" />
                     </p>
-                    {!a.approved_at && (
+                    {isAdmin && !a.approved_at && (
                       <ApproveButton
                         athlete={a}
                         onChange={(at) => setAthletes((list) => list.map((x) => (x.id === a.id ? { ...x, approved_at: at } : x)))}
@@ -339,9 +350,11 @@ export default function Admin() {
                         <span className="text-neutral-400">{DISCIPLINES[a.discipline]}</span>
                       )}
                     </p>
-                    <div className="mt-1">
-                      <PaymentBadge billing={billing[a.id]} />
-                    </div>
+                    {isAdmin && (
+                      <div className="mt-1">
+                        <PaymentBadge billing={billing[a.id]} />
+                      </div>
+                    )}
                     {a.phone && (
                       <a href={`tel:+${a.phone}`} className="text-xs text-neutral-500 hover:text-white">
                         {formatPhone(a.phone)}
@@ -370,18 +383,18 @@ export default function Admin() {
                         Отменить ({todayCount} сегодня)
                       </button>
                     )}
-                    <button
+                    {isAdmin && <button
                       onClick={() => setOpenSettings(settingsOpen ? null : a.id)}
                       className="text-xs text-neutral-500 hover:text-white"
                       aria-expanded={settingsOpen}
                     >
                       {settingsOpen ? 'Скрыть настройки' : 'Ранг и направление'}
-                    </button>
+                    </button>}
                   </div>
                 </div>
 
                 {/* Настройки ученика: направление + ручной ранг */}
-                {settingsOpen && (
+                {isAdmin && settingsOpen && (
                   <div className="grid basis-full gap-3 border-t border-line pt-4 sm:grid-cols-2">
                     <label className="block">
                       <span className="label">Направление</span>

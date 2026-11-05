@@ -1,24 +1,41 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { signInWithPhone } from '../lib/auth.js'
+import { supabase } from '../lib/supabaseClient.js'
+import { SECTIONS, getSection, setSection } from '../lib/section.js'
+
+// Вход: выбор раздела — Grappling, MMA / K1 или «Тренер» (отдельный вход для тренера и помощника).
+const MODES = [...Object.entries(SECTIONS), ['coach', 'Тренер']]
 
 export default function Login() {
   const navigate = useNavigate()
   // ?next=/checkin/… — вернуть туда, откуда пришли (только внутренние пути).
   const [params] = useSearchParams()
-  const next = params.get('next')?.startsWith('/') ? params.get('next') : '/dashboard'
+  const nextParam = params.get('next')?.startsWith('/') ? params.get('next') : null
+  const [mode, setMode] = useState(() => getSection() ?? 'grappling')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const coach = mode === 'coach'
 
   const onSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      await signInWithPhone(phone, password)
-      navigate(next, { replace: true })
+      const user = await signInWithPhone(phone, password)
+      if (coach) {
+        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+        if (!['admin', 'coach'].includes(data?.role)) {
+          await supabase.auth.signOut()
+          throw new Error('Этот вход — только для тренеров. Выберите Grappling или MMA / K1.')
+        }
+        navigate(nextParam ?? '/admin', { replace: true })
+      } else {
+        setSection(mode)
+        navigate(nextParam ?? '/dashboard', { replace: true })
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -29,6 +46,31 @@ export default function Login() {
   return (
     <div className="mx-auto max-w-sm">
       <h1 className="mb-6 text-3xl">Вход</h1>
+
+      <div className="mb-4 grid grid-cols-3 gap-2" role="tablist" aria-label="Куда входим">
+        {MODES.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={mode === id}
+            onClick={() => setMode(id)}
+            className={`rounded-md border px-1 py-3 font-display text-sm uppercase tracking-wider ${
+              mode === id ? 'border-accent bg-accent/10 text-white' : 'border-line text-neutral-400 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="mb-4 text-center text-xs text-neutral-500">
+        {coach
+          ? 'Вход для тренеров — сразу в панель тренера.'
+          : mode === 'grappling'
+            ? 'Daugavpils Grappling Team'
+            : 'Daugavpils Top Team — MMA и K1'}
+      </p>
+
       <form className="card space-y-4" onSubmit={onSubmit}>
         <div>
           <label className="label" htmlFor="phone">Номер телефона</label>
@@ -57,13 +99,15 @@ export default function Login() {
         </div>
         {error && <p className="text-sm font-semibold text-accent">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? 'Входим…' : 'Войти'}
+          {loading ? 'Входим…' : coach ? 'Войти как тренер' : `Войти · ${SECTIONS[mode]}`}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm text-neutral-400">
-        Нет аккаунта?{' '}
-        <Link to="/register" className="text-accent hover:underline">Регистрация</Link>
-      </p>
+      {!coach && (
+        <p className="mt-4 text-center text-sm text-neutral-400">
+          Нет аккаунта?{' '}
+          <Link to="/register" className="text-accent hover:underline">Регистрация</Link>
+        </p>
+      )}
     </div>
   )
 }

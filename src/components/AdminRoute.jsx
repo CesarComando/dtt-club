@@ -3,7 +3,8 @@ import { useAuth } from '../lib/AuthContext.jsx'
 
 // Пускает на страницу только тренера (profiles.role = 'admin').
 // Это защита интерфейса; настоящая защита данных — RLS и проверка is_admin() в SQL-функциях.
-export default function AdminRoute({ children }) {
+// adminOnly — только главный тренер; без него пускает и помощника (role = 'coach').
+export default function AdminRoute({ children, adminOnly = false }) {
   const { user, profile, loading } = useAuth()
 
   if (loading || (user && !profile)) {
@@ -14,6 +15,7 @@ export default function AdminRoute({ children }) {
     )
   }
   if (!user) return <Navigate to="/login" replace />
-  if (profile.role !== 'admin') return <Navigate to="/dashboard" replace />
+  const allowed = adminOnly ? profile.role === 'admin' : ['admin', 'coach'].includes(profile.role)
+  if (!allowed) return <Navigate to={profile.role === 'coach' ? '/admin' : '/dashboard'} replace />
   return children
 }

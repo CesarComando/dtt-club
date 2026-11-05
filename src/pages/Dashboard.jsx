@@ -209,7 +209,7 @@ export default function Dashboard() {
             <span className="truncate">{profile.first_name} {profile.last_name}</span>
             <ApprovedMark approved={profile.approved_at} />
           </h1>
-          {!profile.approved_at && profile.role !== 'admin' && (
+          {!profile.approved_at && profile.role === 'athlete' && (
             <p className="text-xs text-neutral-500">Ожидает подтверждения тренером</p>
           )}
           <p className="text-sm text-neutral-400">

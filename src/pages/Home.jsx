@@ -8,7 +8,7 @@ export default function Home() {
   // Вошедший ученик видит расписание своего направления (и другого — если включил в кабинете).
   // Гости и тренер видят обе команды.
   const ownOnly =
-    profile && profile.role !== 'admin' && ['grappling', 'mma'].includes(profile.discipline) && !profile.cross_training
+    profile && profile.role === 'athlete' && ['grappling', 'mma'].includes(profile.discipline) && !profile.cross_training
   const teams = ownOnly ? TEAMS.filter((t) => t.id === profile.discipline) : TEAMS
   return (
     <div className="space-y-10">

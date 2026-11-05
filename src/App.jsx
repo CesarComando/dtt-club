@@ -34,8 +34,8 @@ export default function App() {
           <Route path="/invite/:token" element={<Invite />} />
           {/* Скрытая панель тренера: нет ссылки в навигации, пускает только role = 'admin'. */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-          <Route path="/admin/member/:id" element={<AdminRoute><AdminStudent kind="member" /></AdminRoute>} />
-          <Route path="/admin/athlete/:id" element={<AdminRoute><AdminStudent kind="athlete" /></AdminRoute>} />
+          <Route path="/admin/member/:id" element={<AdminRoute adminOnly><AdminStudent kind="member" /></AdminRoute>} />
+          <Route path="/admin/athlete/:id" element={<AdminRoute adminOnly><AdminStudent kind="athlete" /></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <footer className="mt-12 border-t border-line pt-4 text-center text-xs text-neutral-500">

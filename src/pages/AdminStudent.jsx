@@ -181,6 +181,13 @@ export default function AdminStudent({ kind }) {
       </section>
 
       {member?.notes && <p className="card text-sm text-neutral-300">{member.notes}</p>}
+
+      {profile && (
+        <StaffRole
+          profile={profile}
+          onChange={(role) => setData((d) => ({ ...d, profile: { ...d.profile, role } }))}
+        />
+      )}
       {member?.aliases?.length > 0 && <p className="text-xs text-neutral-500">В группе: {member.aliases.join(', ')}</p>}
 
       {profile ? <AppData profile={profile} /> : member?.rank_override && (
@@ -343,6 +350,50 @@ function AppData({ profile }) {
         )}
       </section>
     </>
+  )
+}
+
+// Тренер назначает помощника: у него вход «Тренер», но только зал — посещения, QR, записи.
+function StaffRole({ profile, onChange }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  if (profile.role === 'admin') return null
+  const isCoach = profile.role === 'coach'
+
+  const toggle = async () => {
+    if (
+      !isCoach &&
+      !window.confirm(
+        `Сделать ${profile.first_name} помощником тренера? Он сможет отмечать посещения, показывать QR и видеть записи на тренировки.`,
+      )
+    )
+      return
+    setBusy(true)
+    setError('')
+    const { data, error: e } = await supabase.rpc('set_staff_role', { p_profile: profile.id, p_coach: !isCoach })
+    if (e) setError(e.message)
+    else onChange(data)
+    setBusy(false)
+  }
+
+  return (
+    <section className={`card space-y-2 ${isCoach ? 'border-emerald-500/60' : ''}`}>
+      <p className="label">Права</p>
+      <p className="text-sm text-neutral-300">
+        {isCoach
+          ? 'Помощник тренера: вход «Тренер» — посещения, QR-чекин, записи на тренировки. Оплаты, телефоны, ранги и удаление ему недоступны. В списках учеников не показывается.'
+          : 'Ученик.'}
+      </p>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={busy}
+        className={`${isCoach ? 'btn-outline' : 'btn-primary'} disabled:opacity-60`}
+      >
+        {busy ? '…' : isCoach ? 'Вернуть в ученики' : 'Сделать помощником тренера'}
+      </button>
+      {error && <p className="text-sm text-accent">{error}</p>}
+    </section>
   )
 }
 
