@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, autoRank, RANKS, DISCIPLINES } from '../lib/ranks.js'
 import { LIVE_STATUSES } from '../lib/payments.js'
+import AdminSessions from '../components/AdminSessions.jsx'
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
 // Сюда пускает только <AdminRoute>. Изменения идут через SQL-функции
@@ -210,6 +211,8 @@ export default function Admin() {
           </div>
         </div>
       </div>
+
+      <AdminSessions />
 
       <input
         type="search"

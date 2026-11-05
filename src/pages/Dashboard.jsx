@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
 import BillingSection, { liveSubscription, useBilling } from '../components/Billing.jsx'
 import { formatDay, formatPrice } from '../lib/payments.js'
+import Booking from '../components/Booking.jsx'
 
 function experience(since) {
   const start = new Date(since)
@@ -221,6 +222,9 @@ export default function Dashboard() {
           <p className="mt-2 text-sm text-neutral-400">Система рангов пока действует только в грепплинге.</p>
         </section>
       )}
+
+      {/* Запись на тренировки (слой 8): лимит мест проверяет сервер */}
+      <Booking />
 
       {/* Оплата (Stripe): абонемент, разовые тренировки, «Поддержать клуб» */}
       <ClubPayments profile={profile} onPaid={() => refreshProfile()} />
