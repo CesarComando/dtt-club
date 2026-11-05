@@ -12,6 +12,76 @@ const KIND = {
   training: 'тренировка', membership: 'абонемент', pack: 'пакет', individual: 'индивид.',
   uniform: 'форма', donation: 'пожертвование', other: 'другое',
 }
+// Нормализация имён для поиска совпадений: латиница без диакритики,
+// кириллица → латиница (Андрей ≈ Andrejs, Ņikita ≈ Никита).
+const CYR = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'z',з:'z',и:'i',й:'j',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'c',ш:'s',щ:'s',ъ:'',ы:'i',ь:'',э:'e',ю:'ju',я:'ja' }
+const norm = (t) =>
+  (t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[а-яё]/g, (c) => CYR[c] ?? c).replace(/[^a-z ]/g, ' ')
+const stem = (w) => w.replace(/(s|is|js|ijs)$/, '').slice(0, 5) // Andrejs/Андрей → andre
+const tokens = (t) => norm(t).split(/s+/).filter((w) => w.length > 1).map(stem)
+const matchScore = (profile, m) => {
+  const pt = tokens(`${profile.first_name} ${profile.last_name}`)
+  const names = [`${m.first_name} ${m.last_name}`, ...(m.aliases ?? [])]
+  let best = 0
+  for (const n of names) {
+    const mt = tokens(n)
+    if (!mt.length) continue
+    const hit = mt.filter((w) => pt.includes(w)).length
+    best = Math.max(best, hit / Math.max(mt.length, pt.length))
+  }
+  return best
+}
+
+/** Аккаунты в приложении, не связанные с учеником клуба, + кандидаты по имени. */
+function LinkSuggestions({ members, profiles, linkedIds, onChanged }) {
+  const [busy, setBusy] = useState(null)
+  const unlinked = profiles.filter((p) => !linkedIds.has(p.id))
+  if (!unlinked.length) return null
+  const free = members.filter((m) => !m.profile_id)
+
+  const link = async (memberId, profileId) => {
+    setBusy(profileId)
+    await supabase.rpc('link_member', { p_member: memberId, p_profile: profileId })
+    await onChanged()
+    setBusy(null)
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-accent/40 p-3">
+      <p className="label">Новые в приложении — с кем связать</p>
+      {unlinked.map((p) => {
+        const cands = free
+          .map((m) => ({ m, s: matchScore(p, m) }))
+          .filter((x) => x.s >= 0.5)
+          .sort((a, b) => b.s - a.s)
+          .slice(0, 3)
+        return (
+          <div key={p.id} className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-semibold">{p.first_name} {p.last_name}</span>
+            <span className="text-neutral-500">→</span>
+            {cands.length ? (
+              cands.map(({ m }) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  disabled={busy === p.id}
+                  onClick={() => link(m.id, p.id)}
+                  className="rounded border border-line px-2 py-0.5 hover:border-accent disabled:opacity-50"
+                >
+                  {m.first_name} {m.last_name}
+                </button>
+              ))
+            ) : (
+              <span className="text-neutral-500">совпадений нет — выберите вручную в списке ниже</span>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 const day = (d) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 
 function MemberRow({ m, profiles, linkedIds, onChanged }) {
@@ -84,6 +154,13 @@ function MemberRow({ m, profiles, linkedIds, onChanged }) {
       {open && (
         <div className="mt-3 space-y-3 rounded-md border border-line p-3 text-sm">
           {m.notes && <p className="text-neutral-400">{m.notes}</p>}
+          {(m.phone || m.aliases?.length > 0) && (
+            <p className="text-xs text-neutral-500">
+              {m.phone && <a href={`tel:+${m.phone}`} className="text-neutral-300 hover:text-white">+{m.phone}</a>}
+              {m.phone && m.aliases?.length > 0 && ' · '}
+              {m.aliases?.length > 0 && <>в группе: {m.aliases.join(', ')}</>}
+            </p>
+          )}
 
           <label className="block">
             <span className="label">Аккаунт в приложении</span>
@@ -197,7 +274,7 @@ export default function AdminMembers({ profiles }) {
     const s = q.trim().toLowerCase()
     return (members ?? [])
       .filter((m) => (filter === 'active' ? ['regular', 'occasional'].includes(m.status) : filter === 'all' || m.status === filter))
-      .filter((m) => !s || `${m.first_name} ${m.last_name} ${m.parent_name ?? ''}`.toLowerCase().includes(s))
+      .filter((m) => !s || `${m.first_name} ${m.last_name} ${m.parent_name ?? ''} ${(m.aliases ?? []).join(' ')} ${m.phone ?? ''}`.toLowerCase().includes(s))
   }, [members, filter, q])
 
   if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Ученики клуба: {error}</p>
@@ -226,6 +303,8 @@ export default function AdminMembers({ profiles }) {
           <option value="all">Все</option>
         </select>
       </div>
+
+      <LinkSuggestions members={members} profiles={profiles} linkedIds={linkedIds} onChanged={load} />
 
       <ul className="divide-y divide-line">
         {list.map((m) => (
