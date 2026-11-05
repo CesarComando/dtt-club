@@ -65,6 +65,12 @@ async function ensurePrice(p: Product): Promise<string> {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) })
+  // Диагностика: в каком режиме ключ Stripe (сам ключ не раскрывается).
+  if (req.method === 'GET') {
+    const key = Deno.env.get('STRIPE_SECRET_KEY')?.trim() ?? ''
+    const mode = /^(rk|sk)_live_/.test(key) ? 'live' : /^(rk|sk)_test_/.test(key) ? 'test' : 'invalid'
+    return json(req, { stripe_mode: mode, tax: TAX_ENABLED })
+  }
   if (req.method !== 'POST') return json(req, { error: 'Method not allowed' }, 405)
 
   try {
