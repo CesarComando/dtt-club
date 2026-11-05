@@ -2,7 +2,7 @@
 -- DTT Club — Слой 22: бюджет клуба (только главный тренер, role = 'admin').
 -- Выполнить ПОСЛЕ layer21_hardening.sql. Скрипт идемпотентный.
 --
--- Расходы вносит только тренер: аренда, электричество, вода, налоги,
+-- Расходы вносит только тренер: аренда, электричество, вода, отопление, налоги,
 -- бухгалтер, инвентарь, прочее. Доходы считаются сами:
 --   • member_payments — переводы и наличные из списка клуба (оба банковских счёта);
 --   • payments        — оплаты в приложении (карта Stripe и наличные), status = 'paid'.
@@ -14,12 +14,16 @@ create table if not exists public.club_expenses (
   id           bigint generated always as identity primary key,
   spent_on     date        not null,
   category     text        not null
-               check (category in ('rent', 'electricity', 'water', 'taxes', 'accountant', 'inventory', 'other')),
+               check (category in ('rent', 'electricity', 'water', 'heating', 'taxes', 'accountant', 'inventory', 'other')),
   amount_cents integer     not null check (amount_cents > 0),
   note         text,
   created_at   timestamptz not null default now(),
   unique (spent_on, category, amount_cents, note)   -- повторный импорт не задвоит
 );
+-- Отопление (в счетах SANO D за зиму) — отдельная статья; для уже созданной таблицы обновляем проверку.
+alter table public.club_expenses drop constraint if exists club_expenses_category_check;
+alter table public.club_expenses add constraint club_expenses_category_check
+  check (category in ('rent', 'electricity', 'water', 'heating', 'taxes', 'accountant', 'inventory', 'other'));
 create index if not exists club_expenses_spent_idx on public.club_expenses (spent_on desc);
 
 alter table public.club_expenses enable row level security;

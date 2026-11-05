@@ -10,6 +10,7 @@ export const CATEGORIES = {
   rent: 'Аренда',
   electricity: 'Электричество',
   water: 'Вода',
+  heating: 'Отопление',
   taxes: 'Налоги',
   accountant: 'Бухгалтер',
   inventory: 'Инвентарь',
