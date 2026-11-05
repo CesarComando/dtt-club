@@ -21,6 +21,6 @@ Deno.serve(async (req) => {
     return json(req, { url: session.url })
   } catch (e) {
     console.error('customer-portal', e)
-    return json(req, { error: 'Не удалось открыть управление оплатой' }, 500)
+    return json(req, { error: `Не удалось открыть управление оплатой: ${(e as Error).message}` }, 500)
   }
 })

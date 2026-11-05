@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
     return json(req, { url: session.url })
   } catch (e) {
     console.error('create-checkout', e)
-    return json(req, { error: 'Не удалось начать оплату. Попробуйте позже.' }, 500)
+    // Текст ошибки Stripe не содержит секретов и сильно упрощает диагностику.
+    return json(req, { error: `Не удалось начать оплату: ${(e as Error).message}` }, 500)
   }
 })

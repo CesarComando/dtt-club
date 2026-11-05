@@ -46,6 +46,9 @@ npx.cmd supabase functions deploy create-checkout customer-portal stripe-webhook
 
 ## 5. НДС (Stripe Tax) — клуб плательщик PVN
 Все цены каталога — **конечные, с НДС внутри** (`tax_behavior: inclusive`): ученик платит ровно 45€ / 40€ / 6€ / 5€.
+
+**Текущее решение (ноябрь 2026): Stripe Tax выключен, НДС считает бухгалтер клуба** по отчётам Stripe
+(Reports / выгрузка платежей). `STRIPE_TAX_ENABLED` не задан. Если позже захотите, чтобы НДС считал Stripe:
 1. **Tax → Settings**: адрес клуба (Dzirnavu iela 20, Daugavpils) и код налога по умолчанию
    (выберите вместе с бухгалтером из [списка tax codes](https://docs.stripe.com/tax/tax-codes)).
 2. **Tax → Locations → Add registration** → Латвия, номер PVN.
