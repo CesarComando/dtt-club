@@ -24,18 +24,23 @@ export async function loadCatalog() {
 }
 
 export async function loadMyBilling(userId) {
-  const [subs, pays] = await Promise.all([
+  const [subs, pays, offline] = await Promise.all([
     supabase.from('subscriptions').select('*, product:payment_products(kind, title, discipline)').eq('user_id', userId),
     supabase
       .from('payments')
-      .select('id, product_id, amount_cents, currency, status, created_at')
+      .select('id, product_id, amount_cents, currency, status, method, period_end, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10),
+    // Оплаты до приложения / наличными (список учеников клуба, слой 10).
+    supabase
+      .from('member_payments')
+      .select('id, paid_on, amount_cents, kind, method')
+      .order('paid_on', { ascending: false }),
   ])
   if (subs.error) throw subs.error
   if (pays.error) throw pays.error
-  return { subscriptions: subs.data, payments: pays.data }
+  return { subscriptions: subs.data, payments: pays.data, offline: offline.error ? [] : offline.data }
 }
 
 async function callFunction(name, body) {

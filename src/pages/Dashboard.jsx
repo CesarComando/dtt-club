@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRank, hasRanks, RANKS, DISCIPLINES, TRAININGS_PER_YEAR } from '../lib/ranks.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
 import BillingSection, { liveSubscription, useBilling } from '../components/Billing.jsx'
 import { formatDay, formatPrice } from '../lib/payments.js'
+import { deleteMyAccount } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 
 function experience(since) {
@@ -79,6 +81,64 @@ function ClubPayments({ profile, onPaid }) {
       <BillingSection billing={billing} discipline={profile.discipline} />
       <SupportClub isSponsor={profile.is_sponsor} billing={billing} />
     </>
+  )
+}
+
+// Удаление аккаунта из приложения (требование Google Play / App Store).
+function DeleteAccount({ isAdmin }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  if (isAdmin) return null
+
+  const remove = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      await deleteMyAccount()
+      window.location.assign(window.location.href.split('#')[0] + '#/')
+    } catch (e) {
+      setError(e.message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="border-t border-line pt-6 text-sm">
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)} className="text-neutral-500 hover:text-accent">
+          Удалить аккаунт
+        </button>
+      ) : (
+        <div className="card space-y-3 border-accent/60">
+          <h2 className="text-lg text-accent">Удалить аккаунт навсегда?</h2>
+          <p className="text-neutral-400">
+            Удалятся профиль, телефон, селфи, посещения, ранг и записи на тренировки. Подписки по карте будут
+            отменены сразу. История платежей останется только в Stripe для бухгалтерии клуба. Отменить удаление нельзя.
+          </p>
+          <label className="block">
+            <span className="label">Для подтверждения введите УДАЛИТЬ</span>
+            <input className="input" value={text} onChange={(e) => setText(e.target.value)} disabled={busy} />
+          </label>
+          {error && <p className="text-accent" role="alert">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={remove}
+              disabled={busy || text.trim().toUpperCase() !== 'УДАЛИТЬ'}
+              className="btn-primary disabled:opacity-40"
+            >
+              {busy ? 'Удаляем…' : 'Удалить навсегда'}
+            </button>
+            <button type="button" onClick={() => setOpen(false)} disabled={busy} className="btn-outline">
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -255,6 +315,8 @@ export default function Dashboard() {
         <h2 className="text-lg">Мои награды и соревнования</h2>
         <p className="card text-neutral-400">Пока нет наград — всё впереди!</p>
       </section>
+
+      <DeleteAccount isAdmin={profile.role === 'admin'} />
     </div>
   )
 }

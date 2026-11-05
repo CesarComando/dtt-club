@@ -19,7 +19,7 @@ export function useBilling(userId, onPaid) {
   const [params, setParams] = useSearchParams()
   const returned = params.get('payment')
   const [catalog, setCatalog] = useState([])
-  const [billing, setBilling] = useState({ subscriptions: [], payments: [] })
+  const [billing, setBilling] = useState({ subscriptions: [], payments: [], offline: [] })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null) // id товара или 'portal', пока идёт переход
   const [error, setError] = useState('')
@@ -98,6 +98,43 @@ export function useBilling(userId, onPaid) {
 export const liveSubscription = (subscriptions, kind) =>
   subscriptions.find((s) => s.product?.kind === kind && LIVE_STATUSES.includes(s.status))
 
+const DAY = 864e5
+const daysLeft = (iso) => Math.ceil((new Date(iso).getTime() - Date.now()) / DAY)
+
+// Абонемент, оплаченный тренеру наличными (самый поздний срок).
+export const cashMembership = (payments) =>
+  payments
+    .filter((p) => p.method === 'cash' && p.status === 'paid' && p.period_end && new Date(p.period_end) > new Date())
+    .sort((a, b) => b.period_end.localeCompare(a.period_end))[0] ?? null
+
+/** Напоминание за 3 дня: спишется с карты или закончится абонемент за наличные. */
+function Reminder({ card, cash, catalog }) {
+  if (card && card.status !== 'past_due' && !card.cancel_at_period_end && card.current_period_end) {
+    const d = daysLeft(card.current_period_end)
+    if (d <= 3 && d >= 0) {
+      const price = catalog.find((p) => p.id === card.product_id)
+      return (
+        <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">
+          ⏰ {d <= 0 ? 'Сегодня' : d === 1 ? 'Завтра' : `Через ${d} дн.`} ({formatDay(card.current_period_end)}) с карты
+          спишется {price ? formatPrice(price.amount_cents, price.currency) : 'оплата'} за следующий месяц.
+          Отменить можно в «Управлении оплатой».
+        </p>
+      )
+    }
+  }
+  if (!card && cash) {
+    const d = daysLeft(cash.period_end)
+    if (d <= 3) {
+      return (
+        <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">
+          ⏰ Абонемент заканчивается {formatDay(cash.period_end)}. Продлите у тренера или картой ниже.
+        </p>
+      )
+    }
+  }
+  return null
+}
+
 function SubscriptionStatus({ sub }) {
   const until = sub.current_period_end ? formatDay(sub.current_period_end) : '—'
   if (sub.status === 'past_due') {
@@ -113,7 +150,11 @@ function SubscriptionStatus({ sub }) {
         Абонемент оплачен до <b className="text-white">{until}</b>
       </p>
       <p className="text-sm text-neutral-400">
-        {sub.cancel_at_period_end ? 'Автопродление выключено.' : 'Продлится автоматически.'}
+        {sub.status === 'cash'
+          ? 'Оплачено наличными у тренера.'
+          : sub.cancel_at_period_end
+            ? 'Автопродление выключено.'
+            : 'Продлится автоматически.'}
       </p>
     </>
   )
@@ -121,15 +162,26 @@ function SubscriptionStatus({ sub }) {
 
 /** Блок «Оплата» в личном кабинете. */
 export default function BillingSection({ billing, discipline }) {
-  const { catalog, subscriptions, payments, loading, busy, error, notice, checkout, portal } = billing
+  const { catalog, subscriptions, payments, offline = [], loading, busy, error, notice, checkout, portal } = billing
   if (loading) return null
 
-  const membership = liveSubscription(subscriptions, 'membership')
+  const cardMembership = liveSubscription(subscriptions, 'membership')
+  const cash = cashMembership(payments)
+  const membership =
+    cardMembership ??
+    (cash && {
+      status: 'cash',
+      current_period_end: cash.period_end,
+      cancel_at_period_end: true,
+      product: { title: catalog.find((p) => p.id === cash.product_id)?.title ?? 'Абонемент' },
+    })
   // 'both' — показываем оба направления.
   const mine = (p) => !p.discipline || discipline === 'both' || p.discipline === discipline
   const memberships = catalog.filter((p) => p.kind === 'membership' && mine(p))
   const singles = catalog.filter((p) => p.kind === 'single' && mine(p))
   const hasHistory = subscriptions.length > 0 || payments.length > 0
+  // Портал Stripe есть только у тех, кто хоть раз платил картой.
+  const hasCard = subscriptions.length > 0 || payments.some((p) => p.method !== 'cash')
   const titles = Object.fromEntries(catalog.map((p) => [p.id, p.title]))
 
   return (
@@ -150,6 +202,8 @@ export default function BillingSection({ billing, discipline }) {
         </div>
         {membership && <span className="rounded border border-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">Активен</span>}
       </div>
+
+      <Reminder card={cardMembership} cash={cash} catalog={catalog} />
 
       {notice && <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">{notice}</p>}
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent" role="alert">{error}</p>}
@@ -198,20 +252,37 @@ export default function BillingSection({ billing, discipline }) {
                   </span>
                   <span className={p.status === 'paid' ? '' : 'text-accent'}>
                     {p.status === 'failed' ? 'не прошла' : p.status === 'refunded' ? 'возврат' : formatPrice(p.amount_cents, p.currency)}
+                    {p.method === 'cash' && p.status === 'paid' && <span className="text-neutral-500"> · нал.</span>}
                   </span>
                 </li>
               ))}
             </ul>
           )}
-          <button
+          {hasCard && <button
             type="button"
             onClick={portal}
             disabled={Boolean(busy)}
             className="text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline disabled:opacity-60"
           >
             {busy === 'portal' ? 'Открываем…' : 'Управление оплатой: карта, счета, отмена подписки'}
-          </button>
+          </button>}
         </>
+      )}
+
+      {offline.length > 0 && (
+        <details className="border-t border-line pt-2 text-sm">
+          <summary className="cursor-pointer text-neutral-400">
+            Оплаты переводом и наличными: {offline.length} · {formatPrice(offline.reduce((s, p) => s + p.amount_cents, 0))}
+          </summary>
+          <ul className="mt-2 max-h-48 divide-y divide-line overflow-y-auto">
+            {offline.map((p) => (
+              <li key={p.id} className="flex justify-between gap-3 py-1.5 text-neutral-300">
+                <span>{formatDay(p.paid_on)}{p.method === 'cash' ? ' · нал.' : ' · перевод'}</span>
+                <span>{formatPrice(p.amount_cents)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <p className="text-xs text-neutral-500">Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.</p>

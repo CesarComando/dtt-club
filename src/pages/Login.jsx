@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { signInWithPhone } from '../lib/auth.js'
 
 export default function Login() {
   const navigate = useNavigate()
+  // ?next=/checkin/… — вернуть туда, откуда пришли (только внутренние пути).
+  const [params] = useSearchParams()
+  const next = params.get('next')?.startsWith('/') ? params.get('next') : '/dashboard'
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -15,7 +18,7 @@ export default function Login() {
     setLoading(true)
     try {
       await signInWithPhone(phone, password)
-      navigate('/dashboard')
+      navigate(next, { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {

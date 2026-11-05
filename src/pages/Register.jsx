@@ -189,6 +189,11 @@ export default function Register() {
           />
         </div>
 
+        <p className="text-xs text-neutral-500">
+          Регистрируясь, вы соглашаетесь с{' '}
+          <Link to="/privacy" className="text-accent hover:underline">политикой конфиденциальности</Link>
+          {' '}(селфи, телефон, посещения). За ребёнка младше 13 лет регистрируется родитель.
+        </p>
         {error && <p className="text-sm font-semibold text-accent">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
           {loading ? 'Создаём аккаунт…' : 'Зарегистрироваться'}

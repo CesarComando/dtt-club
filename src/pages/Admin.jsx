@@ -3,6 +3,9 @@ import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, autoRank, RANKS, DISCIPLINES } from '../lib/ranks.js'
 import { LIVE_STATUSES } from '../lib/payments.js'
 import AdminSessions from '../components/AdminSessions.jsx'
+import AdminDebtors, { CashPayment } from '../components/AdminDebtors.jsx'
+import CheckinQR from '../components/CheckinQR.jsx'
+import AdminMembers from '../components/AdminMembers.jsx'
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
 // Сюда пускает только <AdminRoute>. Изменения идут через SQL-функции
@@ -51,6 +54,7 @@ export default function Admin() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
+  const [reloadKey, setReloadKey] = useState(0) // перечитать список должников
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -69,9 +73,9 @@ export default function Admin() {
         .in('status', LIVE_STATUSES),
       supabase
         .from('payments')
-        .select('user_id, product:payment_products(kind)')
+        .select('user_id, method, period_end, created_at, product:payment_products(kind)')
         .eq('status', 'paid')
-        .gte('created_at', new Date(Date.now() - 30 * 864e5).toISOString()),
+        .or(`created_at.gte.${new Date(Date.now() - 30 * 864e5).toISOString()},period_end.gt.${new Date().toISOString()}`),
     ])
     const firstError = profilesRes.error || contactsRes.error || attendanceRes.error
     if (firstError) {
@@ -103,7 +107,18 @@ export default function Admin() {
       if (s.product?.kind === 'membership') entry(s.user_id).membership = s
       if (s.product?.kind === 'support') entry(s.user_id).sponsor = true
     })
-    paysRes.data?.forEach((p) => p.product?.kind === 'single' && entry(p.user_id).singles++)
+    const monthAgo = Date.now() - 30 * 864e5
+    paysRes.data?.forEach((p) => {
+      if (p.product?.kind === 'single' && new Date(p.created_at).getTime() > monthAgo) entry(p.user_id).singles++
+      // Абонемент наличными: «оплачен до» — самая поздняя дата.
+      if (p.method === 'cash' && p.period_end && new Date(p.period_end) > new Date()) {
+        const e = entry(p.user_id)
+        if (!e.membership || (e.membership.status === 'cash' && p.period_end > e.membership.current_period_end)) {
+          if (!e.membership) e.membership = { status: 'cash', current_period_end: p.period_end }
+          else e.membership.current_period_end = p.period_end
+        }
+      }
+    })
     profilesRes.data.forEach((p) => p.is_sponsor && (entry(p.id).sponsor = true))
     setBilling(subsRes.error ? {} : bill)
     setLoading(false)
@@ -212,7 +227,13 @@ export default function Admin() {
         </div>
       </div>
 
+      <CheckinQR />
+
+      <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />
+
       <AdminSessions />
+
+      <AdminMembers profiles={athletes} />
 
       <input
         type="search"
@@ -349,6 +370,15 @@ export default function Admin() {
                         ))}
                       </select>
                     </label>
+                    <div className="sm:col-span-2">
+                      <CashPayment
+                        athlete={a}
+                        onDone={() => {
+                          load()
+                          setReloadKey((k) => k + 1)
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </li>

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Link } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 import Home from './pages/Home.jsx'
@@ -6,6 +6,8 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Admin from './pages/Admin.jsx'
+import Privacy from './pages/Privacy.jsx'
+import Checkin from './pages/Checkin.jsx'
 
 export default function App() {
   return (
@@ -18,10 +20,16 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/privacy" element={<Privacy />} />
+          {/* QR-чекин: телефон ученика открывает ссылку из QR на экране тренера */}
+          <Route path="/checkin/:token" element={<Checkin />} />
           {/* Скрытая панель тренера: нет ссылки в навигации, пускает только role = 'admin'. */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <footer className="mt-12 border-t border-line pt-4 text-center text-xs text-neutral-500">
+          <Link to="/privacy" className="hover:text-white">Политика конфиденциальности</Link>
+        </footer>
       </main>
     </div>
   )
