@@ -13,10 +13,10 @@ export const RANKS = [
   { id: 5, title: 'Старый тролль', years: 7 },
 ].map((r) => ({ ...r, minTrainings: r.years * TRAININGS_PER_YEAR }))
 
+// Направления на выбор (в БД ещё допустимо 'both', но в интерфейсе его нет).
 export const DISCIPLINES = {
   grappling: 'Grappling',
   mma: 'MMA / K1',
-  both: 'Grappling + MMA',
 }
 
 export const hasRanks = (discipline) => discipline !== 'mma'

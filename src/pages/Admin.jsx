@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, autoRank, RANKS, DISCIPLINES } from '../lib/ranks.js'
 
@@ -65,33 +65,47 @@ export default function Admin() {
   }, [load])
 
   // Оптимистичное обновление: UI меняется сразу, при ошибке откатываем.
+  // Сколько запросов +1/отмены сейчас в пути для каждого ученика.
+  // Кнопка не блокируется: каждое нажатие засчитывается (5 быстрых нажатий = +5),
+  // а когда все запросы вернулись, сверяем счётчик с базой.
+  const inflight = useRef({})
+
+  const syncCount = async (id) => {
+    const { data } = await supabase.from('profiles').select('trainings_count').eq('id', id).single()
+    if (data && !inflight.current[id]) {
+      setAthletes((list) => list.map((a) => (a.id === id ? { ...a, trainings_count: data.trainings_count } : a)))
+    }
+  }
+
+  // Оптимистичное обновление: UI меняется сразу, при ошибке откатываем именно это нажатие.
   const change = async (athlete, delta) => {
+    const id = athlete.id
     const fn = delta > 0 ? 'mark_attendance' : 'undo_attendance'
-    const before = athlete.trainings_count
-    const rankBefore = getRank(before, athlete.rank_override).current
+    const bump = (d) => {
+      setAthletes((list) =>
+        list.map((a) => (a.id === id ? { ...a, trainings_count: Math.max(0, a.trainings_count + d) } : a)),
+      )
+      setToday((t) => ({ ...t, [id]: Math.max(0, (t[id] ?? 0) + d) }))
+    }
 
     setError('')
-    setNotice('')
-    setPending((p) => ({ ...p, [athlete.id]: true }))
-    setAthletes((list) =>
-      list.map((a) => (a.id === athlete.id ? { ...a, trainings_count: Math.max(0, before + delta) } : a)),
-    )
-    setToday((t) => ({ ...t, [athlete.id]: Math.max(0, (t[athlete.id] ?? 0) + delta) }))
+    inflight.current[id] = (inflight.current[id] ?? 0) + 1
+    bump(delta)
 
-    const { data: newCount, error: rpcError } = await supabase.rpc(fn, { p_athlete: athlete.id })
+    const { data: newCount, error: rpcError } = await supabase.rpc(fn, { p_athlete: id })
+    inflight.current[id] -= 1
 
     if (rpcError) {
-      setAthletes((list) => list.map((a) => (a.id === athlete.id ? { ...a, trainings_count: before } : a)))
-      setToday((t) => ({ ...t, [athlete.id]: Math.max(0, (t[athlete.id] ?? 0) - delta) }))
+      bump(-delta)
       setError(rpcError.message)
-    } else {
-      setAthletes((list) => list.map((a) => (a.id === athlete.id ? { ...a, trainings_count: newCount } : a)))
-      const rankAfter = getRank(newCount, athlete.rank_override).current
-      if (delta > 0 && hasRanks(athlete.discipline) && rankAfter.id > rankBefore.id) {
-        setNotice(`🏆 ${athlete.first_name} ${athlete.last_name} получает ранг «${rankAfter.title}»!`)
+    } else if (delta > 0 && hasRanks(athlete.discipline)) {
+      // Новый ранг — ровно на том нажатии, где счётчик перешёл порог.
+      const rankNow = getRank(newCount, athlete.rank_override).current
+      if (rankNow.id > getRank(newCount - 1, athlete.rank_override).current.id) {
+        setNotice(`🏆 ${athlete.first_name} ${athlete.last_name} получает ранг «${rankNow.title}»!`)
       }
     }
-    setPending((p) => ({ ...p, [athlete.id]: false }))
+    if (inflight.current[id] === 0) syncCount(id)
   }
 
   // Тренер меняет направление и/или ручной ранг (null = автоматический).
@@ -227,16 +241,14 @@ export default function Admin() {
                   <div className="flex flex-1 flex-col items-stretch gap-1 sm:flex-none">
                     <button
                       onClick={() => change(a, +1)}
-                      disabled={busy}
-                      className="btn-primary min-h-14 px-6 text-base disabled:opacity-60"
+                      className="btn-primary min-h-14 px-6 text-base select-none active:scale-95"
                     >
                       +1 Тренировка
                     </button>
                     {todayCount > 0 && (
                       <button
                         onClick={() => change(a, -1)}
-                        disabled={busy}
-                        className="text-xs text-neutral-500 hover:text-white disabled:opacity-60"
+                        className="text-xs text-neutral-500 hover:text-white"
                       >
                         Отменить ({todayCount} сегодня)
                       </button>

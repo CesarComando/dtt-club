@@ -145,7 +145,7 @@ export default function Register() {
         </div>
         <fieldset>
           <legend className="label">Направление *</legend>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {Object.entries(DISCIPLINES).map(([value, label]) => (
               <label
                 key={value}
