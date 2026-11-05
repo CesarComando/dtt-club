@@ -24,7 +24,7 @@ export async function loadCatalog() {
 }
 
 export async function loadMyBilling(userId) {
-  const [subs, pays, offline] = await Promise.all([
+  const [subs, pays, offline, overview] = await Promise.all([
     supabase.from('subscriptions').select('*, product:payment_products(kind, title, discipline)').eq('user_id', userId),
     supabase
       .from('payments')
@@ -39,10 +39,17 @@ export async function loadMyBilling(userId) {
       .select('id, paid_on, amount_cents, kind, method, member:club_members!inner(profile_id)')
       .eq('member.profile_id', userId)
       .order('paid_on', { ascending: false }),
+    // Абонемент «месяц от дня оплаты» по всем источникам (слой 17).
+    supabase.rpc('membership_overview', { p_only_me: true }),
   ])
   if (subs.error) throw subs.error
   if (pays.error) throw pays.error
-  return { subscriptions: subs.data, payments: pays.data, offline: offline.error ? [] : offline.data }
+  return {
+    subscriptions: subs.data,
+    payments: pays.data,
+    offline: offline.error ? [] : offline.data,
+    overview: overview.error ? null : (overview.data?.[0] ?? null),
+  }
 }
 
 async function callFunction(name, body) {

@@ -162,7 +162,9 @@ function SubscriptionStatus({ sub }) {
         Абонемент оплачен до <b className="text-white">{until}</b>
       </p>
       <p className="text-sm text-neutral-400">
-        {sub.status === 'cash'
+        {sub.status === 'bank'
+          ? 'Оплачено переводом или наличными тренеру — месяц со дня оплаты.'
+          : sub.status === 'cash'
           ? 'Оплачено наличными у тренера.'
           : sub.cancel_at_period_end
             ? 'Автопродление выключено.'
@@ -174,19 +176,22 @@ function SubscriptionStatus({ sub }) {
 
 /** Блок «Оплата» в личном кабинете. */
 export default function BillingSection({ billing, discipline }) {
-  const { catalog, subscriptions, payments, offline = [], loading, busy, error, notice, checkout, portal } = billing
+  const { catalog, subscriptions, payments, offline = [], overview, loading, busy, error, notice, checkout, portal } = billing
   if (loading) return null
 
   const cardMembership = liveSubscription(subscriptions, 'membership')
-  const cash = cashMembership(payments)
+  // Абонемент переводом/наличными тренеру из списка клуба — месяц от дня оплаты (слой 17).
+  const bank = overview?.source === 'bank' && overview.active ? { period_end: overview.valid_until } : null
+  const cash = cashMembership(payments) ?? bank
   const membership =
     cardMembership ??
     (cash && {
-      status: 'cash',
+      status: cash === bank ? 'bank' : 'cash',
       current_period_end: cash.period_end,
       cancel_at_period_end: true,
       product: { title: catalog.find((p) => p.id === cash.product_id)?.title ?? 'Абонемент' },
     })
+  const ended = !membership && overview?.valid_until && !overview.active ? overview.valid_until : null
   // 'both' — показываем оба направления.
   const mine = (p) => !p.discipline || discipline === 'both' || p.discipline === discipline
   const memberships = catalog.filter((p) => p.kind === 'membership' && mine(p))
@@ -209,13 +214,22 @@ export default function BillingSection({ billing, discipline }) {
               </div>
             </>
           ) : (
-            <h2 className="text-2xl">Абонемент не оплачен</h2>
+            <>
+              <h2 className="text-2xl">Абонемент не оплачен</h2>
+              {ended && <p className="text-sm text-neutral-400">Последний закончился {formatDay(ended)}</p>}
+            </>
           )}
         </div>
         {membership && <span className="rounded border border-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">Активен</span>}
       </div>
 
       <Reminder card={cardMembership} cash={cash} catalog={catalog} />
+
+      {overview?.single_price_cents && (
+        <p className="rounded-md border border-emerald-500/50 p-3 text-sm">
+          Ваша цена разовой тренировки — <b>{formatPrice(overview.single_price_cents)}</b> (переводом или наличными тренеру).
+        </p>
+      )}
 
       {notice && <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">{notice}</p>}
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent" role="alert">{error}</p>}

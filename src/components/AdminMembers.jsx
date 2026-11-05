@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApprovedMark } from './Approved.jsx'
+import { MembershipLine, loadMemberships } from './AdminMemberships.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { RANKS, DISCIPLINES } from '../lib/ranks.js'
@@ -88,7 +89,8 @@ function LinkSuggestions({ members, profiles, linkedIds, onChanged }) {
 
 const day = (d) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 
-function MemberRow({ m, profiles, linkedIds, onChanged }) {
+function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
+  const [price, setPrice] = useState(m.single_price_cents ? String(m.single_price_cents / 100) : '')
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -152,8 +154,10 @@ function MemberRow({ m, profiles, linkedIds, onChanged }) {
           </p>
           <p className="truncate text-xs text-neutral-500">
             {[STATUS[m.status], m.discipline && DISCIPLINES[m.discipline], m.parent_name && `родитель: ${m.parent_name}`,
-              m.rank_override && RANKS[m.rank_override - 1]?.title].filter(Boolean).join(' · ')}
+              m.rank_override && RANKS[m.rank_override - 1]?.title,
+              m.single_price_cents && `разовая ${formatPrice(m.single_price_cents)}`].filter(Boolean).join(' · ')}
           </p>
+          {membership?.valid_until && <MembershipLine row={membership} className="block truncate text-xs" />}
         </div>
         <button
           type="button"
@@ -210,6 +214,37 @@ function MemberRow({ m, profiles, linkedIds, onChanged }) {
                 <option value="bank">перевод</option>
               </select>
               <button type="button" onClick={addPayment} disabled={busy} className="btn-primary disabled:opacity-60">Записать</button>
+            </div>
+            {form.kind === 'membership' && (
+              <p className="mt-1 text-xs text-neutral-500">Абонемент будет действовать месяц с сегодняшнего дня (или с конца текущего).</p>
+            )}
+          </div>
+
+          <div>
+            <span className="label">Особая цена разовой (пусто — обычная)</span>
+            <div className="flex gap-2">
+              <input
+                className="input !w-24"
+                inputMode="decimal"
+                placeholder="€"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+              <button
+                type="button"
+                disabled={busy}
+                className="btn-outline disabled:opacity-60"
+                onClick={() =>
+                  run(async () => {
+                    const cents = price.trim() ? Math.round(Number(price.replace(',', '.')) * 100) : null
+                    if (cents !== null && !(cents > 0)) throw new Error('Введите цену')
+                    const { error: e } = await supabase.from('club_members').update({ single_price_cents: cents }).eq('id', m.id)
+                    if (e) throw e
+                  })
+                }
+              >
+                Сохранить
+              </button>
             </div>
           </div>
 
@@ -271,8 +306,12 @@ export default function AdminMembers({ profiles }) {
   const [filter, setFilter] = useState('active')
   const [q, setQ] = useState('')
   const [error, setError] = useState('')
+  const [memberships, setMemberships] = useState({}) // member_id → строка membership_overview
 
   const load = useCallback(async () => {
+    loadMemberships()
+      .then((rows) => setMemberships(Object.fromEntries(rows.filter((r) => r.member_id).map((r) => [r.member_id, r]))))
+      .catch(() => setMemberships({}))
     const { data, error: e } = await supabase
       .from('club_members')
       .select('*, member_payments(id, paid_on, amount_cents, kind, method, payer_name, description)')
@@ -291,9 +330,15 @@ export default function AdminMembers({ profiles }) {
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
     return (members ?? [])
-      .filter((m) => (filter === 'active' ? ['regular', 'occasional'].includes(m.status) : filter === 'all' || m.status === filter))
+      .filter((m) =>
+        filter === 'paid'
+          ? memberships[m.id]?.active
+          : filter === 'active'
+            ? ['regular', 'occasional'].includes(m.status)
+            : filter === 'all' || m.status === filter,
+      )
       .filter((m) => !s || `${m.first_name} ${m.last_name} ${m.parent_name ?? ''} ${(m.aliases ?? []).join(' ')} ${m.phone ?? ''}`.toLowerCase().includes(s))
-  }, [members, filter, q])
+  }, [members, filter, q, memberships])
 
   if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Ученики клуба: {error}</p>
   if (!members) return null
@@ -317,6 +362,7 @@ export default function AdminMembers({ profiles }) {
         <input className="input flex-1" type="search" placeholder="Поиск…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input !w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="active">Постоянные и иногда</option>
+          <option value="paid">С абонементом</option>
           <option value="one_time">Были раз</option>
           <option value="all">Все</option>
         </select>
@@ -326,7 +372,7 @@ export default function AdminMembers({ profiles }) {
 
       <ul className="divide-y divide-line">
         {list.map((m) => (
-          <MemberRow key={m.id} m={m} profiles={profiles} linkedIds={linkedIds} onChanged={load} />
+          <MemberRow key={m.id} m={m} profiles={profiles} linkedIds={linkedIds} membership={memberships[m.id]} onChanged={load} />
         ))}
       </ul>
 

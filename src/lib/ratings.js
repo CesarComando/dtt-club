@@ -1,4 +1,4 @@
-// Слой 14: оценки партнёров (1–5) по 7 критериям.
+// Слой 14 + 18: оценки партнёров (1–5) по 8 критериям (гигиена — слой 18).
 // Кто поставил оценку, видят только автор и тренер; свои средние ученик видит при 3+ оценках.
 import { supabase } from './supabaseClient.js'
 
@@ -10,6 +10,7 @@ export const CRITERIA = [
   { key: 'stance', label: 'Стойка' },
   { key: 'armlock', label: 'Болевые' },
   { key: 'choke', label: 'Удушающие' },
+  { key: 'hygiene', label: 'Гигиена' },
 ]
 export const MIN_RATINGS = 3
 

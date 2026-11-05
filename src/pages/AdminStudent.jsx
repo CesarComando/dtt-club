@@ -6,6 +6,7 @@ import { formatDay, formatPrice, LIVE_STATUSES } from '../lib/payments.js'
 import { ageFrom, bmi, bmiCategory } from '../lib/diary.js'
 import { CRITERIA } from '../lib/ratings.js'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
+import { MembershipLine, loadMemberships } from '../components/AdminMemberships.jsx'
 import { sessionDay, sessionTime } from '../lib/booking.js'
 
 // CRM → карточка ученика. Открывается по имени:
@@ -39,7 +40,11 @@ async function loadStudent(kind, id) {
   }
   member?.member_payments?.sort((a, b) => (a.paid_on < b.paid_on ? 1 : -1))
 
-  if (!profileId) return { member, profile: null }
+  const overview = await loadMemberships().catch(() => [])
+  const membership =
+    overview.find((r) => (member && r.member_id === member.id) || (profileId && !r.member_id && r.profile_id === profileId)) ?? null
+
+  if (!profileId) return { member, membership, profile: null }
 
   const since = new Date(Date.now() - 365 * 864e5).toISOString()
   const [p, contact, body, att, books, subs, pays, diary, learned, rating] = await Promise.all([
@@ -69,6 +74,7 @@ async function loadStudent(kind, id) {
   const now = Date.now()
   return {
     member,
+    membership,
     profile: profile && {
       ...profile,
       photo,
@@ -119,7 +125,7 @@ export default function AdminStudent({ kind }) {
     )
   }
 
-  const { member, profile } = data
+  const { member, profile, membership } = data
   if (!member && !profile) return <div className="space-y-4">{back}<p className="card text-neutral-400">Ученик не найден.</p></div>
 
   const first = profile?.first_name || member?.first_name
@@ -160,6 +166,18 @@ export default function AdminStudent({ kind }) {
             )}
           </p>
         </div>
+      </section>
+
+      <section className="card space-y-1">
+        <p className="label">Абонемент</p>
+        {membership?.valid_until ? (
+          <MembershipLine row={membership} className="text-base" />
+        ) : (
+          <p className="text-neutral-400">Абонемент ни разу не оплачивался.</p>
+        )}
+        {member?.single_price_cents && (
+          <p className="text-sm text-emerald-400">Особая цена разовой: {formatPrice(member.single_price_cents)}</p>
+        )}
       </section>
 
       {member?.notes && <p className="card text-sm text-neutral-300">{member.notes}</p>}
@@ -297,9 +315,9 @@ function AppData({ profile }) {
               <li key={c.key} className="flex items-center gap-3 text-sm">
                 <span className="w-24 shrink-0 text-neutral-300">{c.label}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink">
-                  <div className="h-full bg-accent" style={{ width: `${(Number(r[c.key]) / 5) * 100}%` }} />
+                  <div className="h-full bg-accent" style={{ width: `${(Number(r[c.key] ?? 0) / 5) * 100}%` }} />
                 </div>
-                <span className="w-8 text-right tabular-nums">{Number(r[c.key]).toFixed(1)}</span>
+                <span className="w-8 text-right tabular-nums">{r[c.key] == null ? '—' : Number(r[c.key]).toFixed(1)}</span>
               </li>
             ))}
           </ul>

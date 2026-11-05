@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CRITERIA, MIN_RATINGS, deleteRating, loadMyGiven, loadSummary, loadTeammates, saveRating } from '../lib/ratings.js'
 
-// Дневник → «Оценки»: мои средние от партнёров + оценить партнёра по 7 критериям.
+// Дневник → «Оценки»: мои средние от партнёров + оценить партнёра по всем критериям (CRITERIA).
 export default function PeerRatings({ userId }) {
   const [summary, setSummary] = useState(null)
   const [mates, setMates] = useState(null)
@@ -107,14 +107,14 @@ function MySummary({ summary }) {
       ) : (
         <ul className="space-y-2">
           {CRITERIA.map((c) => {
-            const v = Number(summary[c.key])
+            const v = summary[c.key] == null ? null : Number(summary[c.key])
             return (
               <li key={c.key} className="flex items-center gap-3 text-sm">
                 <span className="w-24 shrink-0 text-neutral-300">{c.label}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink">
-                  <div className="h-full bg-accent" style={{ width: `${(v / 5) * 100}%` }} />
+                  <div className="h-full bg-accent" style={{ width: `${((v ?? 0) / 5) * 100}%` }} />
                 </div>
-                <span className="w-8 text-right font-display tabular-nums">{v.toFixed(1)}</span>
+                <span className="w-8 text-right font-display tabular-nums">{v == null ? '—' : v.toFixed(1)}</span>
               </li>
             )
           })}
@@ -174,7 +174,7 @@ function RateForm({ initial, onSave, onDelete }) {
             Удалить оценку
           </button>
         )}
-        {!complete && <span className="text-xs text-neutral-500">Оцените все 7 пунктов</span>}
+        {!complete && <span className="text-xs text-neutral-500">Оцените все {CRITERIA.length} пунктов</span>}
       </div>
     </div>
   )

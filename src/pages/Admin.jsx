@@ -6,12 +6,14 @@ import AdminSessions from '../components/AdminSessions.jsx'
 import AdminDebtors, { CashPayment, DeleteAthlete } from '../components/AdminDebtors.jsx'
 import CheckinQR from '../components/CheckinQR.jsx'
 import AdminMembers from '../components/AdminMembers.jsx'
+import AdminMemberships from '../components/AdminMemberships.jsx'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
 
 const TABS = [
   ['gym', 'Зал'],
   ['students', 'Ученики'],
+  ['memberships', 'Абонементы'],
   ['debtors', 'Должники'],
 ]
 
@@ -238,7 +240,7 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2" role="tablist">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist">
         {TABS.map(([id, label]) => (
           <button
             key={id}
@@ -255,6 +257,7 @@ export default function Admin() {
       </div>
 
       {tab === 'students' && <AdminMembers profiles={athletes} />}
+      {tab === 'memberships' && <AdminMemberships />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
 
       {tab === 'gym' && (
