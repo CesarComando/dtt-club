@@ -39,3 +39,41 @@ export const sessionTime = (s) => `${hm(s.starts_at)}–${hm(s.ends_at)}`
 
 export const seatsText = (s) => (s.capacity ? `${s.booked} / ${s.capacity} мест` : `${s.booked} записано`)
 export const isFull = (s) => s.capacity != null && s.booked >= s.capacity
+
+// Слой 12: «Позвать друга» — ссылка-приглашение на конкретное занятие.
+export async function createInvite(sessionId) {
+  const { data, error } = await supabase.rpc('create_invite', { p_session: sessionId })
+  if (error) throw error
+  return data
+}
+
+export async function inviteInfo(token) {
+  const { data, error } = await supabase.rpc('invite_info', { p_token: token })
+  if (error) throw error
+  return data?.[0] ?? null
+}
+
+export async function acceptInvite(token) {
+  const { data, error } = await supabase.rpc('accept_invite', { p_token: token })
+  if (error) throw error
+  return data
+}
+
+export const inviteUrl = (token) => `${window.location.href.split('#')[0]}#/invite/${token}`
+
+// Отправить приглашение: системное «Поделиться» (WhatsApp и т.п.), иначе — копия в буфер.
+// Возвращает 'shared' | 'copied' | 'cancelled'.
+export async function shareInvite(session) {
+  const url = inviteUrl(await createInvite(session.id))
+  const text = `Пойдём со мной на тренировку! ${session.title}, ${sessionDay(session.starts_at)} ${sessionTime(session)}. Первая тренировка бесплатно. Записаться:`
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Тренировка в Daugavpils Top Team', text, url })
+      return 'shared'
+    } catch (e) {
+      if (e?.name === 'AbortError') return 'cancelled'
+    }
+  }
+  await navigator.clipboard.writeText(`${text} ${url}`)
+  return 'copied'
+}

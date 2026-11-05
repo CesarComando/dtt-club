@@ -21,12 +21,14 @@ export default function AdminSessions() {
       if (list.length) {
         const { data, error: e } = await supabase
           .from('bookings')
-          .select('session_id, created_at, athlete:profiles(id, first_name, last_name)')
+          .select(
+            'session_id, created_at, athlete:profiles!bookings_athlete_id_fkey(id, first_name, last_name), inviter:profiles!bookings_invited_by_fkey(first_name, last_name)',
+          )
           .in('session_id', list.map((s) => s.id))
           .order('created_at')
         if (e) throw e
         const map = {}
-        data.forEach((b) => (map[b.session_id] ??= []).push(b.athlete))
+        data.forEach((b) => (map[b.session_id] ??= []).push({ ...b.athlete, inviter: b.inviter }))
         setPeople(map)
       }
     } catch (e) {
@@ -125,7 +127,12 @@ export default function AdminSessions() {
                         {list.map((p, i) => (
                           <li key={p.id} className="flex items-center gap-2 text-sm">
                             <span className="w-6 text-right text-neutral-500 tabular-nums">{i + 1}.</span>
-                            <span className="flex-1 truncate">{p.first_name} {p.last_name}</span>
+                            <span className="flex-1 truncate">
+                              {p.first_name} {p.last_name}
+                              {p.inviter && (
+                                <span className="ml-2 text-xs text-accent">гость · позвал {p.inviter.first_name} {p.inviter.last_name}</span>
+                              )}
+                            </span>
                             <button
                               type="button"
                               disabled={busy === `${s.id}:${p.id}`}

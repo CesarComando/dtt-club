@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { registerAthlete } from '../lib/auth.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { DISCIPLINES, hasRanks } from '../lib/ranks.js'
@@ -16,6 +16,9 @@ export default function Register() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const fileRef = useRef(null)
+  // ?next=/invite/… — после регистрации вернуть туда (только внутренние пути).
+  const [params] = useSearchParams()
+  const next = params.get('next')?.startsWith('/') ? params.get('next') : null
   const { refreshProfile } = useAuth()
 
   // Превью выбранного фото; освобождаем blob-URL при смене файла/уходе со страницы.
@@ -74,7 +77,7 @@ export default function Register() {
               <> Ваш ранг — <span className="text-accent">Юный падаван</span>.</>
             )}
           </p>
-          <Link to="/dashboard" className="btn-primary">В кабинет</Link>
+          <Link to={next ?? '/dashboard'} className="btn-primary">{next ? 'Продолжить' : 'В кабинет'}</Link>
         </div>
       </div>
     )
@@ -201,7 +204,7 @@ export default function Register() {
       </form>
       <p className="mt-4 text-center text-sm text-neutral-400">
         Уже есть аккаунт?{' '}
-        <Link to="/login" className="text-accent hover:underline">Войти</Link>
+        <Link to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-accent hover:underline">Войти</Link>
       </p>
     </div>
   )

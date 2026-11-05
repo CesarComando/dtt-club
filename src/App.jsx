@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import Admin from './pages/Admin.jsx'
 import Privacy from './pages/Privacy.jsx'
 import Checkin from './pages/Checkin.jsx'
+import Invite from './pages/Invite.jsx'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           {/* QR-чекин: телефон ученика открывает ссылку из QR на экране тренера */}
           <Route path="/checkin/:token" element={<Checkin />} />
+          <Route path="/invite/:token" element={<Invite />} />
           {/* Скрытая панель тренера: нет ссылки в навигации, пускает только role = 'admin'. */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

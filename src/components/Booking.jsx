@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime } from '../lib/booking.js'
+import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime, shareInvite } from '../lib/booking.js'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
 export default function Booking() {
@@ -7,6 +7,7 @@ export default function Booking() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
+  const [shared, setShared] = useState({}) // session_id → 'Ссылка скопирована' и т.п.
 
   const refresh = useCallback(async () => {
     try {
@@ -33,6 +34,17 @@ export default function Booking() {
       refresh() // счётчик мог измениться — перечитываем
     } finally {
       setBusy(null)
+    }
+  }
+
+  const invite = async (s) => {
+    setError('')
+    try {
+      const r = await shareInvite(s)
+      if (r !== 'cancelled')
+        setShared((m) => ({ ...m, [s.id]: r === 'copied' ? 'Ссылка скопирована — отправьте другу' : 'Приглашение отправлено' }))
+    } catch (e) {
+      setError(e.message)
     }
   }
 
@@ -65,6 +77,11 @@ export default function Booking() {
                   <p className={`mt-1 text-xs ${full ? 'text-accent' : 'text-neutral-500'}`}>
                     {s.cancelled ? 'Тренировка отменена' : seatsText(s)}
                   </p>
+                  {!s.cancelled && !started && !isFull(s) && (
+                    <button type="button" onClick={() => invite(s)} className="mt-1 text-xs font-semibold text-accent hover:underline">
+                      {shared[s.id] ?? '＋ Позвать друга'}
+                    </button>
+                  )}
                   {s.capacity && (
                     <div className="mt-1 h-1 overflow-hidden rounded-full bg-ink">
                       <div className={`h-full ${full ? 'bg-accent' : 'bg-white/60'}`} style={{ width: `${pct}%` }} />
