@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured, AVATARS_BUCKET } from './supabaseClient
 const EMAIL_DOMAIN = 'dtt.local'
 
 // '+371 20 000 000' / '20000000' → '37120000000'
-// Детский логин: телефон родителя + «-номер» ('27167013-1' → '37127167013-1', слой 24).
+// Детский логин: телефон родителя + «-номер» ('20000000-1' → '37120000000-1', слой 24).
 export function normalizePhone(raw) {
   // Детский — только «полный номер-1..99» (номер, набранный через дефисы, сюда не попадает)
   const kid = String(raw).trim().match(/^([^-]*\d)\s*-\s*(\d{1,2})$/)

@@ -72,7 +72,7 @@ export default function Login() {
           : mode === 'grappling'
             ? 'Daugavpils Grappling Team'
             : mode === 'mma_kids'
-              ? 'Детское MMA · Вт и Чт 16:30–17:45. Ребёнок входит по логину от родителя (например 27167013-1).'
+              ? 'Детское MMA · Вт и Чт 16:30–17:45. Ребёнок входит по логину от родителя (например 20000000-1).'
               : 'Daugavpils Top Team — MMA и K1'}
       </p>
 
@@ -81,7 +81,7 @@ export default function Login() {
           <label className="label" htmlFor="phone">
             {mode === 'mma_kids' ? 'Телефон или логин ребёнка' : 'Номер телефона'}
           </label>
-          {/* Ребёнок входит по логину «телефон родителя-номер», например 27167013-1 (слой 24) */}
+          {/* Ребёнок входит по логину «телефон родителя-номер», например 20000000-1 (слой 24) */}
           <input
             id="phone"
             type="tel"

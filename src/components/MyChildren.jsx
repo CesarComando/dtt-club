@@ -7,7 +7,7 @@ import { DISCIPLINES, getRank, hasRanks } from '../lib/ranks.js'
 // Ребёнок входит сам по логину «телефон родителя-номер» (вход «MMA дети» или любой другой раздел).
 const EMPTY = { firstName: '', lastName: '', discipline: 'mma', password: '', password2: '' }
 
-// '37127167013-1' → '27167013-1' (короче и привычнее для латвийских номеров)
+// '37120000000-1' → '20000000-1' (короче и привычнее для латвийских номеров)
 const shortLogin = (login) => String(login).replace(/^371(?=\d{8}-)/, '')
 
 export default function MyChildren({ profile }) {
