@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, autoRank, RANKS, DISCIPLINES } from '../lib/ranks.js'
-import { LIVE_STATUSES } from '../lib/payments.js'
+import { LIVE_STATUSES, formatPrice } from '../lib/payments.js'
 import AdminSessions from '../components/AdminSessions.jsx'
 import AdminDebtors, { CashPayment, DeleteAthlete } from '../components/AdminDebtors.jsx'
 import CheckinQR from '../components/CheckinQR.jsx'
@@ -45,7 +45,8 @@ function PaymentBadge({ billing }) {
     text = `Оплачен до ${sub.current_period_end ? shortDate(sub.current_period_end) : '—'}`
     cls = 'border-emerald-600 text-emerald-400'
   } else if (singles) {
-    text = `Разовые: ${singles} за 30 дн.`
+    // Сумма важнее числа оплат: кто-то платит по 3 €, а за 3 тренировки сразу — 9 €.
+    text = `Разовые: ${formatPrice(billing.singlesCents ?? 0)} за 30 дн.`
     cls = 'border-neutral-500 text-neutral-300'
   }
   return (
@@ -94,7 +95,7 @@ export default function Admin() {
         .in('status', LIVE_STATUSES),
       supabase
         .from('payments')
-        .select('user_id, method, period_end, created_at, product:payment_products(kind)')
+        .select('user_id, method, period_end, created_at, amount_cents, product:payment_products(kind)')
         .eq('status', 'paid')
         .or(`created_at.gte.${new Date(Date.now() - 30 * 864e5).toISOString()},period_end.gt.${new Date().toISOString()}`),
     ])
@@ -130,7 +131,11 @@ export default function Admin() {
     })
     const monthAgo = Date.now() - 30 * 864e5
     paysRes.data?.forEach((p) => {
-      if (p.product?.kind === 'single' && new Date(p.created_at).getTime() > monthAgo) entry(p.user_id).singles++
+      if (p.product?.kind === 'single' && new Date(p.created_at).getTime() > monthAgo) {
+        const e = entry(p.user_id)
+        e.singles++
+        e.singlesCents = (e.singlesCents ?? 0) + (p.amount_cents ?? 0)
+      }
       // Абонемент наличными: «оплачен до» — самая поздняя дата.
       if (p.method === 'cash' && p.period_end && new Date(p.period_end) > new Date()) {
         const e = entry(p.user_id)
@@ -149,6 +154,20 @@ export default function Admin() {
       if (!e.membership || (e.membership.status === 'cash' && r.valid_until > e.membership.current_period_end)) {
         e.membership = { status: r.source, current_period_end: r.valid_until }
       }
+    })
+    // Разовые переводом/наличными из списка клуба за 30 дней (например, Павел по 3 € за тренировку).
+    // Помощнику тренера RLS их не отдаёт — тогда просто пусто.
+    const since = new Date(monthAgo).toISOString().slice(0, 10)
+    const offline = await supabase
+      .from('member_payments')
+      .select('kind, amount_cents, member:club_members(profile_id)')
+      .gte('paid_on', since)
+      .in('kind', ['training', 'pack', 'individual'])
+    offline.data?.forEach((r) => {
+      if (!r.member?.profile_id) return
+      const e = entry(r.member.profile_id)
+      e.singles++
+      e.singlesCents = (e.singlesCents ?? 0) + r.amount_cents
     })
     setBilling(subsRes.error ? {} : bill)
     setLoading(false)
