@@ -37,22 +37,67 @@ const matchScore = (profile, m) => {
 }
 
 /** Аккаунты в приложении, не связанные с учеником клуба, + кандидаты по имени. */
-function LinkSuggestions({ members, profiles, linkedIds, onChanged }) {
+// Родители (и другие взрослые, кто платит за ученика) — это не ученики:
+// их телефон лежит в club_contacts с member_id ребёнка. В «Новых» их не показываем.
+function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) {
   const [busy, setBusy] = useState(null)
-  const unlinked = profiles.filter((p) => !linkedIds.has(p.id))
-  if (!unlinked.length) return null
+  const [error, setError] = useState('')
+  const [parentFor, setParentFor] = useState(null) // profile_id, для которого открыт выбор ребёнка
+  const parentOf = Object.fromEntries(contacts.filter((c) => c.phone && c.member_id).map((c) => [c.phone, c.member_id]))
+  const unlinked = profiles.filter((p) => !linkedIds.has(p.id) && !(p.phone && parentOf[p.phone]))
+  const parents = profiles.filter((p) => !linkedIds.has(p.id) && p.phone && parentOf[p.phone])
+  if (!unlinked.length && !parents.length) return null
   const free = members.filter((m) => !m.profile_id)
+  const byId = Object.fromEntries(members.map((m) => [m.id, m]))
 
-  const link = async (memberId, profileId) => {
+  const run = async (profileId, fn) => {
     setBusy(profileId)
-    await supabase.rpc('link_member', { p_member: memberId, p_profile: profileId })
-    await onChanged()
-    setBusy(null)
+    setError('')
+    try {
+      await fn()
+      await onChanged()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(null)
+    }
   }
+  const ok = ({ error: e }) => {
+    if (e) throw e
+  }
+
+  const link = (memberId, profileId) =>
+    run(profileId, async () => ok(await supabase.rpc('link_member', { p_member: memberId, p_profile: profileId })))
+
+  // Человека нет в списке клуба — создаём запись из аккаунта и сразу связываем.
+  const createMember = (p) =>
+    run(p.id, async () => {
+      const { data, error: e } = await supabase
+        .from('club_members')
+        .insert({ first_name: p.first_name, last_name: p.last_name, discipline: p.discipline ?? null, status: 'regular', phone: p.phone ?? null })
+        .select('id')
+        .single()
+      if (e) throw e
+      ok(await supabase.rpc('link_member', { p_member: data.id, p_profile: p.id }))
+    })
+
+  // Аккаунт — родитель ученика клуба: телефон → club_contacts, имя → «родитель» у ребёнка.
+  const markParent = (p, memberId) =>
+    run(p.id, async () => {
+      if (!p.phone) throw new Error('У аккаунта нет телефона')
+      const name = `${p.first_name} ${p.last_name}`
+      ok(await supabase.from('club_contacts').upsert(
+        { display_name: `${name} (родитель)`, phone: p.phone, member_id: Number(memberId), source: 'coach' },
+        { onConflict: 'phone' },
+      ))
+      ok(await supabase.from('club_members').update({ parent_name: name }).eq('id', memberId).is('parent_name', null))
+      setParentFor(null)
+    })
 
   return (
     <div className="space-y-2 rounded-md border border-accent/40 p-3">
-      <p className="label">Новые в приложении — с кем связать</p>
+      {error && <p className="text-sm text-accent">{error}</p>}
+      {unlinked.length > 0 && <p className="label">Новые в приложении — с кем связать</p>}
       {unlinked.map((p) => {
         const cands = free
           .map((m) => ({ m, s: matchScore(p, m) }))
@@ -78,11 +123,55 @@ function LinkSuggestions({ members, profiles, linkedIds, onChanged }) {
                 </button>
               ))
             ) : (
-              <span className="text-neutral-500">совпадений нет — выберите вручную в списке ниже</span>
+              <span className="text-neutral-500">совпадений нет</span>
+            )}
+            <button
+              type="button"
+              disabled={busy === p.id}
+              onClick={() => createMember(p)}
+              className="rounded border border-dashed border-line px-2 py-0.5 text-neutral-300 hover:border-accent disabled:opacity-50"
+            >
+              ＋ Новый ученик
+            </button>
+            {p.phone && (
+              parentFor === p.id ? (
+                <select
+                  className="input !w-auto !py-1 text-sm"
+                  defaultValue=""
+                  disabled={busy === p.id}
+                  onChange={(e) => e.target.value && markParent(p, e.target.value)}
+                >
+                  <option value="">Чей родитель?</option>
+                  {members.filter((m) => m.status !== 'left').map((m) => (
+                    <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setParentFor(p.id)}
+                  className="rounded border border-dashed border-line px-2 py-0.5 text-neutral-300 hover:border-accent"
+                >
+                  Родитель…
+                </button>
+              )
             )}
           </div>
         )
       })}
+      {parents.length > 0 && (
+        <p className="text-xs text-neutral-500">
+          Родители:{' '}
+          {parents.map((p, i) => (
+            <span key={p.id}>
+              {i > 0 && ' · '}
+              <span className="text-neutral-300">{p.first_name} {p.last_name}</span>
+              {' → '}
+              {byId[parentOf[p.phone]] ? `${byId[parentOf[p.phone]].first_name} ${byId[parentOf[p.phone]].last_name}` : '—'}
+            </span>
+          ))}
+        </p>
+      )}
     </div>
   )
 }
@@ -307,6 +396,7 @@ export default function AdminMembers({ profiles }) {
   const [q, setQ] = useState('')
   const [error, setError] = useState('')
   const [memberships, setMemberships] = useState({}) // member_id → строка membership_overview
+  const [contacts, setContacts] = useState([]) // club_contacts: телефон родителя → ученик
 
   const load = useCallback(async () => {
     loadMemberships()
@@ -318,6 +408,9 @@ export default function AdminMembers({ profiles }) {
       .order('last_name')
       .order('paid_on', { referencedTable: 'member_payments', ascending: false })
     if (e) return setError(e.message)
+    // Контакты (родители и т.п.) — если таблицы нет или ошибка, просто без них.
+    const { data: c } = await supabase.from('club_contacts').select('phone, member_id').not('member_id', 'is', null)
+    setContacts(c ?? [])
     setMembers(data)
   }, [])
 
@@ -368,7 +461,7 @@ export default function AdminMembers({ profiles }) {
         </select>
       </div>
 
-      <LinkSuggestions members={members} profiles={profiles} linkedIds={linkedIds} onChanged={load} />
+      <LinkSuggestions members={members} profiles={profiles} linkedIds={linkedIds} contacts={contacts} onChanged={load} />
 
       <ul className="divide-y divide-line">
         {list.map((m) => (
