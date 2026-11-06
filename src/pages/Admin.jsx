@@ -59,10 +59,11 @@ function PaymentBadge({ billing }) {
 const formatPhone = (p) => (p?.startsWith('371') && p.length === 11 ? `+371 ${p.slice(3, 7)} ${p.slice(7)}` : p ? `+${p}` : '')
 
 export default function Admin() {
-  // Помощник тренера (role = 'coach') видит только «Зал»: посещения, QR, записи.
+  // Помощник тренера (role = 'coach') видит «Зал» (посещения, QR, записи)
+  // и «Абонементы» — только ученики MMA / K1 (фильтрует сервер, слой 30).
   const { profile: me } = useAuth()
   const isAdmin = me?.role === 'admin'
-  const tabs = isAdmin ? TABS : TABS.slice(0, 1)
+  const tabs = isAdmin ? TABS : TABS.filter(([t]) => t === 'gym' || t === 'memberships')
   const [athletes, setAthletes] = useState([])
   const [today, setToday] = useState({}) // athlete_id → сколько отметок сегодня
   const [billing, setBilling] = useState({}) // athlete_id → { membership, singles, sponsor }
@@ -256,8 +257,8 @@ export default function Admin() {
         </div>
       </div>
 
-      {isAdmin && (
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5" role="tablist">
+      {tabs.length > 1 && (
+      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-2'}`} role="tablist">
         {tabs.map(([id, label]) => (
           <button
             key={id}
@@ -275,7 +276,7 @@ export default function Admin() {
       )}
 
       {tab === 'students' && <AdminMembers profiles={athletes} />}
-      {tab === 'memberships' && <AdminMemberships />}
+      {tab === 'memberships' && <AdminMemberships full={isAdmin} />}
       {tab === 'budget' && isAdmin && <AdminBudget />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
 

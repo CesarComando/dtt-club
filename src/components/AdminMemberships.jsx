@@ -37,7 +37,9 @@ export function MembershipLine({ row, className = '' }) {
   )
 }
 
-export default function AdminMemberships() {
+// full = тренер. Помощнику (full = false) сервер отдаёт только MMA / K1;
+// карточки учеников ему закрыты — имена без ссылок.
+export default function AdminMemberships({ full = true }) {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState('')
 
@@ -57,9 +59,13 @@ export default function AdminMemberships() {
   const Row = ({ r }) => (
     <li className="flex items-center justify-between gap-3 py-2.5">
       <div className="min-w-0">
-        <Link to={href(r)} className="font-semibold hover:text-accent hover:underline">
-          {r.first_name} {r.last_name}
-        </Link>
+        {full ? (
+          <Link to={href(r)} className="font-semibold hover:text-accent hover:underline">
+            {r.first_name} {r.last_name}
+          </Link>
+        ) : (
+          <span className="font-semibold">{r.first_name} {r.last_name}</span>
+        )}
         <p className="text-xs">
           <MembershipLine row={r} />
           {r.discipline && <span className="text-neutral-500"> · {DISCIPLINES[r.discipline] ?? r.discipline}</span>}
@@ -70,6 +76,7 @@ export default function AdminMemberships() {
 
   return (
     <div className="space-y-4">
+      {!full && <p className="label">Только ученики MMA / K1</p>}
       <section className="card space-y-2">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-xl">Действующие абонементы</h2>
