@@ -7,6 +7,7 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import InstallApp from './components/InstallApp.jsx'
+import AskClub from './components/AskClub.jsx'
 // Редкие и тяжёлые страницы (CRM, QR, галерея) грузятся отдельно — первое открытие быстрее.
 const Admin = lazy(() => import('./pages/Admin.jsx'))
 const Privacy = lazy(() => import('./pages/Privacy.jsx'))
@@ -23,6 +24,7 @@ export default function App() {
   return (
     <div className="min-h-dvh">
       <Navbar />
+      <AskClub />
       {/* pb-24 — место под нижний таб-бар на мобильных */}
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-24 md:pt-24 md:pb-12">
         <InstallApp />

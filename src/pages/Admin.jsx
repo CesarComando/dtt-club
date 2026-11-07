@@ -8,6 +8,7 @@ import CheckinQR from '../components/CheckinQR.jsx'
 import AdminMembers from '../components/AdminMembers.jsx'
 import AdminMemberships from '../components/AdminMemberships.jsx'
 import AdminBudget from '../components/AdminBudget.jsx'
+import AdminAssistant from '../components/AdminAssistant.jsx'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
@@ -18,6 +19,7 @@ const TABS = [
   ['memberships', 'Абонементы'],
   ['debtors', 'Должники'],
   ['budget', 'Бюджет'],
+  ['assistant', 'Помощник'],
 ]
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
@@ -277,7 +279,7 @@ export default function Admin() {
       </div>
 
       {tabs.length > 1 && (
-      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-2'}`} role="tablist">
+      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2'}`} role="tablist">
         {tabs.map(([id, label]) => (
           <button
             key={id}
@@ -297,6 +299,7 @@ export default function Admin() {
       {tab === 'students' && <AdminMembers profiles={athletes} />}
       {tab === 'memberships' && <AdminMemberships full={isAdmin} />}
       {tab === 'budget' && isAdmin && <AdminBudget />}
+      {tab === 'assistant' && isAdmin && <AdminAssistant />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
 
       {tab === 'gym' && (
