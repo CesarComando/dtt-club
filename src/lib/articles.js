@@ -1,11 +1,12 @@
 // Слой 28: статьи — новости клуба, переводы, интервью. Пишет только тренер.
 import { supabase } from './supabaseClient.js'
+import { locale, t } from './i18n.jsx'
 
 export const CATEGORIES = {
-  news: 'Новости клуба',
-  translation: 'Переводы',
-  interview: 'Интервью',
-  article: 'Статьи',
+  news: t('Новости клуба'),
+  translation: t('Переводы'),
+  interview: t('Интервью'),
+  article: t('Статьи'),
 }
 export const ARTICLES_BUCKET = 'articles'
 
@@ -54,7 +55,7 @@ export async function deleteArticle(article) {
 }
 
 export async function uploadCover(file) {
-  if (!file.type.startsWith('image/')) throw new Error('Обложка — только картинка')
+  if (!file.type.startsWith('image/')) throw new Error(t('Обложка — только картинка'))
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `${crypto.randomUUID()}.${ext}`
   must(await supabase.storage.from(ARTICLES_BUCKET).upload(path, file, { contentType: file.type }))
@@ -62,4 +63,4 @@ export async function uploadCover(file) {
 }
 
 export const articleDate = (a) =>
-  new Date(a.published_at ?? a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  new Date(a.published_at ?? a.created_at).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })

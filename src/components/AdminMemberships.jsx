@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { DISCIPLINES } from '../lib/ranks.js'
+import { t, locale } from '../lib/i18n.jsx'
 
 // CRM → «Абонементы»: у кого абонемент действует и до какого числа.
 // Абонемент — месяц со дня оплаты (раньше оплатил — продлевается с конца прошлого).
 // Источники: перевод/наличные из списка клуба, наличные в приложении, карта (Stripe).
 
-export const SOURCE = { bank: 'перевод', cash: 'наличные', card: 'карта' }
+export const SOURCE = { bank: t('перевод'), cash: t('наличные'), card: t('карта') }
 const TZ = 'Europe/Riga'
 export const untilText = (d) =>
-  new Date(`${d}T12:00:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: TZ })
+  new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'long', timeZone: TZ })
 export const daysLeft = (d) => {
   const today = new Date(new Date().toLocaleDateString('en-CA', { timeZone: TZ }) + 'T00:00:00')
   return Math.round((new Date(`${d}T00:00:00`) - today) / 864e5)
@@ -30,8 +31,8 @@ export function MembershipLine({ row, className = '' }) {
   return (
     <span className={`${row.active ? (d <= 3 ? 'text-amber-400' : 'text-emerald-400') : 'text-accent'} ${className}`}>
       {row.active
-        ? `Абонемент до ${untilText(row.valid_until)} · ${d === 0 ? 'последний день' : `ещё ${d} дн.`}`
-        : `Абонемент закончился ${untilText(row.valid_until)}`}
+        ? `${t('Абонемент до {date}', { date: untilText(row.valid_until) })} · ${d === 0 ? t('последний день') : t('ещё {n} дн.', { n: d })}`
+        : t('Абонемент закончился {date}', { date: untilText(row.valid_until) })}
       <span className="text-neutral-500"> · {SOURCE[row.source] ?? row.source}</span>
     </span>
   )
@@ -47,8 +48,8 @@ export default function AdminMemberships({ full = true }) {
     loadMemberships().then(setRows).catch((e) => setError(e.message))
   }, [])
 
-  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Абонементы: {error}</p>
-  if (!rows) return <p className="card text-neutral-400">Загружаем…</p>
+  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Абонементы: {error}', { error })}</p>
+  if (!rows) return <p className="card text-neutral-400">{t('Загружаем…')}</p>
 
   const active = rows.filter((r) => r.active)
   // Закончились за последние 60 дней — кому напомнить продлить.
@@ -76,45 +77,45 @@ export default function AdminMemberships({ full = true }) {
 
   return (
     <div className="space-y-4">
-      {!full && <p className="label">Только ученики MMA / K1</p>}
+      {!full && <p className="label">{t('Только ученики MMA / K1')}</p>}
       <section className="card space-y-2">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-xl">Действующие абонементы</h2>
+          <h2 className="text-xl">{t('Действующие абонементы')}</h2>
           <span className="font-display text-2xl text-emerald-400">{active.length}</span>
         </div>
         {active.length ? (
           <ul className="divide-y divide-line">{active.map((r) => <Row key={`${r.member_id}-${r.profile_id}`} r={r} />)}</ul>
         ) : (
-          <p className="text-sm text-neutral-400">Сейчас ни у кого нет действующего абонемента.</p>
+          <p className="text-sm text-neutral-400">{t('Сейчас ни у кого нет действующего абонемента.')}</p>
         )}
       </section>
 
       <section className="card space-y-2">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-xl">Закончились недавно</h2>
+          <h2 className="text-xl">{t('Закончились недавно')}</h2>
           <span className="font-display text-2xl text-accent">{expired.length}</span>
         </div>
         {expired.length ? (
           <ul className="divide-y divide-line">{expired.map((r) => <Row key={`${r.member_id}-${r.profile_id}`} r={r} />)}</ul>
         ) : (
-          <p className="text-sm text-neutral-400">За последние 2 месяца никто не выпал.</p>
+          <p className="text-sm text-neutral-400">{t('За последние 2 месяца никто не выпал.')}</p>
         )}
       </section>
 
       {special.length > 0 && (
         <section className="card space-y-1">
-          <h2 className="text-lg">Особая цена разовой</h2>
+          <h2 className="text-lg">{t('Особая цена разовой')}</h2>
           {special.map((r) => (
             <p key={`${r.member_id}-${r.profile_id}`} className="text-sm">
               <Link to={href(r)} className="hover:text-accent hover:underline">{r.first_name} {r.last_name}</Link>
-              <span className="text-emerald-400"> · {formatPrice(r.single_price_cents)} за тренировку</span>
+              <span className="text-emerald-400"> · {t('{price} за тренировку', { price: formatPrice(r.single_price_cents) })}</span>
             </p>
           ))}
         </section>
       )}
 
       <p className="text-xs text-neutral-500">
-        Абонемент действует месяц со дня оплаты. Если оплачен раньше, чем закончился прошлый, — новый месяц идёт с конца прошлого.
+        {t('Абонемент действует месяц со дня оплаты. Если оплачен раньше, чем закончился прошлый, — новый месяц идёт с конца прошлого.')}
       </p>
     </div>
   )

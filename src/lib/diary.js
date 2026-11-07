@@ -1,6 +1,7 @@
 // Слой 13: параметры тела (ИМТ), словарь приёмов, мои приёмы, дневник тренировок.
 // Доступ ограничен RLS: ученик видит и меняет только своё, тренер читает всё.
 import { supabase } from './supabaseClient.js'
+import { t } from './i18n.jsx'
 
 const must = ({ data, error }) => {
   if (error) throw error
@@ -39,11 +40,11 @@ export function ageFrom(birthDate) {
 // Категории ВОЗ — только для взрослых (18+). У детей ИМТ оценивают по возрастным таблицам.
 export function bmiCategory(value, age) {
   if (value == null) return null
-  if (age != null && age < 18) return { label: 'До 18 лет оценивается по возрастным таблицам', tone: 'neutral' }
-  if (value < 18.5) return { label: 'Ниже нормы', tone: 'warn' }
-  if (value < 25) return { label: 'Норма', tone: 'ok' }
-  if (value < 30) return { label: 'Выше нормы', tone: 'warn' }
-  return { label: 'Значительно выше нормы', tone: 'warn' }
+  if (age != null && age < 18) return { label: t('До 18 лет оценивается по возрастным таблицам'), tone: 'neutral' }
+  if (value < 18.5) return { label: t('Ниже нормы'), tone: 'warn' }
+  if (value < 25) return { label: t('Норма'), tone: 'ok' }
+  if (value < 30) return { label: t('Выше нормы'), tone: 'warn' }
+  return { label: t('Значительно выше нормы'), tone: 'warn' }
 }
 
 // ---- Словарь приёмов и мои приёмы ----

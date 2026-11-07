@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { askClub } from '../lib/assistant.js'
+import { t } from '../lib/i18n.jsx'
 
 // Кнопка «Спросить» (справа внизу, над таб-баром) и окно чата с помощником клуба.
 // Помощник отвечает по фактам клуба и по абонементу/записям самого ученика.
 const HINTS = [
-  'До какого числа мой абонемент?',
-  'Когда моя следующая тренировка?',
-  'Сколько стоит абонемент?',
-  'Что взять на первую тренировку?',
+  t('До какого числа мой абонемент?'),
+  t('Когда моя следующая тренировка?'),
+  t('Сколько стоит абонемент?'),
+  t('Что взять на первую тренировку?'),
 ]
 
 export default function AskClub() {
@@ -58,12 +59,12 @@ export default function AskClub() {
           type="button"
           onClick={() => setOpen(true)}
           className="fixed bottom-24 right-4 z-40 flex items-center gap-2 rounded-full bg-accent px-4 py-3 font-display text-sm uppercase tracking-wider text-white shadow-lg shadow-black/60 hover:bg-accent/90 md:bottom-6"
-          aria-label="Спросить помощника клуба"
+          aria-label={t('Спросить помощника клуба')}
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
           </svg>
-          Спросить
+          {t('Спросить')}
         </button>
       )}
 
@@ -71,22 +72,22 @@ export default function AskClub() {
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 md:items-center" onClick={() => setOpen(false)}>
           <div
             role="dialog"
-            aria-label="Помощник клуба"
+            aria-label={t('Помощник клуба')}
             className="flex h-[85dvh] w-full max-w-lg flex-col rounded-t-xl border border-line bg-ink md:h-[70vh] md:rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <div className="border-l-4 border-accent pl-3">
-                <p className="font-display text-lg uppercase tracking-wider">Помощник клуба</p>
-                <p className="text-xs text-neutral-500">Отвечает ИИ по данным клуба. Важное уточняйте у тренера.</p>
+                <p className="font-display text-lg uppercase tracking-wider">{t('Помощник клуба')}</p>
+                <p className="text-xs text-neutral-500">{t('Отвечает ИИ по данным клуба. Важное уточняйте у тренера.')}</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="p-2 text-neutral-400 hover:text-white" aria-label="Закрыть">✕</button>
+              <button type="button" onClick={() => setOpen(false)} className="p-2 text-neutral-400 hover:text-white" aria-label={t('Закрыть')}>✕</button>
             </div>
 
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
               {!messages.length && (
                 <div className="space-y-3">
-                  <p className="text-sm text-neutral-300">Спросите про расписание, цены, правила или свой абонемент.</p>
+                  <p className="text-sm text-neutral-300">{t('Спросите про расписание, цены, правила или свой абонемент.')}</p>
                   <div className="flex flex-wrap gap-2">
                     {HINTS.map((h) => (
                       <button key={h} type="button" onClick={() => send(h)}
@@ -105,7 +106,7 @@ export default function AskClub() {
                   </p>
                 </div>
               ))}
-              {busy && <p className="text-sm text-neutral-500">Помощник печатает…</p>}
+              {busy && <p className="text-sm text-neutral-500">{t('Помощник печатает…')}</p>}
               {error && <p className="text-sm text-accent">{error}</p>}
               <div ref={endRef} />
             </div>
@@ -119,7 +120,7 @@ export default function AskClub() {
             >
               <input
                 className="input flex-1"
-                placeholder="Ваш вопрос…"
+                placeholder={t('Ваш вопрос…')}
                 value={text}
                 maxLength={1000}
                 onChange={(e) => setText(e.target.value)}

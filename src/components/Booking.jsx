@@ -4,6 +4,7 @@ import { SECTIONS, activeSection, isKidsSession, seesBoth, setSection, useKids, 
 import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime } from '../lib/booking.js'
 import FriendPicker from './FriendPicker.jsx'
 import { attendeesText, loadAttendees } from '../lib/friends.js'
+import { t, tData } from '../lib/i18n.jsx'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
 export default function Booking() {
@@ -26,7 +27,7 @@ export default function Booking() {
       // «Идут: …» — не критично: если функции ещё нет в базе, просто не показываем
       loadAttendees(list.filter((x) => !x.cancelled).map((x) => x.id)).then(setGoing).catch(() => {})
     } catch (e) {
-      setError('Не удалось загрузить расписание: ' + e.message)
+      setError(t('Не удалось загрузить расписание: ') + e.message)
     } finally {
       setLoading(false)
     }
@@ -55,7 +56,7 @@ export default function Booking() {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg">Запись на тренировки</h2>
+        <h2 className="text-lg">{t('Запись на тренировки')}</h2>
         {/* Раздел из входа; кто ходит в оба направления — переключает здесь */}
         {both && (
           <div className="flex gap-1">
@@ -74,9 +75,9 @@ export default function Booking() {
       </div>
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
       {loading ? (
-        <p className="card text-neutral-400">Загружаем расписание…</p>
+        <p className="card text-neutral-400">{t('Загружаем расписание…')}</p>
       ) : sessions.length === 0 ? (
-        <p className="card text-neutral-400">На ближайшую неделю тренировок нет.</p>
+        <p className="card text-neutral-400">{t('На ближайшую неделю тренировок нет.')}</p>
       ) : (
         <ul className="space-y-2">
           {sessions.filter((s) => (!both || !section || s.discipline === section) && (s.discipline !== 'mma' || isKidsSession(s) === kids)).map((s) => {
@@ -89,21 +90,21 @@ export default function Booking() {
                   <p className="font-display uppercase tracking-wide">
                     {sessionDay(s.starts_at)} · {sessionTime(s)}
                   </p>
-                  <p className="truncate text-sm text-neutral-400">{s.title}</p>
+                  <p className="truncate text-sm text-neutral-400">{tData(s.title)}</p>
                   {s.venue_id !== 'club' && (
                     <p className="text-sm font-semibold text-accent">
-                      📍 {s.venue_name}{s.venue_address && `, ${s.venue_address}`}
+                      📍 {tData(s.venue_name)}{s.venue_address && `, ${s.venue_address}`}
                     </p>
                   )}
                   <p className={`mt-1 text-xs ${full ? 'text-accent' : 'text-neutral-500'}`}>
-                    {s.cancelled ? 'Тренировка отменена' : seatsText(s)}
+                    {s.cancelled ? t('Тренировка отменена') : seatsText(s)}
                   </p>
                   {!s.cancelled && attendeesText(going[s.id], profile?.id) && (
                     <p className="truncate text-xs text-neutral-300">{attendeesText(going[s.id], profile?.id)}</p>
                   )}
                   {!s.cancelled && !started && !isFull(s) && (
                     <button type="button" onClick={() => setPicking(s)} className="mt-1 text-xs font-semibold text-accent hover:underline">
-                      ＋ Позвать друга
+                      ＋ {t('Позвать друга')}
                     </button>
                   )}
                   {s.capacity && (
@@ -121,12 +122,12 @@ export default function Booking() {
                   {busy === s.id
                     ? '…'
                     : s.is_booked
-                      ? 'Отменить'
+                      ? t('Отменить')
                       : full
-                        ? 'Мест нет'
+                        ? t('Мест нет')
                         : started
-                          ? 'Идёт'
-                          : 'Записаться'}
+                          ? t('Идёт')
+                          : t('Записаться')}
                 </button>
               </li>
             )

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { ALBUMS, MAX_VIDEO_MB, approveItem, deleteItem, loadGallery, uploadToGallery } from '../lib/gallery.js'
+import { locale, t } from '../lib/i18n.jsx'
 
 // Галерея клуба: фото и видео с тренировок и соревнований.
 // Видят только вошедшие. Ученик добавляет — фото «на проверке», пока тренер не одобрит.
@@ -30,9 +31,9 @@ export default function Gallery() {
   if (!user) {
     return (
       <div className="mx-auto max-w-sm py-16 text-center">
-        <h1 className="text-3xl">Галерея</h1>
-        <p className="mt-3 text-neutral-400">Фото и видео клуба видят только ученики — войдите в приложение.</p>
-        <Link to="/login?next=%2Fgallery" className="btn-primary mt-6 inline-block">Войти</Link>
+        <h1 className="text-3xl">{t('Галерея')}</h1>
+        <p className="mt-3 text-neutral-400">{t('Фото и видео клуба видят только ученики — войдите в приложение.')}</p>
+        <Link to="/login?next=%2Fgallery" className="btn-primary mt-6 inline-block">{t('Войти')}</Link>
       </div>
     )
   }
@@ -55,7 +56,7 @@ export default function Gallery() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-3xl">Галерея</h1>
+      <h1 className="text-3xl">{t('Галерея')}</h1>
 
       <Upload userId={user.id} isAdmin={isAdmin} onDone={load} />
 
@@ -64,7 +65,7 @@ export default function Gallery() {
       {/* Тренер: что ждёт одобрения */}
       {isAdmin && pending.length > 0 && (
         <section className="card space-y-3 border-amber-400/60">
-          <h2 className="text-xl">На проверке · {pending.length}</h2>
+          <h2 className="text-xl">{t('На проверке')} · {pending.length}</h2>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {pending.map((i) => (
               <li key={i.id} className="space-y-1.5">
@@ -72,10 +73,10 @@ export default function Gallery() {
                 <p className="truncate text-xs text-neutral-400">{i.author?.first_name} {i.author?.last_name} · {ALBUMS[i.album]}</p>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => act(() => approveItem(i.id))} className="flex-1 rounded-md bg-emerald-600 py-1.5 text-xs font-semibold">
-                    ✓ В галерею
+                    {t('✓ В галерею')}
                   </button>
                   <button type="button" onClick={() => act(() => deleteItem(i))} className="rounded-md border border-line px-2 text-xs text-neutral-400 hover:text-accent">
-                    Удалить
+                    {t('Удалить')}
                   </button>
                 </div>
               </li>
@@ -87,12 +88,12 @@ export default function Gallery() {
       {/* Ученик: свои, ещё не одобренные */}
       {!isAdmin && minePending.length > 0 && (
         <p className="rounded-md border border-amber-400/60 p-3 text-sm text-neutral-300">
-          На проверке у тренера: {minePending.length}. Появятся в галерее после одобрения.
+          {t('На проверке у тренера: {n}. Появятся в галерее после одобрения.', { n: minePending.length })}
         </p>
       )}
 
       <div className="flex flex-wrap gap-2">
-        {[['all', 'Все'], ...Object.entries(ALBUMS)].map(([id, label]) => (
+        {[['all', t('Все')], ...Object.entries(ALBUMS)].map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -105,9 +106,9 @@ export default function Gallery() {
       </div>
 
       {items == null ? (
-        <p className="card text-neutral-400">Загружаем…</p>
+        <p className="card text-neutral-400">{t('Загружаем…')}</p>
       ) : feed.length === 0 ? (
-        <p className="card text-neutral-400">Пока пусто — добавьте первые фото с тренировки!</p>
+        <p className="card text-neutral-400">{t('Пока пусто — добавьте первые фото с тренировки!')}</p>
       ) : (
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {feed.map((i) => (
@@ -122,7 +123,7 @@ export default function Gallery() {
         <Viewer
           item={open}
           canDelete={isAdmin || open.author_id === user.id}
-          onDelete={() => window.confirm('Удалить из галереи?') && act(() => deleteItem(open))}
+          onDelete={() => window.confirm(t('Удалить из галереи?')) && act(() => deleteItem(open))}
           onClose={() => setOpen(null)}
         />
       )}
@@ -143,7 +144,7 @@ function Thumb({ item, onOpen }) {
         <span className="absolute inset-0 flex items-center justify-center text-3xl text-white/90 drop-shadow">▶</span>
       )}
       {item.status === 'pending' && (
-        <span className="absolute top-1 left-1 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-black">на проверке</span>
+        <span className="absolute top-1 left-1 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-black">{t('на проверке')}</span>
       )}
     </button>
   )
@@ -161,11 +162,11 @@ function Viewer({ item, canDelete, onDelete, onClose }) {
       <div className="flex items-center justify-between gap-3 p-3 text-sm">
         <span className="min-w-0 truncate text-neutral-300">
           {item.author?.first_name} {item.author?.last_name} · {ALBUMS[item.album]} ·{' '}
-          {new Date(item.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+          {new Date(item.created_at).toLocaleDateString(locale(), { day: 'numeric', month: 'long' })}
         </span>
         <div className="flex shrink-0 gap-3">
-          {canDelete && <button type="button" onClick={onDelete} className="text-neutral-400 hover:text-accent">Удалить</button>}
-          <button type="button" onClick={onClose} className="text-2xl leading-none text-white" aria-label="Закрыть">✕</button>
+          {canDelete && <button type="button" onClick={onDelete} className="text-neutral-400 hover:text-accent">{t('Удалить')}</button>}
+          <button type="button" onClick={onClose} className="text-2xl leading-none text-white" aria-label={t('Закрыть')}>✕</button>
         </div>
       </div>
       <div className="flex min-h-0 flex-1 items-center justify-center p-2" onClick={onClose}>
@@ -193,17 +194,17 @@ function Upload({ userId, isAdmin, onDone }) {
     let done = 0
     try {
       for (const f of files) {
-        setProgress(`Загружаем ${done + 1} из ${files.length}…`)
+        setProgress(t('Загружаем {i} из {n}…', { i: done + 1, n: files.length }))
         await uploadToGallery(userId, f, { album, caption })
         done++
       }
       setFiles([])
       setCaption('')
       if (fileRef.current) fileRef.current.value = ''
-      setProgress(isAdmin ? 'Добавлено в галерею' : 'Отправлено тренеру на проверку')
+      setProgress(isAdmin ? t('Добавлено в галерею') : t('Отправлено тренеру на проверку'))
       onDone()
     } catch (e) {
-      setError(`${done ? `Загружено ${done}, дальше ошибка: ` : ''}${e.message}`)
+      setError(`${done ? t('Загружено {n}, дальше ошибка: ', { n: done }) : ''}${e.message}`)
       setProgress('')
       if (done) onDone()
     }
@@ -226,13 +227,13 @@ function Upload({ userId, isAdmin, onDone }) {
       />
       {!files.length ? (
         <label htmlFor="gallery-file" className="btn-primary block w-full cursor-pointer text-center">
-          ＋ Добавить фото или видео
+          {t('＋ Добавить фото или видео')}
         </label>
       ) : (
         <div className="space-y-3">
           <p className="text-sm">
-            Выбрано: <b>{files.length}</b>{' '}
-            <button type="button" onClick={() => setFiles([])} className="text-neutral-500 hover:text-white">— отменить</button>
+            {t('Выбрано:')} <b>{files.length}</b>{' '}
+            <button type="button" onClick={() => setFiles([])} className="text-neutral-500 hover:text-white">— {t('отменить')}</button>
           </p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(ALBUMS).map(([id, label]) => (
@@ -246,17 +247,17 @@ function Upload({ userId, isAdmin, onDone }) {
               </button>
             ))}
           </div>
-          <input className="input" maxLength={300} placeholder="Подпись (необязательно)" value={caption} onChange={(e) => setCaption(e.target.value)} />
-          <button type="button" onClick={send} disabled={Boolean(progress) && progress.startsWith('Загружаем')} className="btn-primary w-full disabled:opacity-60">
-            {isAdmin ? 'Опубликовать' : 'Отправить на проверку'}
+          <input className="input" maxLength={300} placeholder={t('Подпись (необязательно)')} value={caption} onChange={(e) => setCaption(e.target.value)} />
+          <button type="button" onClick={send} disabled={Boolean(progress) && progress.endsWith('…')} className="btn-primary w-full disabled:opacity-60">
+            {isAdmin ? t('Опубликовать') : t('Отправить на проверку')}
           </button>
         </div>
       )}
       {progress && <p className="text-sm text-neutral-300" role="status">{progress}</p>}
       {error && <p className="text-sm text-accent">{error}</p>}
       <p className="text-xs text-neutral-500">
-        До 10 файлов за раз, видео — до {MAX_VIDEO_MB} МБ. {isAdmin ? '' : 'В галерее появятся после одобрения тренером. '}
-        Детей снимайте только с согласия родителей.
+        {t('До 10 файлов за раз, видео — до {mb} МБ.', { mb: MAX_VIDEO_MB })} {isAdmin ? '' : `${t('В галерее появятся после одобрения тренером.')} `}
+        {t('Детей снимайте только с согласия родителей.')}
       </p>
     </section>
   )

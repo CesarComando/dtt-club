@@ -2,16 +2,17 @@
 // Кто поставил оценку, видят только автор и тренер; свои средние ученик видит при 3+ оценках.
 import { supabase } from './supabaseClient.js'
 import { loadClubPeople } from './friends.js'
+import { t } from './i18n.jsx'
 
 export const CRITERIA = [
-  { key: 'technique', label: 'Техника' },
-  { key: 'speed', label: 'Скорость' },
-  { key: 'strength', label: 'Сила' },
-  { key: 'flexibility', label: 'Гибкость' },
-  { key: 'stance', label: 'Стойка' },
-  { key: 'armlock', label: 'Болевые' },
-  { key: 'choke', label: 'Удушающие' },
-  { key: 'hygiene', label: 'Гигиена' },
+  { key: 'technique', label: t('Техника') },
+  { key: 'speed', label: t('Скорость') },
+  { key: 'strength', label: t('Сила') },
+  { key: 'flexibility', label: t('Гибкость') },
+  { key: 'stance', label: t('Стойка') },
+  { key: 'armlock', label: t('Болевые') },
+  { key: 'choke', label: t('Удушающие') },
+  { key: 'hygiene', label: t('Гигиена') },
 ]
 export const MIN_RATINGS = 3
 

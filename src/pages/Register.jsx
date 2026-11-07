@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { registerAthlete } from '../lib/auth.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { DISCIPLINES, hasRanks } from '../lib/ranks.js'
+import { t } from '../lib/i18n.jsx'
 
 // Регистрация (APP_PASSPORT §2): Имя, Фамилия, Телефон + обязательное селфи.
 // Supabase: auth.signUp → триггер создаёт profiles → селфи в Storage (бакет avatars).
@@ -36,7 +37,7 @@ export default function Register() {
     e.target.value = '' // чтобы повторный выбор того же файла снова сработал
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      setError('Нужна фотография (изображение).')
+      setError(t('Нужна фотография (изображение).'))
       return
     }
     setError('')
@@ -48,11 +49,11 @@ export default function Register() {
   const onSubmit = async (e) => {
     e.preventDefault()
     if (!selfie) {
-      setError('Добавьте фото — тренеру нужно узнать вас на тренировке.')
+      setError(t('Добавьте фото — тренеру нужно узнать вас на тренировке.'))
       return
     }
     if (form.password !== form.password2) {
-      setError('Пароли не совпадают — введите пароль ещё раз.')
+      setError(t('Пароли не совпадают — введите пароль ещё раз.'))
       return
     }
     setError('')
@@ -74,15 +75,15 @@ export default function Register() {
     return (
       <div className="mx-auto max-w-md text-center">
         <div className="card space-y-4">
-          <img src={preview} alt="Ваше селфи" className="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-accent" />
-          <h1 className="text-2xl">Добро пожаловать, {form.firstName}!</h1>
+          <img src={preview} alt={t('Ваше селфи')} className="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-accent" />
+          <h1 className="text-2xl">{t('Добро пожаловать, {name}!', { name: form.firstName })}</h1>
           <p className="text-neutral-400">
-            Аккаунт создан.
+            {t('Аккаунт создан.')}
             {hasRanks(form.discipline) && (
-              <> Ваш ранг — <span className="text-accent">Юный падаван</span>.</>
+              <> {t('Ваш ранг —')} <span className="text-accent">{t('Юный падаван')}</span>.</>
             )}
           </p>
-          <Link to={next ?? '/dashboard'} className="btn-primary">{next ? 'Продолжить' : 'В кабинет'}</Link>
+          <Link to={next ?? '/dashboard'} className="btn-primary">{next ? t('Продолжить') : t('В кабинет')}</Link>
         </div>
       </div>
     )
@@ -90,7 +91,7 @@ export default function Register() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="mb-6 text-3xl">Регистрация</h1>
+      <h1 className="mb-6 text-3xl">{t('Регистрация')}</h1>
       <form className="card space-y-5" onSubmit={onSubmit}>
         {/* Селфи: превью над кнопкой */}
         <div className="flex flex-col items-center gap-3">
@@ -100,7 +101,7 @@ export default function Register() {
             }`}
           >
             {preview ? (
-              <img src={preview} alt="Предпросмотр селфи" className="h-full w-full object-cover" />
+              <img src={preview} alt={t('Предпросмотр селфи')} className="h-full w-full object-cover" />
             ) : (
               <svg viewBox="0 0 24 24" className="h-12 w-12 text-neutral-600" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" />
@@ -117,29 +118,29 @@ export default function Register() {
           <input id="photo" type="file" accept="image/*" className="sr-only" onChange={onFile} />
           <div className="flex flex-wrap justify-center gap-2">
             <label htmlFor="selfie" className={preview ? 'btn-outline cursor-pointer' : 'btn-primary cursor-pointer'}>
-              {preview ? 'Переснять' : 'Сделать селфи *'}
+              {preview ? t('Переснять') : t('Сделать селфи *')}
             </label>
             <label htmlFor="photo" className="btn-outline cursor-pointer">
-              Из галереи
+              {t('Из галереи')}
             </label>
           </div>
           <p className="text-center text-xs text-neutral-500">
-            Фото нужно тренеру, чтобы быстро узнать вас на тренировке — лицо должно быть хорошо видно
+            {t('Фото нужно тренеру, чтобы быстро узнать вас на тренировке — лицо должно быть хорошо видно')}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label" htmlFor="firstName">Имя *</label>
+            <label className="label" htmlFor="firstName">{t('Имя *')}</label>
             <input id="firstName" name="firstName" value={form.firstName} onChange={onChange} className="input" required autoComplete="given-name" />
           </div>
           <div>
-            <label className="label" htmlFor="lastName">Фамилия *</label>
+            <label className="label" htmlFor="lastName">{t('Фамилия *')}</label>
             <input id="lastName" name="lastName" value={form.lastName} onChange={onChange} className="input" required autoComplete="family-name" />
           </div>
         </div>
         <div>
-          <label className="label" htmlFor="phone">Номер телефона *</label>
+          <label className="label" htmlFor="phone">{t('Номер телефона *')}</label>
           <input
             id="phone"
             name="phone"
@@ -154,7 +155,7 @@ export default function Register() {
           />
         </div>
         <fieldset>
-          <legend className="label">Направление *</legend>
+          <legend className="label">{t('Направление *')}</legend>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(DISCIPLINES).map(([value, label]) => (
               <label
@@ -177,7 +178,7 @@ export default function Register() {
           </div>
         </fieldset>
         <div>
-          <label className="label" htmlFor="password">Пароль *</label>
+          <label className="label" htmlFor="password">{t('Пароль *')}</label>
           <input
             id="password"
             name="password"
@@ -188,11 +189,11 @@ export default function Register() {
             required
             minLength={6}
             autoComplete="new-password"
-            placeholder="Минимум 6 символов"
+            placeholder={t('Минимум 6 символов')}
           />
         </div>
         <div>
-          <label className="label" htmlFor="password2">Повторите пароль *</label>
+          <label className="label" htmlFor="password2">{t('Повторите пароль *')}</label>
           <input
             id="password2"
             name="password2"
@@ -206,23 +207,23 @@ export default function Register() {
             aria-invalid={form.password2 !== '' && form.password2 !== form.password}
           />
           {form.password2 !== '' && form.password2 !== form.password && (
-            <p className="mt-1 text-xs text-accent">Пароли не совпадают</p>
+            <p className="mt-1 text-xs text-accent">{t('Пароли не совпадают')}</p>
           )}
         </div>
 
         <p className="text-xs text-neutral-500">
-          Регистрируясь, вы соглашаетесь с{' '}
-          <Link to="/privacy" className="text-accent hover:underline">политикой конфиденциальности</Link>
-          {' '}(селфи, телефон, посещения). За ребёнка младше 13 лет регистрируется родитель.
+          {t('Регистрируясь, вы соглашаетесь с')}{' '}
+          <Link to="/privacy" className="text-accent hover:underline">{t('политикой конфиденциальности')}</Link>
+          {' '}{t('(селфи, телефон, посещения). За ребёнка младше 13 лет регистрируется родитель.')}
         </p>
         {error && <p className="text-sm font-semibold text-accent">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? 'Создаём аккаунт…' : 'Зарегистрироваться'}
+          {loading ? t('Создаём аккаунт…') : t('Зарегистрироваться')}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-neutral-400">
-        Уже есть аккаунт?{' '}
-        <Link to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-accent hover:underline">Войти</Link>
+        {t('Уже есть аккаунт?')}{' '}
+        <Link to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-accent hover:underline">{t('Войти')}</Link>
       </p>
     </div>
   )

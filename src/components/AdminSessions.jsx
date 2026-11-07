@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime, setSessionVenue } from '../lib/booking.js'
 import { setSessionCancelled } from '../lib/coach.js'
+import { t, tData } from '../lib/i18n.jsx'
 
 // CRM тренера: ближайшие занятия, кто записался, перенос в другой зал
 // (для субботы — «Олимпийский центр», лимит 50). Расписание и лимиты — в базе.
@@ -33,7 +34,7 @@ export default function AdminSessions() {
         setPeople(map)
       }
     } catch (e) {
-      setError('Не удалось загрузить записи: ' + e.message)
+      setError(t('Не удалось загрузить записи: {error}', { error: e.message }))
     } finally {
       setLoading(false)
     }
@@ -58,12 +59,12 @@ export default function AdminSessions() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg">Запись на тренировки</h2>
+      <h2 className="text-lg">{t('Запись на тренировки')}</h2>
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
       {loading ? (
-        <p className="card text-neutral-400">Загружаем занятия…</p>
+        <p className="card text-neutral-400">{t('Загружаем занятия…')}</p>
       ) : sessions.length === 0 ? (
-        <p className="card text-neutral-400">На ближайшую неделю занятий нет.</p>
+        <p className="card text-neutral-400">{t('На ближайшую неделю занятий нет.')}</p>
       ) : (
         <ul className="space-y-2">
           {sessions.map((s) => {
@@ -83,16 +84,16 @@ export default function AdminSessions() {
                       {sessionDay(s.starts_at)} · {sessionTime(s)}
                     </p>
                     <p className="truncate text-sm text-neutral-400">
-                      {s.title}
-                      {s.venue_id !== 'club' && <span className="text-accent"> · {s.venue_name}</span>}
-                      {s.cancelled && <span className="font-semibold text-accent"> · отменена</span>}
+                      {tData(s.title)}
+                      {s.venue_id !== 'club' && <span className="text-accent"> · {tData(s.venue_name)}</span>}
+                      {s.cancelled && <span className="font-semibold text-accent"> · {t('отменена')}</span>}
                     </p>
                     {/* Кто записался — видно сразу, без раскрытия */}
                     {!expanded && (
                       <p className={`mt-0.5 truncate text-xs ${list.length ? 'text-neutral-200' : 'text-neutral-600'}`}>
                         {list.length
                           ? list.map((p) => `${p.first_name} ${p.last_name?.[0] ?? ''}.`).join(', ')
-                          : 'Никто не записался'}
+                          : t('Никто не записался')}
                       </p>
                     )}
                   </div>
@@ -109,11 +110,11 @@ export default function AdminSessions() {
                     }`}
                   >
                     <span className="min-w-0">
-                      <span className="font-semibold">📍 Олимпийский центр</span>
+                      <span className="font-semibold">📍 {t('Олимпийский центр')}</span>
                       <span className="block text-xs text-neutral-400">
                         {atAlt
-                          ? `${s.venue_address} · лимит ${s.capacity ?? '—'} мест`
-                          : 'Выключено — тренировка в зале клуба'}
+                          ? t('{address} · лимит {n} мест', { address: tData(s.venue_address), n: s.capacity ?? '—' })
+                          : t('Выключено — тренировка в зале клуба')}
                       </span>
                     </span>
                     <input
@@ -134,14 +135,14 @@ export default function AdminSessions() {
                     <div className="flex flex-wrap items-center gap-2">
                       {s.cancelled ? (
                         <>
-                          <span className="text-sm font-semibold text-accent">⛔ Тренировка отменена</span>
+                          <span className="text-sm font-semibold text-accent">⛔ {t('Тренировка отменена')}</span>
                           <button
                             type="button"
                             disabled={busy === `c${s.id}`}
                             onClick={() => run(`c${s.id}`, () => setSessionCancelled(s.id, false))}
                             className="rounded border border-line px-2 py-1 text-xs hover:border-accent disabled:opacity-50"
                           >
-                            Вернуть в расписание
+                            {t('Вернуть в расписание')}
                           </button>
                         </>
                       ) : (
@@ -150,20 +151,24 @@ export default function AdminSessions() {
                           disabled={busy === `c${s.id}`}
                           onClick={() => {
                             const reason = window.prompt(
-                              `Отменить «${s.title}», ${sessionDay(s.starts_at)} ${sessionTime(s)}?\n` +
-                                `Записанные (${list.length}) получат уведомление в приложении.\n\nПричина (можно оставить пустой):`,
+                              t('Отменить «{title}», {day} {time}?\nЗаписанные ({n}) получат уведомление в приложении.\n\nПричина (можно оставить пустой):', {
+                                title: tData(s.title),
+                                day: sessionDay(s.starts_at),
+                                time: sessionTime(s),
+                                n: list.length,
+                              }),
                               '',
                             )
                             if (reason !== null) run(`c${s.id}`, () => setSessionCancelled(s.id, true, reason))
                           }}
                           className="rounded border border-line px-2 py-1 text-xs text-neutral-300 hover:border-accent hover:text-accent disabled:opacity-50"
                         >
-                          Отменить тренировку
+                          {t('Отменить тренировку')}
                         </button>
                       )}
                     </div>
                     {list.length === 0 ? (
-                      <p className="text-sm text-neutral-500">Пока никто не записался.</p>
+                      <p className="text-sm text-neutral-500">{t('Пока никто не записался.')}</p>
                     ) : (
                       <ol className="space-y-1">
                         {list.map((p, i) => (
@@ -172,7 +177,7 @@ export default function AdminSessions() {
                             <span className="flex-1 truncate">
                               {p.first_name} {p.last_name}
                               {p.inviter && (
-                                <span className="ml-2 text-xs text-accent">гость · позвал {p.inviter.first_name} {p.inviter.last_name}</span>
+                                <span className="ml-2 text-xs text-accent">{t('гость · позвал {name}', { name: `${p.inviter.first_name} ${p.inviter.last_name}` })}</span>
                               )}
                             </span>
                             <button
@@ -181,7 +186,7 @@ export default function AdminSessions() {
                               onClick={() => run(`${s.id}:${p.id}`, () => cancelBooking(s.id, p.id))}
                               className="text-xs text-neutral-500 hover:text-accent"
                             >
-                              Убрать
+                              {t('Убрать')}
                             </button>
                           </li>
                         ))}

@@ -2,9 +2,10 @@
 // записи — gallery_items. Ученик добавляет «на проверку», тренер одобряет.
 import { supabase } from './supabaseClient.js'
 import { loadClubPeople } from './friends.js'
+import { t } from './i18n.jsx'
 
 export const GALLERY_BUCKET = 'gallery'
-export const ALBUMS = { training: 'Тренировки', competition: 'Соревнования', other: 'Разное' }
+export const ALBUMS = { training: t('Тренировки'), competition: t('Соревнования'), other: t('Разное') }
 export const MAX_VIDEO_MB = 50
 
 const must = ({ data, error }) => {
@@ -48,8 +49,8 @@ async function shrinkImage(file) {
 
 export async function uploadToGallery(userId, file, { album, caption }) {
   const isVideo = file.type.startsWith('video/')
-  if (!isVideo && !file.type.startsWith('image/')) throw new Error('Можно добавлять только фото и видео')
-  if (isVideo && file.size > MAX_VIDEO_MB * 1024 * 1024) throw new Error(`Видео больше ${MAX_VIDEO_MB} МБ — обрежьте его`)
+  if (!isVideo && !file.type.startsWith('image/')) throw new Error(t('Можно добавлять только фото и видео'))
+  if (isVideo && file.size > MAX_VIDEO_MB * 1024 * 1024) throw new Error(t('Видео больше {mb} МБ — обрежьте его', { mb: MAX_VIDEO_MB }))
 
   const body = isVideo ? file : await shrinkImage(file)
   const ext = isVideo ? (file.name.split('.').pop() || 'mp4').toLowerCase() : 'jpg'

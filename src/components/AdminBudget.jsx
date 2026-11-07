@@ -1,30 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
+import { t, locale } from '../lib/i18n.jsx'
 
 // CRM → «Бюджет» (слой 22). Видит и редактирует только главный тренер (role = 'admin'):
 // вкладка показывается только ему, данные защищены RLS (is_admin) в club_expenses / budget_overview.
 // Доходы считаются сами (оплаты учеников: переводы на оба счёта + приложение), расходы вносит тренер.
 
 export const CATEGORIES = {
-  rent: 'Аренда',
-  electricity: 'Электричество',
-  water: 'Вода',
-  heating: 'Отопление',
-  taxes: 'Налоги',
-  accountant: 'Бухгалтер',
-  inventory: 'Инвентарь',
-  other: 'Прочее',
+  rent: t('Аренда'),
+  electricity: t('Электричество'),
+  water: t('Вода'),
+  heating: t('Отопление'),
+  taxes: t('Налоги'),
+  accountant: t('Бухгалтер'),
+  inventory: t('Инвентарь'),
+  other: t('Прочее'),
 }
 
 const TZ = 'Europe/Riga'
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ })
 const monthKey = (d) => d.slice(0, 7)
 const monthTitle = (key) => {
-  const s = new Date(`${key}-15T12:00:00`).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
+  const s = new Date(`${key}-15T12:00:00`).toLocaleDateString(locale(), { month: 'long', year: 'numeric' })
   return s.charAt(0).toUpperCase() + s.slice(1).replace(' г.', '')
 }
-const dayText = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+const dayText = (d) => new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 const EMPTY = { spent_on: today(), category: 'rent', amount: '', note: '' }
 
 export default function AdminBudget() {
@@ -81,7 +82,7 @@ export default function AdminBudget() {
       await fn()
       await load()
     } catch (e) {
-      setError(/duplicate key/i.test(e.message) ? 'Такой расход уже записан (та же дата, статья, сумма и комментарий).' : e.message)
+      setError(/duplicate key/i.test(e.message) ? t('Такой расход уже записан (та же дата, статья, сумма и комментарий).') : e.message)
     } finally {
       setBusy(false)
     }
@@ -91,7 +92,7 @@ export default function AdminBudget() {
     e.preventDefault()
     run(async () => {
       const cents = Math.round(Number(String(form.amount).replace(',', '.')) * 100)
-      if (!(cents > 0)) throw new Error('Введите сумму')
+      if (!(cents > 0)) throw new Error(t('Введите сумму'))
       const { error: err } = await supabase.from('club_expenses').insert({
         spent_on: form.spent_on,
         category: form.category,
@@ -105,51 +106,51 @@ export default function AdminBudget() {
   }
 
   const remove = (row) => {
-    if (!window.confirm(`Удалить расход ${formatPrice(row.amount_cents)} (${CATEGORIES[row.category]})?`)) return
+    if (!window.confirm(t('Удалить расход {sum} ({category})?', { sum: formatPrice(row.amount_cents), category: CATEGORIES[row.category] }))) return
     run(async () => {
       const { error: err } = await supabase.from('club_expenses').delete().eq('id', row.id)
       if (err) throw err
     })
   }
 
-  if (error && !months) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Бюджет: {error}</p>
-  if (!months || !view) return <p className="card text-neutral-400">Загружаем…</p>
+  if (error && !months) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Бюджет: {error}', { error })}</p>
+  if (!months || !view) return <p className="card text-neutral-400">{t('Загружаем…')}</p>
 
   const keys = [...new Set([monthKey(today()), ...months.map((m) => m.key)])].sort().reverse()
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <label htmlFor="budget-month" className="text-sm text-neutral-400">Период</label>
+        <label htmlFor="budget-month" className="text-sm text-neutral-400">{t('Период')}</label>
         <select id="budget-month" value={month ?? ''} onChange={(e) => setMonth(e.target.value)} className="input w-auto">
           {keys.map((k) => (
             <option key={k} value={k}>{monthTitle(k)}</option>
           ))}
-          <option value="all">Всё время</option>
+          <option value="all">{t('Всё время')}</option>
         </select>
       </div>
 
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="card px-2 py-3">
           <p className="font-display text-xl text-emerald-400 sm:text-2xl">{formatPrice(view.income)}</p>
-          <p className="text-[11px] uppercase tracking-wider text-neutral-400">Доходы</p>
+          <p className="text-[11px] uppercase tracking-wider text-neutral-400">{t('Доходы')}</p>
         </div>
         <div className="card px-2 py-3">
           <p className="font-display text-xl text-accent sm:text-2xl">{formatPrice(view.spent)}</p>
-          <p className="text-[11px] uppercase tracking-wider text-neutral-400">Расходы</p>
+          <p className="text-[11px] uppercase tracking-wider text-neutral-400">{t('Расходы')}</p>
         </div>
         <div className="card px-2 py-3">
           <p className={`font-display text-xl sm:text-2xl ${view.balance < 0 ? 'text-accent' : 'text-white'}`}>
             {view.balance < 0 ? '−' : ''}{formatPrice(Math.abs(view.balance))}
           </p>
-          <p className="text-[11px] uppercase tracking-wider text-neutral-400">Итог</p>
+          <p className="text-[11px] uppercase tracking-wider text-neutral-400">{t('Итог')}</p>
         </div>
       </div>
 
       <section className="card space-y-2 text-sm">
-        <h2 className="text-xl">Откуда и куда</h2>
-        <p className="flex justify-between"><span className="text-neutral-400">Оплаты учеников (перевод / наличные)</span><span>{formatPrice(view.bank)}</span></p>
-        <p className="flex justify-between"><span className="text-neutral-400">Оплаты в приложении</span><span>{formatPrice(view.app)}</span></p>
+        <h2 className="text-xl">{t('Откуда и куда')}</h2>
+        <p className="flex justify-between"><span className="text-neutral-400">{t('Оплаты учеников (перевод / наличные)')}</span><span>{formatPrice(view.bank)}</span></p>
+        <p className="flex justify-between"><span className="text-neutral-400">{t('Оплаты в приложении')}</span><span>{formatPrice(view.app)}</span></p>
         <div className="border-t border-line pt-2">
           {Object.entries(CATEGORIES).map(([k, label]) => (
             <p key={k} className="flex justify-between">
@@ -161,18 +162,18 @@ export default function AdminBudget() {
       </section>
 
       <form onSubmit={add} className="card space-y-3">
-        <h2 className="text-xl">Добавить расход</h2>
+        <h2 className="text-xl">{t('Добавить расход')}</h2>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="label" htmlFor="exp-date">Дата</label>
+            <label className="label" htmlFor="exp-date">{t('Дата')}</label>
             <input id="exp-date" type="date" required value={form.spent_on} onChange={(e) => setForm({ ...form, spent_on: e.target.value })} className="input" />
           </div>
           <div>
-            <label className="label" htmlFor="exp-amount">Сумма, €</label>
+            <label className="label" htmlFor="exp-amount">{t('Сумма, €')}</label>
             <input id="exp-amount" inputMode="decimal" required placeholder="0,00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="input" />
           </div>
         </div>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Статья расхода">
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Статья расхода')}>
           {Object.entries(CATEGORIES).map(([k, label]) => (
             <button
               key={k}
@@ -186,15 +187,15 @@ export default function AdminBudget() {
             </button>
           ))}
         </div>
-        <input aria-label="Комментарий" placeholder="Комментарий (необязательно): счёт №, за какой месяц…" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="input" />
+        <input aria-label={t('Комментарий')} placeholder={t('Комментарий (необязательно): счёт №, за какой месяц…')} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="input" />
         {error && <p className="text-sm text-accent">{error}</p>}
-        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? 'Сохраняем…' : 'Записать расход'}</button>
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? t('Сохраняем…') : t('Записать расход')}</button>
       </form>
 
       <section className="card">
-        <h2 className="mb-2 text-xl">Расходы{month === 'all' ? '' : ` · ${monthTitle(month)}`}</h2>
+        <h2 className="mb-2 text-xl">{t('Расходы')}{month === 'all' ? '' : ` · ${monthTitle(month)}`}</h2>
         {list.length === 0 ? (
-          <p className="text-sm text-neutral-400">Расходов за этот период нет.</p>
+          <p className="text-sm text-neutral-400">{t('Расходов за этот период нет.')}</p>
         ) : (
           <ul className="divide-y divide-line">
             {list.map((r) => (
@@ -205,7 +206,7 @@ export default function AdminBudget() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="font-display">−{formatPrice(r.amount_cents)}</span>
-                  <button type="button" onClick={() => remove(r)} disabled={busy} aria-label="Удалить расход" className="px-1 text-neutral-500 hover:text-accent">✕</button>
+                  <button type="button" onClick={() => remove(r)} disabled={busy} aria-label={t('Удалить расход')} className="px-1 text-neutral-500 hover:text-accent">✕</button>
                 </div>
               </li>
             ))}

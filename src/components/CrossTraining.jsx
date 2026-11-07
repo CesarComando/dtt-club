@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { DISCIPLINES } from '../lib/ranks.js'
 import { useSection } from '../lib/section.js'
+import { t } from '../lib/i18n.jsx'
 
 // Кабинет: «тренируюсь и в другом направлении». Показывает расписание другого
 // направления и даёт на него записываться. Основное направление, ранг и абонемент
@@ -29,13 +30,13 @@ export default function CrossTraining({ profile, onChange }) {
   return (
     <label className={`card flex cursor-pointer items-center justify-between gap-4 ${on || mismatch ? 'border-accent/60' : ''}`}>
       <span className="min-w-0">
-        <span className="block font-semibold">Показывать и тренировки {DISCIPLINES[other]}</span>
+        <span className="block font-semibold">{t('Показывать и тренировки {name}', { name: DISCIPLINES[other] })}</span>
         <span className="block text-xs text-neutral-400">
-          Можно записываться и туда. Ваше направление, ранг и абонемент не меняются — абонемент {DISCIPLINES[other]} оплачивается отдельно.
+          {t('Можно записываться и туда. Ваше направление, ранг и абонемент не меняются — абонемент {name} оплачивается отдельно.', { name: DISCIPLINES[other] })}
         </span>
         {mismatch && (
           <span className="mt-1 block text-xs font-semibold text-accent">
-            Вы вошли в раздел {DISCIPLINES[other]}, а ваше направление — {DISCIPLINES[profile.discipline]}. Включите, чтобы видеть эти тренировки.
+            {t('Вы вошли в раздел {other}, а ваше направление — {mine}. Включите, чтобы видеть эти тренировки.', { other: DISCIPLINES[other], mine: DISCIPLINES[profile.discipline] })}
           </span>
         )}
         {error && <span className="block text-xs text-accent">{error}</span>}

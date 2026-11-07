@@ -8,6 +8,7 @@ import { CRITERIA } from '../lib/ratings.js'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { MembershipLine, loadMemberships } from '../components/AdminMemberships.jsx'
 import { sessionDay, sessionTime } from '../lib/booking.js'
+import { t, locale, tData } from '../lib/i18n.jsx'
 
 // CRM → карточка ученика. Открывается по имени:
 //   /admin/member/:id  — ученик клуба (club_members), даже без аккаунта в приложении;
@@ -15,14 +16,14 @@ import { sessionDay, sessionTime } from '../lib/booking.js'
 // Если запись клуба и аккаунт связаны — показываем всё вместе.
 // Данные читаются под правами тренера (RLS: is_admin).
 
-const STATUS = { regular: 'Постоянный', occasional: 'Иногда', one_time: 'Был раз', left: 'Ушёл' }
+const STATUS = { regular: t('Постоянный'), occasional: t('Иногда'), one_time: t('Был раз'), left: t('Ушёл') }
 const KIND = {
-  training: 'тренировка', membership: 'абонемент', pack: 'пакет', individual: 'индивид.',
-  uniform: 'форма', donation: 'пожертвование', other: 'другое',
+  training: t('тренировка'), membership: t('абонемент'), pack: t('пакет'), individual: t('индивид.'),
+  uniform: t('форма'), donation: t('пожертвование'), other: t('другое'),
 }
-const SUB_STATUS = { active: 'активна', trialing: 'пробный', past_due: 'долг по карте', canceled: 'отменена', unpaid: 'не оплачена' }
+const SUB_STATUS = { active: t('активна'), trialing: t('пробный'), past_due: t('долг по карте'), canceled: t('отменена'), unpaid: t('не оплачена') }
 const phoneText = (p) => (p?.startsWith('371') && p.length === 11 ? `+371 ${p.slice(3, 7)} ${p.slice(7)}` : p ? `+${p}` : '')
-const shortDay = (iso) => new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: '2-digit' })
+const shortDay = (iso) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: '2-digit' })
 
 async function loadStudent(kind, id) {
   let member = null
@@ -112,7 +113,7 @@ export default function AdminStudent({ kind }) {
 
   const back = (
     <Link to={kind === 'member' ? '/admin?tab=students' : '/admin'} className="text-sm text-neutral-400 hover:text-white">
-      ← {kind === 'member' ? 'Ученики' : 'Зал'}
+      ← {kind === 'member' ? t('Ученики') : t('Зал')}
     </Link>
   )
 
@@ -126,7 +127,7 @@ export default function AdminStudent({ kind }) {
   }
 
   const { member, profile, membership } = data
-  if (!member && !profile) return <div className="space-y-4">{back}<p className="card text-neutral-400">Ученик не найден.</p></div>
+  if (!member && !profile) return <div className="space-y-4">{back}<p className="card text-neutral-400">{t('Ученик не найден.')}</p></div>
 
   const first = profile?.first_name || member?.first_name
   const last = profile?.last_name || member?.last_name
@@ -160,28 +161,28 @@ export default function AdminStudent({ kind }) {
           <p className="text-xs">
             {profile ? (
               <span className="flex flex-wrap items-center gap-3">
-                <span className="text-emerald-400">● В приложении с {formatDay(profile.created_at)}</span>
+                <span className="text-emerald-400">{t('● В приложении с {date}', { date: formatDay(profile.created_at) })}</span>
                 <ApproveButton
                   athlete={profile}
                   onChange={(at) => setData((d) => ({ ...d, profile: { ...d.profile, approved_at: at } }))}
                 />
               </span>
             ) : (
-              <span className="text-neutral-500">Нет аккаунта в приложении</span>
+              <span className="text-neutral-500">{t('Нет аккаунта в приложении')}</span>
             )}
           </p>
         </div>
       </section>
 
       <section className="card space-y-1">
-        <p className="label">Абонемент</p>
+        <p className="label">{t('Абонемент')}</p>
         {membership?.valid_until ? (
           <MembershipLine row={membership} className="text-base" />
         ) : (
-          <p className="text-neutral-400">Абонемент ни разу не оплачивался.</p>
+          <p className="text-neutral-400">{t('Абонемент ни разу не оплачивался.')}</p>
         )}
         {member?.single_price_cents && (
-          <p className="text-sm text-emerald-400">Особая цена разовой: {formatPrice(member.single_price_cents)}</p>
+          <p className="text-sm text-emerald-400">{t('Особая цена разовой: {price}', { price: formatPrice(member.single_price_cents) })}</p>
         )}
       </section>
 
@@ -193,10 +194,10 @@ export default function AdminStudent({ kind }) {
           onChange={(role) => setData((d) => ({ ...d, profile: { ...d.profile, role } }))}
         />
       )}
-      {member?.aliases?.length > 0 && <p className="text-xs text-neutral-500">В группе: {member.aliases.join(', ')}</p>}
+      {member?.aliases?.length > 0 && <p className="text-xs text-neutral-500">{t('В группе: {names}', { names: member.aliases.join(', ') })}</p>}
 
       {profile ? <AppData profile={profile} /> : member?.rank_override && (
-        <section className="card"><p className="label">Ранг</p><p className="text-xl text-accent">{RANKS[member.rank_override - 1]?.title}</p></section>
+        <section className="card"><p className="label">{t('Ранг')}</p><p className="text-xl text-accent">{RANKS[member.rank_override - 1]?.title}</p></section>
       )}
 
       {member && <MemberPayments member={member} />}
@@ -220,9 +221,9 @@ function AppData({ profile }) {
     <>
       <section className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Тренировок', value: profile.trainings_count },
-          { label: 'За 30 дней', value: month },
-          { label: ranked ? (manual ? 'Ранг · вручную' : 'Ранг') : 'Направление', value: ranked ? current.title : DISCIPLINES[profile.discipline] },
+          { label: t('Тренировок'), value: profile.trainings_count },
+          { label: t('За 30 дней'), value: month },
+          { label: ranked ? (manual ? t('Ранг · вручную') : t('Ранг')) : t('Направление'), value: ranked ? current.title : DISCIPLINES[profile.discipline] },
         ].map((s) => (
           <div key={s.label} className="card !p-3 text-center">
             <p className="font-display text-xl leading-tight md:text-2xl">{s.value}</p>
@@ -232,28 +233,28 @@ function AppData({ profile }) {
       </section>
 
       <section className="card space-y-2">
-        <p className="label">Оплата в приложении</p>
+        <p className="label">{t('Оплата в приложении')}</p>
         {live.length ? (
           live.map((s, i) => (
             <p key={i} className="text-sm">
-              <span className="font-semibold">{s.product?.title}</span> — {SUB_STATUS[s.status] ?? s.status}
-              {s.current_period_end && <span className="text-neutral-400"> · до {formatDay(s.current_period_end)}</span>}
-              {s.cancel_at_period_end && <span className="text-accent"> · не продлится</span>}
+              <span className="font-semibold">{tData(s.product?.title)}</span> — {SUB_STATUS[s.status] ?? s.status}
+              {s.current_period_end && <span className="text-neutral-400"> · {t('до {date}', { date: formatDay(s.current_period_end) })}</span>}
+              {s.cancel_at_period_end && <span className="text-accent"> · {t('не продлится')}</span>}
             </p>
           ))
         ) : (
-          <p className="text-sm text-neutral-400">Активной подписки нет.</p>
+          <p className="text-sm text-neutral-400">{t('Активной подписки нет.')}</p>
         )}
         {profile.payments.length > 0 && (
           <ul className="divide-y divide-line text-sm">
             {profile.payments.map((p) => (
               <li key={p.id} className="flex justify-between gap-3 py-1.5">
                 <span className="min-w-0 truncate">
-                  {shortDay(p.created_at)} · {p.product?.title ?? 'Оплата'}
-                  <span className="text-neutral-500"> · {p.method === 'cash' ? 'наличные' : 'карта'}</span>
+                  {shortDay(p.created_at)} · {tData(p.product?.title) ?? t('Оплата')}
+                  <span className="text-neutral-500"> · {p.method === 'cash' ? t('наличные') : t('карта')}</span>
                 </span>
                 <span className={p.status === 'paid' ? '' : 'text-accent'}>
-                  {formatPrice(p.amount_cents, p.currency)}{p.status !== 'paid' && ` · ${p.status === 'refunded' ? 'возврат' : p.status}`}
+                  {formatPrice(p.amount_cents, p.currency)}{p.status !== 'paid' && ` · ${p.status === 'refunded' ? t('возврат') : p.status}`}
                 </span>
               </li>
             ))}
@@ -262,22 +263,22 @@ function AppData({ profile }) {
       </section>
 
       <section className="card space-y-2">
-        <p className="label">Записан на тренировки</p>
+        <p className="label">{t('Записан на тренировки')}</p>
         {profile.upcoming.length ? (
           <ul className="space-y-1 text-sm">
             {profile.upcoming.map((s) => (
               <li key={s.id} className={s.cancelled ? 'text-neutral-500 line-through' : ''}>
-                {sessionDay(s.starts_at)} · {sessionTime(s)} · {s.slot?.title}
+                {sessionDay(s.starts_at)} · {sessionTime(s)} · {tData(s.slot?.title)}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-400">Никуда не записан.</p>
+          <p className="text-sm text-neutral-400">{t('Никуда не записан.')}</p>
         )}
       </section>
 
       <section className="card space-y-2">
-        <p className="label">Посещения за год · {profile.attendance.length}</p>
+        <p className="label">{t('Посещения за год · {n}', { n: profile.attendance.length })}</p>
         {profile.attendance.length ? (
           <div className="flex flex-wrap gap-1.5">
             {profile.attendance.slice(0, 40).map((a) => (
@@ -287,25 +288,25 @@ function AppData({ profile }) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-neutral-400">Отметок пока нет.</p>
+          <p className="text-sm text-neutral-400">{t('Отметок пока нет.')}</p>
         )}
       </section>
 
       <section className="card space-y-1">
-        <p className="label">Параметры</p>
+        <p className="label">{t('Параметры')}</p>
         {profile.body ? (
           <p className="text-sm">
-            {[profile.body.height && `${profile.body.height} см`, profile.body.weight && `${profile.body.weight} кг`, age != null && `${age} лет`]
+            {[profile.body.height && t('{n} см', { n: profile.body.height }), profile.body.weight && t('{n} кг', { n: profile.body.weight }), age != null && t('{n} лет', { n: age })]
               .filter(Boolean).join(' · ') || '—'}
-            {value != null && <span className="text-neutral-400"> · ИМТ {value}{cat && ` (${cat.label.toLowerCase()})`}</span>}
+            {value != null && <span className="text-neutral-400"> · {t('ИМТ')} {value}{cat && ` (${cat.label.toLowerCase()})`}</span>}
           </p>
         ) : (
-          <p className="text-sm text-neutral-400">Не заполнены.</p>
+          <p className="text-sm text-neutral-400">{t('Не заполнены.')}</p>
         )}
       </section>
 
       <section className="card space-y-2">
-        <p className="label">Приёмы · освоил {mastered.length} · изучает {learning.length}</p>
+        <p className="label">{t('Приёмы · освоил {m} · изучает {l}', { m: mastered.length, l: learning.length })}</p>
         {profile.learned.length ? (
           <div className="flex flex-wrap gap-1.5">
             {[...mastered, ...learning].map((l, i) => (
@@ -315,12 +316,12 @@ function AppData({ profile }) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-neutral-400">Пока ничего не отметил.</p>
+          <p className="text-sm text-neutral-400">{t('Пока ничего не отметил.')}</p>
         )}
       </section>
 
       <section className="card space-y-2">
-        <p className="label">Оценки партнёров · {r?.ratings ?? 0}</p>
+        <p className="label">{t('Оценки партнёров · {n}', { n: r?.ratings ?? 0 })}</p>
         {r?.ratings ? (
           <ul className="space-y-1.5">
             {CRITERIA.map((c) => (
@@ -334,12 +335,12 @@ function AppData({ profile }) {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-400">Его пока никто не оценил.</p>
+          <p className="text-sm text-neutral-400">{t('Его пока никто не оценил.')}</p>
         )}
       </section>
 
       <section className="card space-y-2">
-        <p className="label">Дневник · последние записи</p>
+        <p className="label">{t('Дневник · последние записи')}</p>
         {profile.diary.length ? (
           <ul className="space-y-3">
             {profile.diary.map((d) => (
@@ -351,7 +352,7 @@ function AppData({ profile }) {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-400">Записей нет.</p>
+          <p className="text-sm text-neutral-400">{t('Записей нет.')}</p>
         )}
       </section>
     </>
@@ -369,7 +370,7 @@ function StaffRole({ profile, onChange }) {
     if (
       !isCoach &&
       !window.confirm(
-        `Сделать ${profile.first_name} помощником тренера? Он сможет отмечать посещения, показывать QR и видеть записи на тренировки.`,
+        t('Сделать {name} помощником тренера? Он сможет отмечать посещения, показывать QR и видеть записи на тренировки.', { name: profile.first_name }),
       )
     )
       return
@@ -383,11 +384,11 @@ function StaffRole({ profile, onChange }) {
 
   return (
     <section className={`card space-y-2 ${isCoach ? 'border-emerald-500/60' : ''}`}>
-      <p className="label">Права</p>
+      <p className="label">{t('Права')}</p>
       <p className="text-sm text-neutral-300">
         {isCoach
-          ? 'Помощник тренера: вход «Тренер» — посещения, QR-чекин, записи на тренировки. Оплаты, телефоны, ранги и удаление ему недоступны. В списках учеников не показывается.'
-          : 'Ученик.'}
+          ? t('Помощник тренера: вход «Тренер» — посещения, QR-чекин, записи на тренировки. Оплаты, телефоны, ранги и удаление ему недоступны. В списках учеников не показывается.')
+          : t('Ученик.')}
       </p>
       <button
         type="button"
@@ -395,7 +396,7 @@ function StaffRole({ profile, onChange }) {
         disabled={busy}
         className={`${isCoach ? 'btn-outline' : 'btn-primary'} disabled:opacity-60`}
       >
-        {busy ? '…' : isCoach ? 'Вернуть в ученики' : 'Сделать помощником тренера'}
+        {busy ? '…' : isCoach ? t('Вернуть в ученики') : t('Сделать помощником тренера')}
       </button>
       {error && <p className="text-sm text-accent">{error}</p>}
     </section>
@@ -407,23 +408,23 @@ function MemberPayments({ member }) {
   const total = pays.reduce((s, p) => s + p.amount_cents, 0)
   return (
     <section className="card space-y-2">
-      <p className="label">Оплаты переводом и наличными · {pays.length} · {formatPrice(total)}</p>
+      <p className="label">{t('Оплаты переводом и наличными · {n} · {sum}', { n: pays.length, sum: formatPrice(total) })}</p>
       {pays.length ? (
         <ul className="max-h-80 divide-y divide-line overflow-y-auto text-sm">
           {pays.map((p) => (
             <li key={p.id} className="flex justify-between gap-3 py-1.5">
               <span className="min-w-0 truncate">
                 {shortDay(p.paid_on)} · {KIND[p.kind] ?? p.kind}
-                <span className="text-neutral-500"> · {p.method === 'cash' ? 'наличные' : 'перевод'}</span>
+                <span className="text-neutral-500"> · {p.method === 'cash' ? t('наличные') : t('перевод')}</span>
               </span>
               <span>{formatPrice(p.amount_cents)}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-neutral-400">Оплат нет.</p>
+        <p className="text-sm text-neutral-400">{t('Оплат нет.')}</p>
       )}
-      <p className="text-xs text-neutral-500">Записать оплату — во вкладке «Ученики», нажмите на сумму справа от имени.</p>
+      <p className="text-xs text-neutral-500">{t('Записать оплату — во вкладке «Ученики», нажмите на сумму справа от имени.')}</p>
     </section>
   )
 }
@@ -447,17 +448,17 @@ function ParentField({ member, onSaved }) {
   if (!edit)
     return (
       <button type="button" onClick={() => { setValue(member.parent_name ?? ''); setEdit(true) }} className="text-left text-sm text-neutral-400 hover:text-accent">
-        {member.parent_name ? `родитель: ${member.parent_name} ✎` : '＋ указать родителя'}
+        {member.parent_name ? t('родитель: {name} ✎', { name: member.parent_name }) : t('＋ указать родителя')}
       </button>
     )
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <input className="input !w-auto !py-1 text-sm" autoFocus placeholder="Имя родителя" value={value}
+      <input className="input !w-auto !py-1 text-sm" autoFocus placeholder={t('Имя родителя')} value={value}
         onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
       <button type="button" disabled={busy} onClick={save} className="rounded border border-accent px-2 py-0.5 text-sm hover:bg-accent/15 disabled:opacity-50">
-        {busy ? '…' : 'Сохранить'}
+        {busy ? '…' : t('Сохранить')}
       </button>
-      <button type="button" onClick={() => setEdit(false)} className="text-sm text-neutral-400 hover:text-white">Отмена</button>
+      <button type="button" onClick={() => setEdit(false)} className="text-sm text-neutral-400 hover:text-white">{t('Отмена')}</button>
       {err && <span className="text-xs text-accent">{err}</span>}
     </div>
   )

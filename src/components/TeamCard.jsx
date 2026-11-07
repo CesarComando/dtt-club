@@ -1,4 +1,5 @@
 import { WEEK_DAYS } from '../data/club.js'
+import { t } from '../lib/i18n.jsx'
 
 // Сегодняшний день в формате 'Пн'…'Вс' (getDay(): 0 = воскресенье).
 const TODAY = WEEK_DAYS[(new Date().getDay() + 6) % 7]
@@ -41,7 +42,7 @@ export default function TeamCard({ team }) {
                   {c.title}
                   {isToday && (
                     <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] uppercase tracking-wider">
-                      Сегодня
+                      {t('Сегодня')}
                     </span>
                   )}
                 </p>
@@ -56,13 +57,13 @@ export default function TeamCard({ team }) {
       {/* Цены */}
       <footer className="grid grid-cols-2 border-t border-line">
         <div className="p-5">
-          <p className="label">Абонемент</p>
+          <p className="label">{t('Абонемент')}</p>
           <p className="font-display text-4xl">
-            {prices.monthly}€<span className="text-base text-neutral-400">/мес</span>
+            {prices.monthly}€<span className="text-base text-neutral-400">{t('/мес')}</span>
           </p>
         </div>
         <div className="border-l border-line p-5">
-          <p className="label">Разовая</p>
+          <p className="label">{t('Разовая')}</p>
           <p className="font-display text-4xl">{prices.single}€</p>
         </div>
       </footer>

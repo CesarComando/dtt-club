@@ -1,5 +1,6 @@
 // Слой 9: QR-чекин, оплата наличными, должники, удаление аккаунта.
 import { supabase } from './supabaseClient.js'
+import { t } from './i18n.jsx'
 
 const rpc = async (fn, args) => {
   const { data, error } = await supabase.rpc(fn, args)
@@ -26,7 +27,7 @@ export const loadDebtors = () => rpc('payment_debtors')
 async function callDelete(body) {
   const { data, error } = await supabase.functions.invoke('delete-account', { body: { confirm: 'УДАЛИТЬ', ...body } })
   if (error) {
-    let message = 'Не удалось удалить аккаунт'
+    let message = t('Не удалось удалить аккаунт')
     try {
       message = (await error.context?.json())?.error ?? message
     } catch {
