@@ -249,6 +249,7 @@ export default {
   // AdminAssistant.jsx
   'Сначала выполните supabase/layer32_assistant.sql': 'Vispirms izpildiet supabase/layer32_assistant.sql',
   'Сохранено — помощник уже отвечает по новому тексту.': 'Saglabāts — asistents jau atbild pēc jaunā teksta.',
+  'Не сохранилось:': 'Nav saglabāts:',
   'Помощник «Спросить»': 'Asistents «Jautāt»',
   'Что знает ИИ-помощник учеников. Расписание, цены и ближайшие занятия он берёт из приложения сам, а абонемент и записи — только самого ученика. Пишите сюда правила, что взять, возраст групп, контакты.':
     'Ko zina audzēkņu MI asistents. Grafiku, cenas un tuvākās nodarbības viņš ņem no lietotnes pats, bet abonementu un pieteikumus — tikai paša audzēkņa. Rakstiet šeit noteikumus, ko ņemt līdzi, grupu vecumu, kontaktus.',

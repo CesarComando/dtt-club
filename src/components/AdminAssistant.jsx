@@ -9,6 +9,7 @@ export default function AdminAssistant() {
   const [saved, setSaved] = useState('')
   const [state, setState] = useState('loading') // loading | ready | saving | error
   const [msg, setMsg] = useState('')
+  const [failed, setFailed] = useState(false) // последнее сохранение не удалось — показываем красным
 
   useEffect(() => {
     loadFacts()
@@ -26,12 +27,14 @@ export default function AdminAssistant() {
   const save = async () => {
     setState('saving')
     setMsg('')
+    setFailed(false)
     try {
       await saveFacts(body)
       setSaved(body)
       setMsg(t('Сохранено — помощник уже отвечает по новому тексту.'))
     } catch (e) {
-      setMsg(e.message)
+      setFailed(true)
+      setMsg(`${t('Не сохранилось:')} ${e.message}`)
     }
     setState('ready')
   }
@@ -53,7 +56,7 @@ export default function AdminAssistant() {
           </button>
         </>
       )}
-      {msg && <p className={`text-sm ${state === 'error' ? 'text-accent' : 'text-emerald-400'}`}>{msg}</p>}
+      {msg && <p className={`text-sm ${state === 'error' || failed ? 'text-accent' : 'text-emerald-400'}`}>{msg}</p>}
     </section>
   )
 }
