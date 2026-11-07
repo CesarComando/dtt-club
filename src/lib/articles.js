@@ -1,6 +1,7 @@
 // Слой 28: статьи — новости клуба, переводы, интервью. Пишет только тренер.
 import { supabase } from './supabaseClient.js'
 import { locale, t } from './i18n.jsx'
+import { shrinkImage } from './gallery.js'
 
 export const CATEGORIES = {
   news: t('Новости клуба'),
@@ -56,9 +57,10 @@ export async function deleteArticle(article) {
 
 export async function uploadCover(file) {
   if (!file.type.startsWith('image/')) throw new Error(t('Обложка — только картинка'))
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-  const path = `${crypto.randomUUID()}.${ext}`
-  must(await supabase.storage.from(ARTICLES_BUCKET).upload(path, file, { contentType: file.type }))
+  // Обложка публичная — перерисовываем, чтобы стереть EXIF (GPS, телефон, дата съёмки).
+  const body = await shrinkImage(file)
+  const path = `${crypto.randomUUID()}.jpg`
+  must(await supabase.storage.from(ARTICLES_BUCKET).upload(path, body, { contentType: 'image/jpeg' }))
   return path
 }
 

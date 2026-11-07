@@ -122,6 +122,7 @@ export default function Gallery() {
       {open && (
         <Viewer
           item={open}
+          viewer={[profile?.first_name, profile?.last_name].filter(Boolean).join(' ')}
           canDelete={isAdmin || open.author_id === user.id}
           onDelete={() => window.confirm(t('Удалить из галереи?')) && act(() => deleteItem(open))}
           onClose={() => setOpen(null)}
@@ -138,7 +139,7 @@ function Thumb({ item, onOpen }) {
         (item.kind === 'video' ? (
           <video src={`${item.url}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" />
         ) : (
-          <img src={item.url} alt={item.caption} loading="lazy" className="h-full w-full object-cover" />
+          <img src={item.url} alt={item.caption} loading="lazy" draggable={false} className="h-full w-full object-cover" />
         ))}
       {item.kind === 'video' && (
         <span className="absolute inset-0 flex items-center justify-center text-3xl text-white/90 drop-shadow">▶</span>
@@ -150,7 +151,7 @@ function Thumb({ item, onOpen }) {
   )
 }
 
-function Viewer({ item, canDelete, onDelete, onClose }) {
+function Viewer({ item, viewer, canDelete, onDelete, onClose }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -169,11 +170,22 @@ function Viewer({ item, canDelete, onDelete, onClose }) {
           <button type="button" onClick={onClose} className="text-2xl leading-none text-white" aria-label={t('Закрыть')}>✕</button>
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 items-center justify-center p-2" onClick={onClose}>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center p-2" onClick={onClose}>
         {item.kind === 'video' ? (
-          <video src={item.url} controls autoPlay playsInline className="max-h-full max-w-full" onClick={(e) => e.stopPropagation()} />
+          <video src={item.url} controls autoPlay playsInline controlsList="nodownload noremoteplayback" disablePictureInPicture
+            className="max-h-full max-w-full" onClick={(e) => e.stopPropagation()} />
         ) : (
-          <img src={item.url} alt={item.caption} className="max-h-full max-w-full object-contain" />
+          <img src={item.url} alt={item.caption} draggable={false} className="max-h-full max-w-full object-contain" />
+        )}
+        {/* Водяной знак с именем того, кто смотрит: снимок экрана сразу видно, чей он */}
+        {viewer && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex flex-wrap content-around justify-around overflow-hidden opacity-[0.12]">
+            {Array.from({ length: 12 }, (_, i) => (
+              <span key={i} className="-rotate-30 select-none whitespace-nowrap font-display text-lg uppercase tracking-widest text-white">
+                {viewer} · DTT
+              </span>
+            ))}
+          </div>
         )}
       </div>
       {item.caption && <p className="p-3 text-center text-neutral-200">{item.caption}</p>}
