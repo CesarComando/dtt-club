@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { sessionDay, sessionTime, shareInvite } from '../lib/booking.js'
-import { inviteFriend, loadClubPeople } from '../lib/friends.js'
+import { inviteFriend, loadAttendees, loadClubPeople } from '../lib/friends.js'
 
 // «Позвать друга»: выбрать из учеников, уже зарегистрированных в приложении
 // (видны только имя и фото), или отправить ссылку тому, кого в приложении ещё нет.
@@ -12,12 +12,20 @@ export default function FriendPicker({ session, onClose }) {
   const [sent, setSent] = useState({}) // id → 'ok' | текст ошибки
   const [busy, setBusy] = useState(null)
   const [linkMsg, setLinkMsg] = useState('')
+  const [going, setGoing] = useState(null) // { people, hidden } — кто уже записан
 
   useEffect(() => {
     loadClubPeople({ photos: true })
       .then((list) => setPeople(list.filter((p) => p.id !== user?.id)))
       .catch(() => setPeople([]))
   }, [user?.id])
+
+  useEffect(() => {
+    loadAttendees([session.id], { photos: true })
+      .then((m) => setGoing(m[session.id] ?? { people: [], hidden: 0 }))
+      .catch(() => setGoing({ people: [], hidden: 0 }))
+  }, [session.id])
+  const goingIds = useMemo(() => new Set((going?.people ?? []).map((p) => p.id)), [going])
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -27,8 +35,11 @@ export default function FriendPicker({ session, onClose }) {
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return (people ?? []).filter((p) => !s || `${p.first_name} ${p.last_name}`.toLowerCase().includes(s))
-  }, [people, q])
+    return (people ?? [])
+      .filter((p) => !s || `${p.first_name} ${p.last_name}`.toLowerCase().includes(s))
+      // кто уже записан — в конце списка, с отметкой «✓ Идёт»
+      .sort((a, b) => goingIds.has(a.id) - goingIds.has(b.id))
+  }, [people, q, goingIds])
 
   const invite = async (p) => {
     setBusy(p.id)
@@ -62,6 +73,22 @@ export default function FriendPicker({ session, onClose }) {
             </div>
             <button type="button" onClick={onClose} aria-label="Закрыть" className="text-2xl leading-none text-neutral-400 hover:text-white">✕</button>
           </div>
+          {going && (going.people.length > 0 || going.hidden > 0) && (
+            <div>
+              <p className="label">Уже идут · {going.people.length + going.hidden}</p>
+              <div className="flex flex-wrap gap-2">
+                {going.people.map((p) => (
+                  <span key={p.id} className="flex items-center gap-1.5 rounded-full border border-line py-0.5 pl-0.5 pr-2.5 text-xs">
+                    <span className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-ink text-[10px] font-display">
+                      {p.photo ? <img src={p.photo} alt="" className="h-full w-full object-cover" /> : `${p.first_name[0] ?? ''}${p.last_name[0] ?? ''}`}
+                    </span>
+                    {p.id === user?.id ? 'Вы' : `${p.first_name} ${p.last_name[0] ?? ''}.`}
+                  </span>
+                ))}
+                {going.hidden > 0 && <span className="rounded-full border border-line px-2.5 py-1 text-xs text-neutral-400">ещё {going.hidden}</span>}
+              </div>
+            </div>
+          )}
           <input className="input" type="search" placeholder="Найти по имени…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
 
@@ -73,6 +100,7 @@ export default function FriendPicker({ session, onClose }) {
           ) : (
             list.map((p) => {
               const st = sent[p.id]
+              const isGoing = goingIds.has(p.id)
               return (
                 <li key={p.id} className="flex items-center gap-3 py-2.5">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-sm font-display">
@@ -82,14 +110,18 @@ export default function FriendPicker({ session, onClose }) {
                     <p className="truncate">{p.first_name} {p.last_name}</p>
                     {st && st !== 'ok' && <p className="text-xs text-accent">{st}</p>}
                   </div>
-                  <button
-                    type="button"
-                    disabled={busy === p.id || st === 'ok'}
-                    onClick={() => invite(p)}
-                    className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold ${st === 'ok' ? 'text-emerald-400' : 'border border-accent text-white hover:bg-accent/15'} disabled:opacity-70`}
-                  >
-                    {busy === p.id ? '…' : st === 'ok' ? '✓ Позван' : 'Позвать'}
-                  </button>
+                  {isGoing ? (
+                    <span className="shrink-0 px-3 py-1.5 text-xs font-semibold text-emerald-400">✓ Идёт</span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy === p.id || st === 'ok'}
+                      onClick={() => invite(p)}
+                      className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold ${st === 'ok' ? 'text-emerald-400' : 'border border-accent text-white hover:bg-accent/15'} disabled:opacity-70`}
+                    >
+                      {busy === p.id ? '…' : st === 'ok' ? '✓ Позван' : 'Позвать'}
+                    </button>
+                  )}
                 </li>
               )
             })

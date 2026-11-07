@@ -3,6 +3,7 @@ import { useAuth } from '../lib/AuthContext.jsx'
 import { SECTIONS, activeSection, isKidsSession, seesBoth, setSection, useKids, useSection } from '../lib/section.js'
 import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime } from '../lib/booking.js'
 import FriendPicker from './FriendPicker.jsx'
+import { attendeesText, loadAttendees } from '../lib/friends.js'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
 export default function Booking() {
@@ -16,10 +17,14 @@ export default function Booking() {
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
   const [picking, setPicking] = useState(null) // занятие, на которое зовём друга
+  const [going, setGoing] = useState({}) // кто записан: { [sessionId]: { people, hidden } }
 
   const refresh = useCallback(async () => {
     try {
-      setSessions(await loadUpcoming(7))
+      const list = await loadUpcoming(7)
+      setSessions(list)
+      // «Идут: …» — не критично: если функции ещё нет в базе, просто не показываем
+      loadAttendees(list.filter((x) => !x.cancelled).map((x) => x.id)).then(setGoing).catch(() => {})
     } catch (e) {
       setError('Не удалось загрузить расписание: ' + e.message)
     } finally {
@@ -37,6 +42,7 @@ export default function Booking() {
     try {
       const booked = s.is_booked ? await cancelBooking(s.id) : await bookSession(s.id)
       setSessions((list) => list.map((x) => (x.id === s.id ? { ...x, booked, is_booked: !s.is_booked } : x)))
+      loadAttendees([s.id]).then((m) => setGoing((g) => ({ ...g, [s.id]: m[s.id] ?? { people: [], hidden: 0 } }))).catch(() => {})
     } catch (e) {
       setError(e.message)
       refresh() // счётчик мог измениться — перечитываем
@@ -92,6 +98,9 @@ export default function Booking() {
                   <p className={`mt-1 text-xs ${full ? 'text-accent' : 'text-neutral-500'}`}>
                     {s.cancelled ? 'Тренировка отменена' : seatsText(s)}
                   </p>
+                  {!s.cancelled && attendeesText(going[s.id], profile?.id) && (
+                    <p className="truncate text-xs text-neutral-300">{attendeesText(going[s.id], profile?.id)}</p>
+                  )}
                   {!s.cancelled && !started && !isFull(s) && (
                     <button type="button" onClick={() => setPicking(s)} className="mt-1 text-xs font-semibold text-accent hover:underline">
                       ＋ Позвать друга
