@@ -485,18 +485,29 @@ export default function AdminMembers({ profiles }) {
 
   const linkedIds = useMemo(() => new Set((members ?? []).map((m) => m.profile_id).filter(Boolean)), [members])
 
+  // Дети — у кого записан родитель или привязан телефон родителя (кнопка «Родитель…»).
+  const withParent = useMemo(() => new Set(contacts.map((c) => c.member_id)), [contacts])
+  const isKid = useCallback((m) => Boolean(m.parent_name) || withParent.has(m.id), [withParent])
+  const FILTERS = useMemo(
+    () => ({
+      active: (m) => ['regular', 'occasional'].includes(m.status),
+      regular: (m) => m.status === 'regular',
+      occasional: (m) => m.status === 'occasional',
+      kids: (m) => m.status !== 'left' && isKid(m),
+      paid: (m) => memberships[m.id]?.active,
+      one_time: (m) => m.status === 'one_time',
+      left: (m) => m.status === 'left',
+      all: () => true,
+    }),
+    [memberships, isKid],
+  )
+
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
     return (members ?? [])
-      .filter((m) =>
-        filter === 'paid'
-          ? memberships[m.id]?.active
-          : filter === 'active'
-            ? ['regular', 'occasional'].includes(m.status)
-            : filter === 'all' || m.status === filter,
-      )
+      .filter(FILTERS[filter] ?? FILTERS.active)
       .filter((m) => !s || `${m.first_name} ${m.last_name} ${m.parent_name ?? ''} ${(m.aliases ?? []).join(' ')} ${m.phone ?? ''}`.toLowerCase().includes(s))
-  }, [members, filter, q, memberships])
+  }, [members, filter, q, FILTERS])
 
   if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Ученики клуба: {error}', { error })}</p>
   if (!members) return null
@@ -517,12 +528,20 @@ export default function AdminMembers({ profiles }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <input className="input flex-1" type="search" placeholder={t('Поиск…')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input min-w-40 flex-1" type="search" placeholder={t('Поиск…')} value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input !w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="active">{t('Постоянные и иногда')}</option>
-          <option value="paid">{t('С абонементом')}</option>
-          <option value="one_time">{t('Были раз')}</option>
-          <option value="all">{t('Все')}</option>
+          {[
+            ['active', t('Постоянные и иногда')],
+            ['regular', t('Постоянные')],
+            ['occasional', t('Иногда')],
+            ['kids', t('Дети и родители')],
+            ['paid', t('С абонементом')],
+            ['one_time', t('Были раз')],
+            ['left', t('Ушли')],
+            ['all', t('Все')],
+          ].map(([v, l]) => (
+            <option key={v} value={v}>{l} · {members.filter(FILTERS[v]).length}</option>
+          ))}
         </select>
       </div>
 
