@@ -178,7 +178,29 @@ function SubscriptionStatus({ sub }) {
 }
 
 /** Блок «Оплата» в личном кабинете. */
-export default function BillingSection({ billing, discipline }) {
+// Режим родителя (слой 35): статус абонемента каждого ребёнка.
+function ChildrenStatus({ children }) {
+  return (
+    <ul className="space-y-1">
+      {children.map((c, i) => (
+        <li key={i} className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm">
+          <span className="font-semibold">{c.name}</span>
+          {c.active ? (
+            <span className="text-emerald-400">{t('абонемент до {date}', { date: formatDay(c.valid_until) })}</span>
+          ) : c.valid_until ? (
+            <span className="text-accent">{t('закончился {date}', { date: formatDay(c.valid_until) })}</span>
+          ) : (
+            <span className="text-accent">{t('не оплачен')}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export default function BillingSection({ billing, discipline, family }) {
+  const parentOnly = Boolean(family?.parent_only)
+  if (parentOnly) discipline = 'mma' // родитель платит только за детское MMA
   const { catalog, subscriptions, payments, offline = [], overview, loading, busy, error, notice, checkout, custom, portal } = billing
   if (loading) return null
 
@@ -194,11 +216,14 @@ export default function BillingSection({ billing, discipline }) {
       cancel_at_period_end: true,
       product: { title: catalog.find((p) => p.id === cash.product_id)?.title ?? t('Абонемент') },
     })
-  const ended = !membership && overview?.valid_until && !overview.active ? overview.valid_until : null
+  const kidsPaid = parentOnly && family.children.every((c) => c.active)
+  const ended = !parentOnly && !membership && overview?.valid_until && !overview.active ? overview.valid_until : null
   // 'both' — показываем оба направления.
   const mine = (p) => !p.discipline || discipline === 'both' || p.discipline === discipline
   const memberships = catalog.filter((p) => p.kind === 'membership' && mine(p))
   const singles = catalog.filter((p) => p.kind === 'single' && mine(p))
+  // Название для родителя: «Детское MMA», а не взрослое «MMA / K1».
+  const title = (p) => (parentOnly ? t('Детское MMA') : tData(p.title).replace('Абонемент ', '').replace('Abonements ', ''))
   const hasHistory = subscriptions.length > 0 || payments.length > 0
   // Портал Stripe есть только у тех, кто хоть раз платил картой.
   const hasCard = subscriptions.length > 0 || payments.some((p) => p.method !== 'cash')
@@ -208,8 +233,10 @@ export default function BillingSection({ billing, discipline }) {
     <section className="card space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="label">{t('Оплата')}</p>
-          {membership ? (
+          <p className="label">{parentOnly ? t('Оплата за ребёнка') : t('Оплата')}</p>
+          {parentOnly && !membership ? (
+            <h2 className="text-2xl">{kidsPaid ? t('Абонемент оплачен') : t('Детское MMA')}</h2>
+          ) : membership ? (
             <>
               <h2 className="text-2xl">{tData(membership.product?.title)}</h2>
               <div className="mt-1">
@@ -223,8 +250,10 @@ export default function BillingSection({ billing, discipline }) {
             </>
           )}
         </div>
-        {membership && <span className="rounded border border-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">{t('Активен')}</span>}
+        {(membership || kidsPaid) && <span className="rounded border border-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">{t('Активен')}</span>}
       </div>
+
+      {parentOnly && <ChildrenStatus children={family.children} />}
 
       <Reminder card={cardMembership} cash={cash} catalog={catalog} />
 
@@ -237,7 +266,7 @@ export default function BillingSection({ billing, discipline }) {
       {notice && <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">{notice}</p>}
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent" role="alert">{error}</p>}
 
-      {!membership && memberships.length > 0 && (
+      {!membership && !kidsPaid && memberships.length > 0 && (
         <div className="grid gap-2 sm:grid-cols-2">
           {memberships.map((p) => (
             <button
@@ -247,7 +276,7 @@ export default function BillingSection({ billing, discipline }) {
               onClick={() => checkout(p.id)}
               className="btn-primary flex min-h-14 flex-col items-center justify-center !py-2 disabled:opacity-60"
             >
-              <span>{busy === p.id ? t('Переход к оплате…') : `${tData(p.title).replace('Абонемент ', '').replace('Abonements ', '')} · ${formatPrice(p.amount_cents, p.currency)}${t('/мес')}`}</span>
+              <span>{busy === p.id ? t('Переход к оплате…') : `${title(p)} · ${formatPrice(p.amount_cents, p.currency)}${t('/мес')}`}</span>
               <span className="text-[11px] normal-case tracking-normal opacity-80">{t('абонемент, автопродление')}</span>
             </button>
           ))}
@@ -264,7 +293,7 @@ export default function BillingSection({ billing, discipline }) {
               onClick={() => checkout(p.id)}
               className="btn-outline flex-1 whitespace-nowrap disabled:opacity-60"
             >
-              {busy === p.id ? t('Переход…') : `${tData(p.title)} · ${formatPrice(p.amount_cents, p.currency)}`}
+              {busy === p.id ? t('Переход…') : `${parentOnly ? t('Разовая тренировка ребёнка') : tData(p.title)} · ${formatPrice(p.amount_cents, p.currency)}`}
             </button>
           ))}
         </div>

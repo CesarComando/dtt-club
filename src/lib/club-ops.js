@@ -45,3 +45,10 @@ export async function deleteMyAccount() {
 }
 
 export const deleteAthleteAccount = (athleteId) => callDelete({ athlete_id: athleteId })
+
+/** Режим родителя (слой 35): { parent_only, children: [{ name, valid_until, active }] }. */
+export async function loadMyFamily() {
+  const { data, error } = await supabase.rpc('my_family')
+  if (error) return { parent_only: false, children: [] } // слой ещё не выполнен — обычный кабинет
+  return data ?? { parent_only: false, children: [] }
+}

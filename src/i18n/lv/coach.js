@@ -129,6 +129,11 @@ export default {
   'Аккаунт в приложении': 'Konts lietotnē',
   '— не связан —': '— nav sasaistīts —',
   'Записать оплату (сегодня)': 'Reģistrēt maksājumu (šodien)',
+  'Записать оплату': 'Reģistrēt maksājumu',
+  'Дата оплаты': 'Maksājuma datums',
+  'С какого числа считать абонемент': 'No kura datuma skaitīt abonementu',
+  'Месяц от даты оплаты (или от конца действующего).': 'Mēnesis no maksājuma datuma (vai no pašreizējā abonementa beigām).',
+  'Будет действовать до {date}': 'Būs spēkā līdz {date}',
   'Записать': 'Reģistrēt',
   'Абонемент будет действовать месяц с сегодняшнего дня (или с конца текущего).':
     'Abonements būs spēkā mēnesi no šodienas (vai no pašreizējā abonementa beigām).',
