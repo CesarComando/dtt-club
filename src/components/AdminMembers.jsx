@@ -360,8 +360,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
               <input
                 type="date"
                 className="input !w-auto"
-                title={t('Дата оплаты')}
-                max={today}
+                title={t('С какого числа считать абонемент')}
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
               />

@@ -131,6 +131,7 @@ export default {
   'Записать оплату (сегодня)': 'Reģistrēt maksājumu (šodien)',
   'Записать оплату': 'Reģistrēt maksājumu',
   'Дата оплаты': 'Maksājuma datums',
+  'С какого числа считать абонемент': 'No kura datuma skaitīt abonementu',
   'Месяц от даты оплаты (или от конца действующего).': 'Mēnesis no maksājuma datuma (vai no pašreizējā abonementa beigām).',
   'Будет действовать до {date}': 'Būs spēkā līdz {date}',
   'Записать': 'Reģistrēt',
