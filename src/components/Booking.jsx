@@ -5,14 +5,15 @@ import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay
 import FriendPicker from './FriendPicker.jsx'
 import { attendeesText, loadAttendees } from '../lib/friends.js'
 import { t, tData } from '../lib/i18n.jsx'
+import { friendlyError } from '../lib/offline.js'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
-export default function Booking() {
+export default function Booking({ kidsOnly = false }) {
   const { profile } = useAuth()
   const chosen = useSection()
-  const both = seesBoth(profile)
+  const both = !kidsOnly && seesBoth(profile) // родитель — только детское MMA, без переключателя
   const section = activeSection(profile, chosen)
-  const kids = useKids()
+  const kids = useKids() || kidsOnly
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
@@ -27,7 +28,7 @@ export default function Booking() {
       // «Идут: …» — не критично: если функции ещё нет в базе, просто не показываем
       loadAttendees(list.filter((x) => !x.cancelled).map((x) => x.id)).then(setGoing).catch(() => {})
     } catch (e) {
-      setError(t('Не удалось загрузить расписание: ') + e.message)
+      setError(t('Не удалось загрузить расписание: ') + friendlyError(e))
     } finally {
       setLoading(false)
     }
@@ -45,7 +46,7 @@ export default function Booking() {
       setSessions((list) => list.map((x) => (x.id === s.id ? { ...x, booked, is_booked: !s.is_booked } : x)))
       loadAttendees([s.id]).then((m) => setGoing((g) => ({ ...g, [s.id]: m[s.id] ?? { people: [], hidden: 0 } }))).catch(() => {})
     } catch (e) {
-      setError(e.message)
+      setError(friendlyError(e))
       refresh() // счётчик мог измениться — перечитываем
     } finally {
       setBusy(null)
@@ -56,7 +57,7 @@ export default function Booking() {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg">{t('Запись на тренировки')}</h2>
+        <h2 className="text-lg">{kidsOnly ? t('Детские тренировки') : t('Запись на тренировки')}</h2>
         {/* Раздел из входа; кто ходит в оба направления — переключает здесь */}
         {both && (
           <div className="flex gap-1">
@@ -80,7 +81,7 @@ export default function Booking() {
         <p className="card text-neutral-400">{t('На ближайшую неделю тренировок нет.')}</p>
       ) : (
         <ul className="space-y-2">
-          {sessions.filter((s) => (!both || !section || s.discipline === section) && (s.discipline !== 'mma' || isKidsSession(s) === kids)).map((s) => {
+          {sessions.filter((s) => (kidsOnly ? isKidsSession(s) : (!both || !section || s.discipline === section) && (s.discipline !== 'mma' || isKidsSession(s) === kids))).map((s) => {
             const full = isFull(s) && !s.is_booked
             const started = new Date(s.starts_at) <= new Date()
             const pct = s.capacity ? Math.min(100, Math.round((s.booked / s.capacity) * 100)) : 0

@@ -1,11 +1,11 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getRank, hasRanks, RANKS, DISCIPLINES, TRAININGS_PER_YEAR } from '../lib/ranks.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
 import BillingSection, { liveSubscription, useBilling } from '../components/Billing.jsx'
 import { formatDay, formatPrice } from '../lib/payments.js'
-import { deleteMyAccount } from '../lib/club-ops.js'
+import { deleteMyAccount, loadMyFamily } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
@@ -103,11 +103,11 @@ function SupportClub({ isSponsor, billing }) {
 
 // Оплата (абонемент, разовые, поддержка) — отдельный компонент, чтобы хук
 // useBilling вызывался только для вошедшего пользователя.
-function ClubPayments({ profile, onPaid }) {
+function ClubPayments({ profile, family, onPaid }) {
   const billing = useBilling(profile.id, onPaid)
   return (
     <>
-      <BillingSection billing={billing} discipline={profile.discipline} />
+      <BillingSection billing={billing} discipline={profile.discipline} family={family} />
       <SupportClub isSponsor={profile.is_sponsor} billing={billing} />
     </>
   )
@@ -178,6 +178,17 @@ function Centered({ children }) {
 export default function Dashboard() {
   const { user, profile, loading, error, refreshProfile, signOut } = useAuth()
   const [bookingKey, setBookingKey] = useState(0) // перечитать запись после «Записаться» по приглашению
+  // Режим родителя (слой 35): сам не тренируется — видит только детское MMA и статус детей.
+  const [family, setFamily] = useState(null)
+  useEffect(() => {
+    if (!user) return
+    let alive = true
+    loadMyFamily().then((f) => alive && setFamily(f))
+    return () => {
+      alive = false
+    }
+  }, [user])
+  const parentOnly = Boolean(family?.parent_only)
   const navigate = useNavigate()
 
   if (!isSupabaseConfigured) {
@@ -332,13 +343,13 @@ export default function Dashboard() {
 
       {/* Запись на тренировки (слой 8): лимит мест проверяет сервер.
           key: после переключателя направления список перечитывается. */}
-      <CrossTraining profile={profile} onChange={() => refreshProfile()} />
-      <Booking key={`${profile.cross_training}-${bookingKey}`} />
+      {!parentOnly && <CrossTraining profile={profile} onChange={() => refreshProfile()} />}
+      <Booking key={`${profile.cross_training}-${bookingKey}-${parentOnly}`} kidsOnly={parentOnly} />
       <HideProfile profile={profile} onChange={() => refreshProfile()} />
       <MyChildren profile={profile} />
 
       {/* Оплата (Stripe): абонемент, разовые тренировки, «Поддержать клуб» */}
-      <ClubPayments profile={profile} onPaid={() => refreshProfile()} />
+      <ClubPayments profile={profile} family={family} onPaid={() => refreshProfile()} />
 
       {/* Мерч GERA — неактивная карточка-анонс */}
       <section

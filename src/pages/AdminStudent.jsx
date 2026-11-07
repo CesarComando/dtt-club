@@ -144,10 +144,20 @@ export default function AdminStudent({ kind }) {
           {profile?.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : `${first?.[0] ?? ''}${last?.[0] ?? ''}`}
         </div>
         <div className="min-w-0 flex-1 space-y-0.5">
-          <h1 className="flex items-center gap-2 text-2xl leading-tight">
-            <span>{first} {last}</span>
-            <ApprovedMark approved={profile?.approved_at} />
-          </h1>
+          <NameField
+            first={first}
+            last={last}
+            memberId={member?.id ?? null}
+            profileId={profile?.id ?? null}
+            approved={profile?.approved_at}
+            onSaved={(f, l) =>
+              setData((d) => ({
+                ...d,
+                member: d.member && { ...d.member, first_name: f, last_name: l },
+                profile: d.profile && { ...d.profile, first_name: f, last_name: l },
+              }))
+            }
+          />
           <p className="text-sm text-neutral-400">
             {[discipline && DISCIPLINES[discipline], member && STATUS[member.status]].filter(Boolean).join(' · ')}
           </p>
@@ -430,6 +440,45 @@ function MemberPayments({ member }) {
 }
 
 // «родитель: …» в шапке — тренер может исправить имя (например, Meksa → Mekša).
+// Имя и фамилия — тренер исправляет опечатку сразу и в CRM, и в аккаунте (слой 36).
+function NameField({ first, last, memberId, profileId, approved, onSaved }) {
+  const [edit, setEdit] = useState(false)
+  const [f, setF] = useState(first ?? '')
+  const [l, setL] = useState(last ?? '')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const save = async () => {
+    setBusy(true)
+    setErr('')
+    const { error } = await supabase.rpc('coach_rename', { p_member: memberId, p_profile: profileId, p_first: f, p_last: l })
+    setBusy(false)
+    if (error) return setErr(error.message)
+    onSaved(f.trim(), l.trim())
+    setEdit(false)
+  }
+  if (!edit)
+    return (
+      <h1 className="flex items-center gap-2 text-2xl leading-tight">
+        <span>{first} {last}</span>
+        <ApprovedMark approved={approved} />
+        <button type="button" onClick={() => { setF(first ?? ''); setL(last ?? ''); setEdit(true) }}
+          className="text-base text-neutral-500 hover:text-accent" title={t('Исправить имя')} aria-label={t('Исправить имя')}>✎</button>
+      </h1>
+    )
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <input className="input !w-32 !py-1" autoFocus placeholder={t('Имя')} value={f} onChange={(e) => setF(e.target.value)} />
+      <input className="input !w-40 !py-1" placeholder={t('Фамилия')} value={l} onChange={(e) => setL(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && save()} />
+      <button type="button" disabled={busy} onClick={save} className="rounded border border-accent px-2 py-0.5 text-sm hover:bg-accent/15 disabled:opacity-50">
+        {busy ? '…' : t('Сохранить')}
+      </button>
+      <button type="button" onClick={() => setEdit(false)} className="text-sm text-neutral-400 hover:text-white">{t('Отмена')}</button>
+      {err && <span className="w-full text-xs text-accent">{err}</span>}
+    </div>
+  )
+}
+
 function ParentField({ member, onSaved }) {
   const [edit, setEdit] = useState(false)
   const [value, setValue] = useState(member.parent_name ?? '')

@@ -4,6 +4,7 @@ import { signInWithPhone } from '../lib/auth.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { SECTIONS, getKids, getSection, setKids, setSection } from '../lib/section.js'
 import { t } from '../lib/i18n.jsx'
+import { friendlyError } from '../lib/offline.js'
 
 // Вход: выбор раздела — Grappling, MMA / K1, MMA дети или «Тренер» (отдельный вход для тренера и помощника).
 const MODES = [...Object.entries(SECTIONS), ['mma_kids', t('MMA дети')], ['coach', t('Тренер')]]
@@ -41,7 +42,7 @@ export default function Login() {
         navigate(nextParam ?? '/dashboard', { replace: true })
       }
     } catch (err) {
-      setError(err.message)
+      setError(friendlyError(err))
     } finally {
       setLoading(false)
     }
@@ -89,10 +90,11 @@ export default function Login() {
             className="input"
             required
             autoComplete="username"
-            placeholder={mode === 'mma_kids' ? '2X XXX XXX-1' : '+371 2X XXX XXX'}
+            placeholder={mode === 'mma_kids' ? '2X XXX XXX-1' : '2X XXX XXX'}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
+          {mode !== 'mma_kids' && <p className="mt-1 text-xs text-neutral-500">{t('Код +371 можно не вводить — достаточно 8 цифр.')}</p>}
         </div>
         <div>
           <label className="label" htmlFor="password">{t('Пароль')}</label>

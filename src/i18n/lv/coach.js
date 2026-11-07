@@ -107,6 +107,7 @@ export default {
   'Имя родителя': 'Vecāka vārds',
   'Сохранить': 'Saglabāt',
   'Отмена': 'Atcelt',
+  'Исправить имя': 'Labot vārdu',
 
   // AdminMembers.jsx
   'У аккаунта нет телефона': 'Kontam nav tālruņa numura',
@@ -129,6 +130,11 @@ export default {
   'Аккаунт в приложении': 'Konts lietotnē',
   '— не связан —': '— nav sasaistīts —',
   'Записать оплату (сегодня)': 'Reģistrēt maksājumu (šodien)',
+  'Записать оплату': 'Reģistrēt maksājumu',
+  'Дата оплаты': 'Maksājuma datums',
+  'С какого числа считать абонемент': 'No kura datuma skaitīt abonementu',
+  'Месяц от даты оплаты (или от конца действующего).': 'Mēnesis no maksājuma datuma (vai no pašreizējā abonementa beigām).',
+  'Будет действовать до {date}': 'Būs spēkā līdz {date}',
   'Записать': 'Reģistrēt',
   'Абонемент будет действовать месяц с сегодняшнего дня (или с конца текущего).':
     'Abonements būs spēkā mēnesi no šodienas (vai no pašreizējā abonementa beigām).',
@@ -146,6 +152,9 @@ export default {
   '{sum} всего': 'kopā {sum}',
   'Поиск…': 'Meklēt…',
   'Постоянные и иногда': 'Pastāvīgie un reizēm',
+  'Постоянные': 'Pastāvīgie',
+  'Дети и родители': 'Bērni un vecāki',
+  'Ушли': 'Aizgājuši',
   'С абонементом': 'Ar abonementu',
   'Были раз': 'Bija vienreiz',
   'Все': 'Visi',
@@ -294,4 +303,5 @@ export default {
   'Когда удобно: {when}': 'Kad ērti: {when}',
   'Удалить заявку «{name}»?': 'Dzēst pieteikumu «{name}»?',
   'Удалить': 'Dzēst',
+  'Нет интернета: оплата сохранена на телефоне и отправится сама.': 'Nav interneta: maksājums saglabāts tālrunī un tiks nosūtīts pats.',
 }

@@ -193,6 +193,8 @@ export default {
   'Соревнования': 'Sacensības',
   'Разное': 'Dažādi',
   'Можно добавлять только фото и видео': 'Var pievienot tikai foto un video',
+  'Не удалось обработать фото. Сохраните его как JPEG (или сделайте снимок экрана фото) и попробуйте снова.':
+    'Neizdevās apstrādāt foto. Saglabājiet to kā JPEG (vai uzņemiet foto ekrānuzņēmumu) un mēģiniet vēlreiz.',
   'Видео больше {mb} МБ — обрежьте его': 'Video ir lielāks par {mb} MB — saīsiniet to',
 
   // Дневник
@@ -261,4 +263,17 @@ export default {
   'MMA (взрослые)': 'MMA (pieaugušie)',
   'Грэпплинг / BJJ no-gi': 'Grepling / BJJ no-gi',
   'Детское MMA': 'Bērnu MMA',
+  'Нет связи с сервером — проверьте интернет и попробуйте ещё раз.': 'Nav savienojuma ar serveri — pārbaudiet internetu un mēģiniet vēlreiz.',
+  'Код +371 можно не вводить — достаточно 8 цифр.': 'Kodu +371 var nerakstīt — pietiek ar 8 cipariem.',
+  'Нет интернета.': 'Nav interneta.',
+  'Показаны сохранённые данные от {date}.': 'Parādīti saglabātie dati no {date}.',
+  'Показано то, что уже загружено.': 'Parādīts tas, kas jau ielādēts.',
+  'Показаны сохранённые данные от {date} — не было связи с сервером.': 'Parādīti saglabātie dati no {date} — nebija savienojuma ar serveri.',
+  'Обновить данные': 'Atjaunot datus',
+  'Ждут отправки: {n}': 'Gaida nosūtīšanu: {n}',
+  '— отправляем…': '— sūtām…',
+  '— уйдут сами, когда появится интернет.': '— tiks nosūtīti paši, kad būs internets.',
+  'Отправить сейчас': 'Nosūtīt tagad',
+  'Сервер не принял: {n}': 'Serveris nepieņēma: {n}',
+  'Понятно, скрыть': 'Skaidrs, paslēpt',
 }

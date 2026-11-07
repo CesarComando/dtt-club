@@ -2,6 +2,7 @@
 // Edge Function создать страницу оплаты и уходит на неё. Статус оплаты
 // в базе меняет вебхук на сервере (supabase/functions/stripe-webhook).
 import { supabase } from './supabaseClient.js'
+import { cached } from './offline.js'
 import { t, locale } from './i18n.jsx'
 
 // Подписка считается действующей и в статусе past_due: Stripe ещё пытается списать.
@@ -14,7 +15,9 @@ export const formatPrice = (cents, currency = 'eur') =>
 export const formatDay = (iso) =>
   new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })
 
-export async function loadCatalog() {
+// Каталог и свои оплаты сохраняются на телефоне — без интернета кабинет показывает последнее (offline.js).
+export const loadCatalog = () => cached('catalog', fetchCatalog)
+async function fetchCatalog() {
   const { data, error } = await supabase
     .from('payment_products')
     .select('id, kind, discipline, title, description, amount_cents, currency, billing_interval, sort')
@@ -24,7 +27,8 @@ export async function loadCatalog() {
   return data
 }
 
-export async function loadMyBilling(userId) {
+export const loadMyBilling = (userId) => cached('billing', () => fetchMyBilling(userId))
+async function fetchMyBilling(userId) {
   const [subs, pays, offline, overview] = await Promise.all([
     supabase.from('subscriptions').select('*, product:payment_products(kind, title, discipline)').eq('user_id', userId),
     supabase

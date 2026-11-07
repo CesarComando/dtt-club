@@ -1,13 +1,16 @@
 // Запись на тренировки (слой 8). Расписание и лимиты — в базе
 // (training_slots / training_sessions), лимит проверяет сервер в book_session.
 import { supabase } from './supabaseClient.js'
+import { cached } from './offline.js'
 import { t, tData, locale } from './i18n.jsx'
 
-export async function loadUpcoming(days = 7) {
-  const { data, error } = await supabase.rpc('upcoming_sessions', { p_days: days })
-  if (error) throw error
-  return data
-}
+// Без интернета — последнее сохранённое расписание (offline.js).
+export const loadUpcoming = (days = 7) =>
+  cached(`upcoming:${days}`, async () => {
+    const { data, error } = await supabase.rpc('upcoming_sessions', { p_days: days })
+    if (error) throw error
+    return data
+  })
 
 export async function bookSession(id) {
   const { data, error } = await supabase.rpc('book_session', { p_session: id })

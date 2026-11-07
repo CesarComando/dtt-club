@@ -1,5 +1,6 @@
 // Слой 9: QR-чекин, оплата наличными, должники, удаление аккаунта.
 import { supabase } from './supabaseClient.js'
+import { cached, isNetworkError } from './offline.js'
 import { t } from './i18n.jsx'
 
 const rpc = async (fn, args) => {
@@ -45,3 +46,17 @@ export async function deleteMyAccount() {
 }
 
 export const deleteAthleteAccount = (athleteId) => callDelete({ athlete_id: athleteId })
+
+/** Режим родителя (слой 35): { parent_only, children: [{ name, valid_until, active }] }. */
+export async function loadMyFamily() {
+  const none = { parent_only: false, children: [] }
+  try {
+    return await cached('family', async () => {
+      const { data, error } = await supabase.rpc('my_family')
+      if (error && isNetworkError(error)) throw error
+      return error ? none : (data ?? none) // слой ещё не выполнен — обычный кабинет
+    })
+  } catch {
+    return none
+  }
+}
