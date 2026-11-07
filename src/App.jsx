@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, Link } from 'react-router-dom'
+import OfflineBanner from './components/OfflineBanner.jsx'
 import Navbar from './components/Navbar.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 import Home from './pages/Home.jsx'
@@ -34,6 +35,7 @@ export default function App() {
       </Suspense>
       {/* pb-24 — место под нижний таб-бар на мобильных */}
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-24 md:pt-24 md:pb-12">
+        <OfflineBanner />
         <InstallApp />
         <Suspense
           fallback={

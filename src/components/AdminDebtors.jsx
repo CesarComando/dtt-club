@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { formatDay, formatPrice, loadCatalog } from '../lib/payments.js'
 import { deleteAthleteAccount, loadDebtors, recordCashPayment } from '../lib/club-ops.js'
 import { t, tData } from '../lib/i18n.jsx'
+import { useAuth } from '../lib/AuthContext.jsx'
+import { isNetworkError } from '../lib/offline.js'
+import { enqueue } from '../lib/outbox.js'
 
 let catalogCache = null
 const useCashProducts = () => {
@@ -20,6 +23,7 @@ const useCashProducts = () => {
 
 /** Тренер отмечает оплату наличными: абонемент на месяц или разовая. */
 export function CashPayment({ athlete, onDone }) {
+  const { profile: me } = useAuth()
   const products = useCashProducts()
   const mine = products.filter((p) => athlete.discipline === 'both' || p.discipline === athlete.discipline)
   const [product, setProduct] = useState('')
@@ -30,12 +34,19 @@ export function CashPayment({ athlete, onDone }) {
   const save = async () => {
     setBusy(true)
     setMsg('')
+    const queue = () => {
+      const p = mine.find((x) => x.id === selected)
+      enqueue('cash', { athlete: athlete.id, product: selected }, `${formatPrice(p?.amount_cents ?? 0)} · ${athlete.first_name} ${athlete.last_name}`, me?.id)
+      setMsg(t('Нет интернета: оплата сохранена на телефоне и отправится сама.'))
+    }
     try {
+      if (!navigator.onLine) return queue()
       const until = await recordCashPayment(athlete.id, selected)
       setMsg(until ? t('Абонемент оплачен до {date}', { date: formatDay(until) }) : t('Разовая оплата записана'))
       onDone?.()
     } catch (e) {
-      setMsg(e.message)
+      if (isNetworkError(e)) queue()
+      else setMsg(e.message)
     } finally {
       setBusy(false)
     }

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured, AVATARS_BUCKET } from './supabaseClient.js'
 import { t } from './i18n.jsx'
+import { friendlyError, isNetworkError } from './offline.js'
 
 // Вход по номеру телефона: Supabase Auth требует email,
 // поэтому телефон превращается в технический адрес <цифры>@dtt.local.
@@ -155,5 +156,6 @@ function translateAuthError(error) {
   if (/invalid login credentials/i.test(msg)) return new Error(t('Неверный номер телефона или пароль.'))
   if (/password should be at least/i.test(msg)) return new Error(t('Пароль слишком короткий (минимум 6 символов).'))
   if (/rate limit/i.test(msg)) return new Error(t('Слишком много попыток. Подождите минуту.'))
+  if (isNetworkError(error)) return new Error(friendlyError(error)) // вместо «Load failed» на iPhone
   return new Error(msg)
 }

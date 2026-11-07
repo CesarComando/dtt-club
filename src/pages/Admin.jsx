@@ -16,6 +16,8 @@ import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { t, locale } from '../lib/i18n.jsx'
+import { cached, friendlyError, isNetworkError } from '../lib/offline.js'
+import { dequeue, enqueue, pendingDelta, useOutbox } from '../lib/outbox.js'
 
 const TABS = [
   ['gym', t('Зал')],
@@ -86,9 +88,8 @@ export default function Admin() {
   const [params, setParams] = useSearchParams()
   const tab = tabs.some(([t]) => t === params.get('tab')) ? params.get('tab') : 'gym'
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
+  // Всё для вкладки «Зал» одним объектом: без интернета берётся последняя сохранённая копия.
+  const fetchGym = useCallback(async () => {
     const [profilesRes, contactsRes, attendanceRes, subsRes, paysRes] = await Promise.all([
       supabase
         .from('profiles')
@@ -108,11 +109,7 @@ export default function Admin() {
         .or(`created_at.gte.${new Date(Date.now() - 30 * 864e5).toISOString()},period_end.gt.${new Date().toISOString()}`),
     ])
     const firstError = profilesRes.error || contactsRes.error || attendanceRes.error
-    if (firstError) {
-      setError(t('Не удалось загрузить учеников: {error}', { error: firstError.message }))
-      setLoading(false)
-      return
-    }
+    if (firstError) throw firstError
 
     // Подписанные ссылки на селфи одним запросом (бакет приватный).
     const paths = profilesRes.data.map((p) => p.avatar_url).filter(Boolean)
@@ -123,12 +120,9 @@ export default function Admin() {
     }
     const phones = Object.fromEntries(contactsRes.data.map((c) => [c.id, c.phone]))
 
-    setAthletes(
-      profilesRes.data.map((p) => ({ ...p, phone: phones[p.id], photo: urls[p.avatar_url] ?? null })),
-    )
+    const athletesList = profilesRes.data.map((p) => ({ ...p, phone: phones[p.id], photo: urls[p.avatar_url] ?? null }))
     const counts = {}
     attendanceRes.data.forEach((a) => (counts[a.athlete_id] = (counts[a.athlete_id] ?? 0) + 1))
-    setToday(counts)
 
     // Оплата: если слой 7 ещё не выполнен в базе — просто не показываем статусы.
     const bill = {}
@@ -177,9 +171,30 @@ export default function Admin() {
       e.singles++
       e.singlesCents = (e.singlesCents ?? 0) + r.amount_cents
     })
-    setBilling(subsRes.error ? {} : bill)
-    setLoading(false)
+    return { day: startOfToday(), athletes: athletesList, today: counts, billing: subsRes.error ? {} : bill }
   }, [])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await cached('admin-gym', fetchGym)
+      const offline = !navigator.onLine
+      // Отметки из очереди (ещё не на сервере) добавляем к счётчикам
+      const d = pendingDelta(me?.id)
+      const plus = (n, id) => Math.max(0, (n ?? 0) + (d[id] ?? 0))
+      // Без сети ссылки на селфи не откроются — показываем инициалы
+      setAthletes(data.athletes.map((a) => ({ ...a, trainings_count: plus(a.trainings_count, a.id), photo: offline ? null : a.photo })))
+      // Сохранено вчера — сегодняшних отметок там нет
+      const base = data.day === startOfToday() ? data.today : {}
+      setToday(Object.fromEntries([...new Set([...Object.keys(base), ...Object.keys(d)])].map((id) => [id, plus(base[id], id)])))
+      setBilling(data.billing)
+    } catch (e) {
+      setError(t('Не удалось загрузить учеников: {error}', { error: friendlyError(e) }))
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchGym, me?.id])
 
   useEffect(() => {
     load()
@@ -190,6 +205,14 @@ export default function Admin() {
   // Кнопка не блокируется: каждое нажатие засчитывается (5 быстрых нажатий = +5),
   // а когда все запросы вернулись, сверяем счётчик с базой.
   const inflight = useRef({})
+  const outbox = useOutbox()
+  // Очередь ушла на сервер — перечитываем счётчики
+  const queued = outbox.items.length
+  const prevQueued = useRef(queued)
+  useEffect(() => {
+    if (prevQueued.current > 0 && queued === 0 && navigator.onLine) load()
+    prevQueued.current = queued
+  }, [queued, load])
 
   const syncCount = async (id) => {
     const { data } = await supabase.from('profiles').select('trainings_count').eq('id', id).single()
@@ -210,12 +233,30 @@ export default function Admin() {
     }
 
     setError('')
+    const name = `${athlete.first_name} ${athlete.last_name}`
+    // Без интернета: «+1» — в очередь на телефоне; отмена — убираем ещё не отправленный «+1».
+    const queue = () => {
+      if (delta < 0) {
+        const last = [...outbox.items].reverse().find((i) => i.type === 'attendance' && i.args.athlete === id)
+        if (last) return dequeue(last.id)
+      }
+      enqueue(delta > 0 ? 'attendance' : 'undo', { athlete: id }, `${delta > 0 ? '+1' : '−1'} ${name}`, me?.id)
+    }
+    if (!navigator.onLine) {
+      bump(delta)
+      queue()
+      return
+    }
     inflight.current[id] = (inflight.current[id] ?? 0) + 1
     bump(delta)
 
     const { data: newCount, error: rpcError } = await supabase.rpc(fn, { p_athlete: id })
     inflight.current[id] -= 1
 
+    if (rpcError && isNetworkError(rpcError)) {
+      queue() // связь оборвалась — отметка не потеряется, уйдёт позже
+      return
+    }
     if (rpcError) {
       bump(-delta)
       setError(rpcError.message)
@@ -223,7 +264,7 @@ export default function Admin() {
       // Новый ранг — ровно на том нажатии, где счётчик перешёл порог.
       const rankNow = getRank(newCount, athlete.rank_override).current
       if (rankNow.id > getRank(newCount - 1, athlete.rank_override).current.id) {
-        setNotice(t('🏆 {name} получает ранг «{rank}»!', { name: `${athlete.first_name} ${athlete.last_name}`, rank: rankNow.title }))
+        setNotice(t('🏆 {name} получает ранг «{rank}»!', { name, rank: rankNow.title }))
       }
     }
     if (inflight.current[id] === 0) syncCount(id)

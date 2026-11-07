@@ -303,4 +303,5 @@ export default {
   'Когда удобно: {when}': 'Kad ērti: {when}',
   'Удалить заявку «{name}»?': 'Dzēst pieteikumu «{name}»?',
   'Удалить': 'Dzēst',
+  'Нет интернета: оплата сохранена на телефоне и отправится сама.': 'Nav interneta: maksājums saglabāts tālrunī un tiks nosūtīts pats.',
 }
