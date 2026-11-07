@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CRITERIA, MIN_RATINGS, deleteRating, loadMyGiven, loadSummary, loadTeammates, saveRating } from '../lib/ratings.js'
+import { t } from '../lib/i18n.jsx'
 
 // Дневник → «Оценки»: мои средние от партнёров + оценить партнёра по всем критериям (CRITERIA).
 // Оценивают только ученики друг друга (RLS в layer14) — тренеру показываем пояснение.
@@ -16,10 +17,9 @@ function CoachNote({ userId }) {
   }, [userId])
   return (
     <section className="card space-y-3">
-      <h2 className="text-xl">Оценки ставят ученики</h2>
+      <h2 className="text-xl">{t('Оценки ставят ученики')}</h2>
       <p className="text-sm text-neutral-400">
-        Тренер оценки не ставит — так средние честно показывают мнение партнёров. Средние баллы и кто кого оценил видны в
-        карточке ученика:
+        {t('Тренер оценки не ставит — так средние честно показывают мнение партнёров. Средние баллы и кто кого оценил видны в карточке ученика:')}
       </p>
       <ul className="divide-y divide-line">
         {(mates ?? []).map((m) => (
@@ -37,7 +37,7 @@ function CoachNote({ userId }) {
 // Ошибки базы — понятным языком.
 const friendly = (e) =>
   /row-level security/i.test(e?.message ?? '')
-    ? 'Эту оценку поставить нельзя: оценивают только ученики друг друга (не себя и не тренера).'
+    ? t('Эту оценку поставить нельзя: оценивают только ученики друг друга (не себя и не тренера).')
     : e.message
 
 function AthleteRatings({ userId }) {
@@ -73,17 +73,17 @@ function AthleteRatings({ userId }) {
 
       <section className="card space-y-3">
         <div>
-          <h2 className="text-xl">Оценить партнёра</h2>
+          <h2 className="text-xl">{t('Оценить партнёра')}</h2>
           <p className="text-xs text-neutral-500">
-            Оценка 1–5. Ваше имя партнёр не увидит — только средний балл, когда оценок наберётся {MIN_RATINGS}+.
+            {t('Оценка 1–5. Ваше имя партнёр не увидит — только средний балл, когда оценок наберётся {n}+.', { n: MIN_RATINGS })}
           </p>
         </div>
         {error && <p className="text-sm text-accent">{error}</p>}
-        <input value={query} onChange={(e) => setQuery(e.target.value)} className="input" placeholder="Найти по имени…" aria-label="Поиск партнёра" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} className="input" placeholder={t('Найти по имени…')} aria-label={t('Поиск партнёра')} />
         {mates == null ? (
-          <p className="text-sm text-neutral-400">Загружаем…</p>
+          <p className="text-sm text-neutral-400">{t('Загружаем…')}</p>
         ) : list.length === 0 ? (
-          <p className="text-sm text-neutral-400">Никого не нашли.</p>
+          <p className="text-sm text-neutral-400">{t('Никого не нашли.')}</p>
         ) : (
           <ul className="divide-y divide-line">
             {list.map((m) => (
@@ -96,7 +96,7 @@ function AthleteRatings({ userId }) {
                 >
                   <span className="truncate">{m.first_name} {m.last_name}</span>
                   <span className={`shrink-0 text-xs ${given[m.id] ? 'text-accent' : 'text-neutral-500'}`}>
-                    {given[m.id] ? '✓ оценён' : 'Оценить'}
+                    {given[m.id] ? `✓ ${t('оценён')}` : t('Оценить')}
                   </span>
                 </button>
                 {open === m.id && (
@@ -134,13 +134,13 @@ function MySummary({ summary }) {
   return (
     <section className="card space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xl">Мои оценки от партнёров</h2>
-        <span className="text-xs text-neutral-500">{summary.ratings} оц.</span>
+        <h2 className="text-xl">{t('Мои оценки от партнёров')}</h2>
+        <span className="text-xs text-neutral-500">{t('{n} оц.', { n: summary.ratings })}</span>
       </div>
       {!enough ? (
         <p className="text-sm text-neutral-400">
-          Средние появятся, когда вас оценят хотя бы {MIN_RATINGS} партнёра
-          {summary.ratings > 0 && ` (сейчас ${summary.ratings})`}.
+          {t('Средние появятся, когда вас оценят хотя бы {n} партнёра', { n: MIN_RATINGS })}
+          {summary.ratings > 0 && ` ${t('(сейчас {n})', { n: summary.ratings })}`}.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -205,14 +205,14 @@ function RateForm({ initial, onSave, onDelete }) {
       {error && <p className="text-sm text-accent">{error}</p>}
       <div className="flex items-center gap-2">
         <button type="button" disabled={!complete || busy} onClick={() => run(() => onSave(scores))} className="btn-primary disabled:opacity-50">
-          {busy ? '…' : initial ? 'Обновить' : 'Сохранить'}
+          {busy ? '…' : initial ? t('Обновить') : t('Сохранить')}
         </button>
         {initial && (
           <button type="button" disabled={busy} onClick={() => run(onDelete)} className="text-xs text-neutral-500 hover:text-accent">
-            Удалить оценку
+            {t('Удалить оценку')}
           </button>
         )}
-        {!complete && <span className="text-xs text-neutral-500">Оцените все {CRITERIA.length} пунктов</span>}
+        {!complete && <span className="text-xs text-neutral-500">{t('Оцените все {n} пунктов', { n: CRITERIA.length })}</span>}
       </div>
     </div>
   )

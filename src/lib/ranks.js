@@ -3,14 +3,16 @@
 // тренер может назначить ранг вручную (profiles.rank_override), он важнее автоматического.
 
 // 1 год стажа ≈ 90 тренировок (2 раза в неделю × 45 недель сезона).
+import { t } from './i18n.jsx'
+
 export const TRAININGS_PER_YEAR = 90
 
 export const RANKS = [
-  { id: 1, title: 'Юный падаван', years: 0 },
-  { id: 2, title: 'Тролль', years: 1 },
-  { id: 3, title: 'Матёрый тролль', years: 3 },
-  { id: 4, title: 'Ронин тролль', years: 4 },
-  { id: 5, title: 'Старый тролль', years: 7 },
+  { id: 1, title: t('Юный падаван'), years: 0 },
+  { id: 2, title: t('Тролль'), years: 1 },
+  { id: 3, title: t('Матёрый тролль'), years: 3 },
+  { id: 4, title: t('Ронин тролль'), years: 4 },
+  { id: 5, title: t('Старый тролль'), years: 7 },
 ].map((r) => ({ ...r, minTrainings: r.years * TRAININGS_PER_YEAR }))
 
 // Направления на выбор (в БД ещё допустимо 'both', но в интерфейсе его нет).

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { CATEGORIES, articleDate, coverUrl, deleteArticle, loadArticle } from '../lib/articles.js'
+import { t } from '../lib/i18n.jsx'
 
 // Статья. Текст — простая разметка, чтобы тренеру было легко вставлять переводы:
 //   пустая строка — новый абзац;  «## Заголовок»;  «> цитата»;  «- пункт списка»;
@@ -24,7 +25,7 @@ export default function Article() {
       })
   }, [id, loading, profile?.id])
 
-  const back = <Link to="/articles" className="text-sm text-neutral-400 hover:text-white">← Статьи</Link>
+  const back = <Link to="/articles" className="text-sm text-neutral-400 hover:text-white">← {t('Статьи')}</Link>
 
   if (a === undefined) {
     return (
@@ -36,18 +37,18 @@ export default function Article() {
   if (!a) {
     return (
       <div className="mx-auto max-w-sm space-y-4 py-12 text-center">
-        <h1 className="text-2xl">Статья недоступна</h1>
-        <p className="text-neutral-400">{error || 'Она удалена или открыта только ученикам клуба — войдите в приложение.'}</p>
+        <h1 className="text-2xl">{t('Статья недоступна')}</h1>
+        <p className="text-neutral-400">{error || t('Она удалена или открыта только ученикам клуба — войдите в приложение.')}</p>
         <div className="flex justify-center gap-3">
-          <Link to={`/login?next=${encodeURIComponent(`/articles/${id}`)}`} className="btn-primary">Войти</Link>
-          <Link to="/articles" className="btn-outline">Все статьи</Link>
+          <Link to={`/login?next=${encodeURIComponent(`/articles/${id}`)}`} className="btn-primary">{t('Войти')}</Link>
+          <Link to="/articles" className="btn-outline">{t('Все статьи')}</Link>
         </div>
       </div>
     )
   }
 
   const remove = async () => {
-    if (!window.confirm(`Удалить статью «${a.title}»?`)) return
+    if (!window.confirm(t('Удалить статью «{title}»?', { title: a.title }))) return
     try {
       await deleteArticle(a)
       navigate('/articles', { replace: true })
@@ -62,8 +63,8 @@ export default function Article() {
         {back}
         {isAdmin && (
           <div className="flex gap-3 text-sm">
-            <Link to={`/articles/${a.id}/edit`} className="text-neutral-300 hover:text-white">Редактировать</Link>
-            <button type="button" onClick={remove} className="text-neutral-500 hover:text-accent">Удалить</button>
+            <Link to={`/articles/${a.id}/edit`} className="text-neutral-300 hover:text-white">{t('Редактировать')}</Link>
+            <button type="button" onClick={remove} className="text-neutral-500 hover:text-accent">{t('Удалить')}</button>
           </div>
         )}
       </div>
@@ -72,7 +73,7 @@ export default function Article() {
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-wider text-neutral-500">
           {CATEGORIES[a.category]} · {articleDate(a)}
-          {!a.published && <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-black">черновик</span>}
+          {!a.published && <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-black">{t('черновик')}</span>}
         </p>
         <h1 className="text-3xl leading-tight md:text-4xl">{a.title}</h1>
         {a.lead && <p className="text-lg text-neutral-300">{a.lead}</p>}
@@ -84,7 +85,7 @@ export default function Article() {
 
       {(a.source_title || a.source_url) && (
         <p className="border-t border-line pt-4 text-sm text-neutral-400">
-          Источник:{' '}
+          {t('Источник:')}{' '}
           {a.source_url ? (
             <a href={a.source_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
               {a.source_title || a.source_url}

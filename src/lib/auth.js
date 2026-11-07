@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured, AVATARS_BUCKET } from './supabaseClient.js'
+import { t } from './i18n.jsx'
 
 // Вход по номеру телефона: Supabase Auth требует email,
 // поэтому телефон превращается в технический адрес <цифры>@dtt.local.
@@ -22,7 +23,7 @@ export const phoneToEmail = (phone) => `${normalizePhone(phone)}@${EMAIL_DOMAIN}
 
 function ensureConfigured() {
   if (!isSupabaseConfigured) {
-    throw new Error('Supabase не настроен: заполните VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY в .env')
+    throw new Error(t('Supabase не настроен: заполните VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY в .env'))
   }
 }
 
@@ -36,7 +37,7 @@ export async function compressImage(file, maxSize = 800, quality = 0.85) {
   canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   bitmap.close?.()
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Не удалось обработать фото'))), 'image/jpeg', quality),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t('Не удалось обработать фото')))), 'image/jpeg', quality),
   )
 }
 
@@ -61,7 +62,7 @@ export async function registerAthlete({ firstName, lastName, phone, password, di
 
   // Без сессии (включено подтверждение email) загрузить фото нельзя — RLS не пустит.
   if (!data.session) {
-    throw new Error('Аккаунт создан, но требуется подтверждение email. Отключите «Confirm email» в Supabase (см. SUPABASE_SETUP.md).')
+    throw new Error(t('Аккаунт создан, но требуется подтверждение email. Отключите «Confirm email» в Supabase (см. SUPABASE_SETUP.md).'))
   }
 
   const userId = data.user.id
@@ -71,13 +72,13 @@ export async function registerAthlete({ firstName, lastName, phone, password, di
   const { error: uploadError } = await supabase.storage
     .from(AVATARS_BUCKET)
     .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-  if (uploadError) throw new Error('Аккаунт создан, но фото не загрузилось: ' + uploadError.message)
+  if (uploadError) throw new Error(t('Аккаунт создан, но фото не загрузилось: ') + uploadError.message)
 
   const { error: profileError } = await supabase
     .from('profiles')
     .update({ avatar_url: path })
     .eq('id', userId)
-  if (profileError) throw new Error('Фото загружено, но профиль не обновился: ' + profileError.message)
+  if (profileError) throw new Error(t('Фото загружено, но профиль не обновился: ') + profileError.message)
 
   return data.user
 }
@@ -92,13 +93,13 @@ export async function registerAthlete({ firstName, lastName, phone, password, di
 export async function createChildAccount({ parentPhone, firstName, lastName, discipline, password, photo }) {
   ensureConfigured()
   if (!/^\d{8,15}$/.test(normalizePhone(parentPhone ?? ''))) {
-    throw new Error('В вашем профиле нет номера телефона — добавить ребёнка нельзя.')
+    throw new Error(t('В вашем профиле нет номера телефона — добавить ребёнка нельзя.'))
   }
   const { data, error } = await supabase.functions.invoke('create-child', {
     body: { first_name: firstName.trim(), last_name: lastName.trim(), discipline, password },
   })
   if (error) {
-    let message = 'Не удалось создать аккаунт ребёнка'
+    let message = t('Не удалось создать аккаунт ребёнка')
     try {
       message = (await error.context?.json())?.error ?? message
     } catch {
@@ -148,11 +149,11 @@ export async function getAvatarUrl(path, expiresIn = 3600) {
 
 function translateAuthError(error) {
   const msg = error.message || ''
-  if (/already registered|already been registered/i.test(msg)) return new Error('Этот номер уже зарегистрирован. Войдите.')
+  if (/already registered|already been registered/i.test(msg)) return new Error(t('Этот номер уже зарегистрирован. Войдите.'))
   if (/Аккаунт родителя не найден|Database error saving new user/i.test(msg))
-    return new Error('Аккаунт родителя не найден — сначала родитель регистрируется сам.')
-  if (/invalid login credentials/i.test(msg)) return new Error('Неверный номер телефона или пароль.')
-  if (/password should be at least/i.test(msg)) return new Error('Пароль слишком короткий (минимум 6 символов).')
-  if (/rate limit/i.test(msg)) return new Error('Слишком много попыток. Подождите минуту.')
+    return new Error(t('Аккаунт родителя не найден — сначала родитель регистрируется сам.'))
+  if (/invalid login credentials/i.test(msg)) return new Error(t('Неверный номер телефона или пароль.'))
+  if (/password should be at least/i.test(msg)) return new Error(t('Пароль слишком короткий (минимум 6 символов).'))
+  if (/rate limit/i.test(msg)) return new Error(t('Слишком много попыток. Подождите минуту.'))
   return new Error(msg)
 }

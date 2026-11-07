@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { t } from '../lib/i18n.jsx'
 
 // Плашка «Установить приложение» (PWA). Браузеры сами почти не предлагают
 // установку, а на iPhone такого предложения нет вовсе — подсказываем:
@@ -78,39 +79,39 @@ export default function InstallApp() {
       <div className="flex items-center gap-3">
         <img src={`${import.meta.env.BASE_URL}pwa-192x192.png`} alt="" className="h-11 w-11 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
-          <p className="font-display uppercase tracking-wide">Приложение клуба на телефон</p>
-          <p className="text-xs text-neutral-300">Иконка на экране, открывается как обычное приложение.</p>
+          <p className="font-display uppercase tracking-wide">{t('Приложение клуба на телефон')}</p>
+          <p className="text-xs text-neutral-300">{t('Иконка на экране, открывается как обычное приложение.')}</p>
         </div>
-        <button type="button" onClick={dismiss} aria-label="Скрыть" className="self-start px-1 text-neutral-500 hover:text-white">
+        <button type="button" onClick={dismiss} aria-label={t('Скрыть')} className="self-start px-1 text-neutral-500 hover:text-white">
           ✕
         </button>
       </div>
 
       <button type="button" onClick={install} className="btn-primary mt-3 w-full">
-        Установить приложение
+        {t('Установить приложение')}
       </button>
 
       {help && (
         <div className="mt-3 space-y-1 text-sm text-neutral-200">
           {inApp ? (
             <>
-              <p>Вы открыли сайт внутри Instagram / WhatsApp — оттуда установить нельзя.</p>
+              <p>{t('Вы открыли сайт внутри Instagram / WhatsApp — оттуда установить нельзя.')}</p>
               <p>
-                Нажмите <b>⋯</b> вверху справа → <b>«Открыть в браузере»</b> ({isIOS ? 'Safari' : 'Chrome'}), и там снова
-                «Установить приложение».
+                {t('Нажмите')} <b>⋯</b> {t('вверху справа →')} <b>{t('«Открыть в браузере»')}</b> ({isIOS ? 'Safari' : 'Chrome'}),{' '}
+                {t('и там снова «Установить приложение».')}
               </p>
             </>
           ) : isIOS ? (
             <ol className="list-decimal space-y-1 pl-5">
-              <li>Откройте сайт в <b>Safari</b>.</li>
-              <li>Нажмите кнопку <b>«Поделиться»</b> (квадрат со стрелкой вверх) внизу экрана.</li>
-              <li>Выберите <b>«На экран „Домой“»</b> → <b>«Добавить»</b>.</li>
+              <li>{t('Откройте сайт в')} <b>Safari</b>.</li>
+              <li>{t('Нажмите кнопку')} <b>{t('«Поделиться»')}</b> {t('(квадрат со стрелкой вверх) внизу экрана.')}</li>
+              <li>{t('Выберите')} <b>{t('«На экран „Домой“»')}</b> → <b>{t('«Добавить»')}</b>.</li>
             </ol>
           ) : (
             <ol className="list-decimal space-y-1 pl-5">
-              <li>Откройте сайт в <b>Chrome</b>.</li>
-              <li>Нажмите <b>⋮</b> вверху справа.</li>
-              <li>Выберите <b>«Установить приложение»</b> или <b>«Добавить на главный экран»</b>.</li>
+              <li>{t('Откройте сайт в')} <b>Chrome</b>.</li>
+              <li>{t('Нажмите')} <b>⋮</b> {t('вверху справа.')}</li>
+              <li>{t('Выберите')} <b>{t('«Установить приложение»')}</b> {t('или')} <b>{t('«Добавить на главный экран»')}</b>.</li>
             </ol>
           )}
         </div>

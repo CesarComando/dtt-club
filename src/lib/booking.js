@@ -1,6 +1,7 @@
 // Запись на тренировки (слой 8). Расписание и лимиты — в базе
 // (training_slots / training_sessions), лимит проверяет сервер в book_session.
 import { supabase } from './supabaseClient.js'
+import { t, tData, locale } from './i18n.jsx'
 
 export async function loadUpcoming(days = 7) {
   const { data, error } = await supabase.rpc('upcoming_sessions', { p_days: days })
@@ -30,14 +31,14 @@ const TZ = 'Europe/Riga'
 
 // «Вт, 10 нояб.»
 export const sessionDay = (iso) => {
-  const s = new Date(iso).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ })
+  const s = new Date(iso).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ })
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-const hm = (iso) => new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
+const hm = (iso) => new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit', timeZone: TZ })
 export const sessionTime = (s) => `${hm(s.starts_at)}–${hm(s.ends_at)}`
 
-export const seatsText = (s) => (s.capacity ? `${s.booked} / ${s.capacity} мест` : `${s.booked} записано`)
+export const seatsText = (s) => (s.capacity ? t('{booked} / {capacity} мест', { booked: s.booked, capacity: s.capacity }) : t('{n} записано', { n: s.booked }))
 export const isFull = (s) => s.capacity != null && s.booked >= s.capacity
 
 // Слой 12: «Позвать друга» — ссылка-приглашение на конкретное занятие.
@@ -65,10 +66,14 @@ export const inviteUrl = (token) => `${window.location.href.split('#')[0]}#/invi
 // Возвращает 'shared' | 'copied' | 'cancelled'.
 export async function shareInvite(session) {
   const url = inviteUrl(await createInvite(session.id))
-  const text = `Пойдём со мной на тренировку! ${session.title}, ${sessionDay(session.starts_at)} ${sessionTime(session)}. Первая тренировка бесплатно. Записаться:`
+  const text = t('Пойдём со мной на тренировку! {title}, {day} {time}. Первая тренировка бесплатно. Записаться:', {
+    title: tData(session.title),
+    day: sessionDay(session.starts_at),
+    time: sessionTime(session),
+  })
   if (navigator.share) {
     try {
-      await navigator.share({ title: 'Тренировка в Daugavpils Top Team', text, url })
+      await navigator.share({ title: t('Тренировка в Daugavpils Top Team'), text, url })
       return 'shared'
     } catch (e) {
       if (e?.name === 'AbortError') return 'cancelled'

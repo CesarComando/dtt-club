@@ -10,6 +10,7 @@ import {
   startCheckout,
   startCustomCheckout,
 } from '../lib/payments.js'
+import { t, tData } from '../lib/i18n.jsx'
 
 /**
  * Каталог, подписки и платежи текущего ученика + действия оплаты.
@@ -25,7 +26,7 @@ export function useBilling(userId, onPaid) {
   const [busy, setBusy] = useState(null) // id товара или 'portal', пока идёт переход
   const [error, setError] = useState('')
   const [notice, setNotice] = useState(
-    returned === 'success' ? 'Спасибо! Оплата прошла, обновляем статус…' : returned === 'cancel' ? 'Оплата отменена.' : '',
+    returned === 'success' ? t('Спасибо! Оплата прошла, обновляем статус…') : returned === 'cancel' ? t('Оплата отменена.') : '',
   )
 
   const refresh = useCallback(async () => {
@@ -35,7 +36,7 @@ export function useBilling(userId, onPaid) {
       setBilling(b)
       return b
     } catch (e) {
-      setError('Не удалось загрузить оплату: ' + e.message)
+      setError(t('Не удалось загрузить оплату: ') + e.message)
     } finally {
       setLoading(false)
     }
@@ -60,7 +61,7 @@ export function useBilling(userId, onPaid) {
         b?.payments.some((p) => new Date(p.created_at).getTime() > before) ||
         b?.subscriptions.some((s) => new Date(s.updated_at).getTime() > before)
       if (fresh || ++tries >= 8) {
-        setNotice(fresh ? 'Оплата получена — спасибо!' : 'Оплата принята Stripe. Статус обновится в течение минуты.')
+        setNotice(fresh ? t('Оплата получена — спасибо!') : t('Оплата принята Stripe. Статус обновится в течение минуты.'))
         onPaid?.()
         return
       }
@@ -129,9 +130,9 @@ function Reminder({ card, cash, catalog }) {
       const price = catalog.find((p) => p.id === card.product_id)
       return (
         <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">
-          ⏰ {d <= 0 ? 'Сегодня' : d === 1 ? 'Завтра' : `Через ${d} дн.`} ({formatDay(card.current_period_end)}) с карты
-          спишется {price ? formatPrice(price.amount_cents, price.currency) : 'оплата'} за следующий месяц.
-          Отменить можно в «Управлении оплатой».
+          ⏰ {d <= 0 ? t('Сегодня') : d === 1 ? t('Завтра') : t('Через {n} дн.', { n: d })} ({formatDay(card.current_period_end)}){' '}
+          {t('с карты спишется {amount} за следующий месяц.', { amount: price ? formatPrice(price.amount_cents, price.currency) : t('оплата') })}{' '}
+          {t('Отменить можно в «Управлении оплатой».')}
         </p>
       )
     }
@@ -141,7 +142,7 @@ function Reminder({ card, cash, catalog }) {
     if (d <= 3) {
       return (
         <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">
-          ⏰ Абонемент заканчивается {formatDay(cash.period_end)}. Продлите у тренера или картой ниже.
+          ⏰ {t('Абонемент заканчивается {date}. Продлите у тренера или картой ниже.', { date: formatDay(cash.period_end) })}
         </p>
       )
     }
@@ -154,23 +155,23 @@ function SubscriptionStatus({ sub }) {
   if (sub.status === 'past_due') {
     return (
       <p className="text-accent">
-        Не удалось списать оплату. Обновите карту в «Управлении оплатой».
+        {t('Не удалось списать оплату. Обновите карту в «Управлении оплатой».')}
       </p>
     )
   }
   return (
     <>
       <p className="text-lg">
-        Абонемент оплачен до <b className="text-white">{until}</b>
+        {t('Абонемент оплачен до')} <b className="text-white">{until}</b>
       </p>
       <p className="text-sm text-neutral-400">
         {sub.status === 'bank'
-          ? 'Оплачено переводом или наличными тренеру — месяц со дня оплаты.'
+          ? t('Оплачено переводом или наличными тренеру — месяц со дня оплаты.')
           : sub.status === 'cash'
-          ? 'Оплачено наличными у тренера.'
+          ? t('Оплачено наличными у тренера.')
           : sub.cancel_at_period_end
-            ? 'Автопродление выключено.'
-            : 'Продлится автоматически.'}
+            ? t('Автопродление выключено.')
+            : t('Продлится автоматически.')}
       </p>
     </>
   )
@@ -191,7 +192,7 @@ export default function BillingSection({ billing, discipline }) {
       status: cash === bank ? 'bank' : 'cash',
       current_period_end: cash.period_end,
       cancel_at_period_end: true,
-      product: { title: catalog.find((p) => p.id === cash.product_id)?.title ?? 'Абонемент' },
+      product: { title: catalog.find((p) => p.id === cash.product_id)?.title ?? t('Абонемент') },
     })
   const ended = !membership && overview?.valid_until && !overview.active ? overview.valid_until : null
   // 'both' — показываем оба направления.
@@ -201,35 +202,35 @@ export default function BillingSection({ billing, discipline }) {
   const hasHistory = subscriptions.length > 0 || payments.length > 0
   // Портал Stripe есть только у тех, кто хоть раз платил картой.
   const hasCard = subscriptions.length > 0 || payments.some((p) => p.method !== 'cash')
-  const titles = Object.fromEntries(catalog.map((p) => [p.id, p.title]))
+  const titles = Object.fromEntries(catalog.map((p) => [p.id, tData(p.title)]))
 
   return (
     <section className="card space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="label">Оплата</p>
+          <p className="label">{t('Оплата')}</p>
           {membership ? (
             <>
-              <h2 className="text-2xl">{membership.product?.title}</h2>
+              <h2 className="text-2xl">{tData(membership.product?.title)}</h2>
               <div className="mt-1">
                 <SubscriptionStatus sub={membership} />
               </div>
             </>
           ) : (
             <>
-              <h2 className="text-2xl">Абонемент не оплачен</h2>
-              {ended && <p className="text-sm text-neutral-400">Последний закончился {formatDay(ended)}</p>}
+              <h2 className="text-2xl">{t('Абонемент не оплачен')}</h2>
+              {ended && <p className="text-sm text-neutral-400">{t('Последний закончился {date}', { date: formatDay(ended) })}</p>}
             </>
           )}
         </div>
-        {membership && <span className="rounded border border-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">Активен</span>}
+        {membership && <span className="rounded border border-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">{t('Активен')}</span>}
       </div>
 
       <Reminder card={cardMembership} cash={cash} catalog={catalog} />
 
       {overview?.single_price_cents && (
         <p className="rounded-md border border-emerald-500/50 p-3 text-sm">
-          Ваша цена разовой тренировки — <b>{formatPrice(overview.single_price_cents)}</b> (переводом или наличными тренеру).
+          {t('Ваша цена разовой тренировки —')} <b>{formatPrice(overview.single_price_cents)}</b> {t('(переводом или наличными тренеру).')}
         </p>
       )}
 
@@ -246,8 +247,8 @@ export default function BillingSection({ billing, discipline }) {
               onClick={() => checkout(p.id)}
               className="btn-primary flex min-h-14 flex-col items-center justify-center !py-2 disabled:opacity-60"
             >
-              <span>{busy === p.id ? 'Переход к оплате…' : `${p.title.replace('Абонемент ', '')} · ${formatPrice(p.amount_cents, p.currency)}/мес`}</span>
-              <span className="text-[11px] normal-case tracking-normal opacity-80">абонемент, автопродление</span>
+              <span>{busy === p.id ? t('Переход к оплате…') : `${tData(p.title).replace('Абонемент ', '').replace('Abonements ', '')} · ${formatPrice(p.amount_cents, p.currency)}${t('/мес')}`}</span>
+              <span className="text-[11px] normal-case tracking-normal opacity-80">{t('абонемент, автопродление')}</span>
             </button>
           ))}
         </div>
@@ -263,7 +264,7 @@ export default function BillingSection({ billing, discipline }) {
               onClick={() => checkout(p.id)}
               className="btn-outline flex-1 whitespace-nowrap disabled:opacity-60"
             >
-              {busy === p.id ? 'Переход…' : `${p.title} · ${formatPrice(p.amount_cents, p.currency)}`}
+              {busy === p.id ? t('Переход…') : `${tData(p.title)} · ${formatPrice(p.amount_cents, p.currency)}`}
             </button>
           ))}
         </div>
@@ -278,11 +279,11 @@ export default function BillingSection({ billing, discipline }) {
               {payments.slice(0, 5).map((p) => (
                 <li key={p.id} className="flex justify-between gap-3 py-2">
                   <span className="truncate text-neutral-300">
-                    {p.note || titles[p.product_id] || 'Оплата'} · {formatDay(p.created_at)}
+                    {p.note || titles[p.product_id] || t('Оплата')} · {formatDay(p.created_at)}
                   </span>
                   <span className={p.status === 'paid' ? '' : 'text-accent'}>
-                    {p.status === 'failed' ? 'не прошла' : p.status === 'refunded' ? 'возврат' : formatPrice(p.amount_cents, p.currency)}
-                    {p.method === 'cash' && p.status === 'paid' && <span className="text-neutral-500"> · нал.</span>}
+                    {p.status === 'failed' ? t('не прошла') : p.status === 'refunded' ? t('возврат') : formatPrice(p.amount_cents, p.currency)}
+                    {p.method === 'cash' && p.status === 'paid' && <span className="text-neutral-500"> · {t('нал.')}</span>}
                   </span>
                 </li>
               ))}
@@ -294,7 +295,7 @@ export default function BillingSection({ billing, discipline }) {
             disabled={Boolean(busy)}
             className="text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline disabled:opacity-60"
           >
-            {busy === 'portal' ? 'Открываем…' : 'Управление оплатой: карта, счета, отмена подписки'}
+            {busy === 'portal' ? t('Открываем…') : t('Управление оплатой: карта, счета, отмена подписки')}
           </button>}
         </>
       )}
@@ -302,12 +303,12 @@ export default function BillingSection({ billing, discipline }) {
       {offline.length > 0 && (
         <details className="border-t border-line pt-2 text-sm">
           <summary className="cursor-pointer text-neutral-400">
-            Оплаты переводом и наличными: {offline.length} · {formatPrice(offline.reduce((s, p) => s + p.amount_cents, 0))}
+            {t('Оплаты переводом и наличными: {n}', { n: offline.length })} ·{formatPrice(offline.reduce((s, p) => s + p.amount_cents, 0))}
           </summary>
           <ul className="mt-2 max-h-48 divide-y divide-line overflow-y-auto">
             {offline.map((p) => (
               <li key={p.id} className="flex justify-between gap-3 py-1.5 text-neutral-300">
-                <span>{formatDay(p.paid_on)}{p.method === 'cash' ? ' · нал.' : ' · перевод'}</span>
+                <span>{formatDay(p.paid_on)}{p.method === 'cash' ? ` · ${t('нал.')}` : ` · ${t('перевод')}`}</span>
                 <span>{formatPrice(p.amount_cents)}</span>
               </li>
             ))}
@@ -315,7 +316,7 @@ export default function BillingSection({ billing, discipline }) {
         </details>
       )}
 
-      <p className="text-xs text-neutral-500">Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.</p>
+      <p className="text-xs text-neutral-500">{t('Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.')}</p>
     </section>
   )
 }
@@ -331,7 +332,7 @@ function CustomAmount({ onPay, busy }) {
   if (!open)
     return (
       <button type="button" onClick={() => setOpen(true)} className="btn-outline w-full">
-        Оплатить свою сумму
+        {t('Оплатить свою сумму')}
       </button>
     )
   return (
@@ -342,37 +343,37 @@ function CustomAmount({ onPay, busy }) {
         if (valid) onPay(cents, note.trim())
       }}
     >
-      <p className="text-sm font-semibold">Своя сумма</p>
+      <p className="text-sm font-semibold">{t('Своя сумма')}</p>
       <div className="grid grid-cols-[8rem_1fr] gap-2">
         <input
           inputMode="decimal"
           required
           autoFocus
-          placeholder="Сумма, €"
-          aria-label="Сумма в евро"
+          placeholder={t('Сумма, €')}
+          aria-label={t('Сумма в евро')}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           className="input"
         />
         <input
           maxLength={120}
-          placeholder="За что (необязательно): 3 тренировки, долг…"
-          aria-label="За что"
+          placeholder={t('За что (необязательно): 3 тренировки, долг…')}
+          aria-label={t('За что')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           className="input"
         />
       </div>
-      {amount && !valid && <p className="text-xs text-accent">Сумма от 1 до 500 €</p>}
+      {amount && !valid && <p className="text-xs text-accent">{t('Сумма от 1 до 500 €')}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={!valid || Boolean(busy)} className="btn-primary flex-1 disabled:opacity-60">
-          {busy === 'custom' ? 'Переход к оплате…' : valid ? `Оплатить ${formatPrice(cents)}` : 'Оплатить'}
+          {busy === 'custom' ? t('Переход к оплате…') : valid ? t('Оплатить {amount}', { amount: formatPrice(cents) }) : t('Оплатить')}
         </button>
         <button type="button" onClick={() => setOpen(false)} disabled={Boolean(busy)} className="btn-outline">
-          Отмена
+          {t('Отмена')}
         </button>
       </div>
-      <p className="text-xs text-neutral-500">Разовая оплата картой. Абонемент так не продлевается — для него кнопки выше.</p>
+      <p className="text-xs text-neutral-500">{t('Разовая оплата картой. Абонемент так не продлевается — для него кнопки выше.')}</p>
     </form>
   )
 }

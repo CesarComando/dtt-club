@@ -5,15 +5,16 @@ import { MembershipLine, loadMemberships } from './AdminMemberships.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { RANKS, DISCIPLINES } from '../lib/ranks.js'
+import { t, locale } from '../lib/i18n.jsx'
 
 // CRM: все ученики клуба, в том числе без аккаунта в приложении,
 // с историей оплат вне приложения (банк, наличные). Связка с аккаунтом —
 // функция link_member (ранг и направление переносятся в профиль).
 
-const STATUS = { regular: 'Постоянный', occasional: 'Иногда', one_time: 'Был раз', left: 'Ушёл' }
+const STATUS = { regular: t('Постоянный'), occasional: t('Иногда'), one_time: t('Был раз'), left: t('Ушёл') }
 const KIND = {
-  training: 'тренировка', membership: 'абонемент', pack: 'пакет', individual: 'индивид.',
-  uniform: 'форма', donation: 'пожертвование', other: 'другое',
+  training: t('тренировка'), membership: t('абонемент'), pack: t('пакет'), individual: t('индивид.'),
+  uniform: t('форма'), donation: t('пожертвование'), other: t('другое'),
 }
 // Нормализация имён для поиска совпадений: латиница без диакритики,
 // кириллица → латиница (Андрей ≈ Andrejs, Ņikita ≈ Никита).
@@ -95,7 +96,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
   // Аккаунт — родитель ученика клуба: телефон → club_contacts, имя → «родитель» у ребёнка.
   const markParent = (p, memberId) =>
     run(p.id, async () => {
-      if (!p.phone) throw new Error('У аккаунта нет телефона')
+      if (!p.phone) throw new Error(t('У аккаунта нет телефона'))
       const name = `${p.first_name} ${p.last_name}`
       ok(await supabase.from('club_contacts').upsert(
         { display_name: `${name} (родитель)`, phone: p.phone, member_id: Number(memberId), source: 'coach' },
@@ -108,7 +109,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
   return (
     <div className="space-y-2 rounded-md border border-accent/40 p-3">
       {error && <p className="text-sm text-accent">{error}</p>}
-      {unlinked.length > 0 && <p className="label">Новые в приложении — с кем связать</p>}
+      {unlinked.length > 0 && <p className="label">{t('Новые в приложении — с кем связать')}</p>}
       {unlinked.map((p) => {
         // Совпал телефон — первая подсказка (📞). Сама база больше не связывает:
         // номер при регистрации не проверяется, поэтому подтверждает тренер (слой 33).
@@ -130,14 +131,14 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
                   type="button"
                   disabled={busy === p.id}
                   onClick={() => link(m.id, p.id)}
-                  title={s === 2 ? 'Совпадает номер телефона' : undefined}
+                  title={s === 2 ? t('Совпадает номер телефона') : undefined}
                   className="rounded border border-line px-2 py-0.5 hover:border-accent disabled:opacity-50"
                 >
                   {s === 2 && '📞 '}{m.first_name} {m.last_name}
                 </button>
               ))
             ) : (
-              <span className="text-neutral-500">совпадений нет</span>
+              <span className="text-neutral-500">{t('совпадений нет')}</span>
             )}
             {pickFor === p.id ? (
               <select
@@ -146,7 +147,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
                 disabled={busy === p.id}
                 onChange={(e) => e.target.value && (setPickFor(null), link(Number(e.target.value), p.id))}
               >
-                <option value="">Кто это?</option>
+                <option value="">{t('Кто это?')}</option>
                 {free.filter((m) => m.status !== 'left')
                   .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`))
                   .map((m) => (
@@ -159,7 +160,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
                 onClick={() => setPickFor(p.id)}
                 className="rounded border border-dashed border-line px-2 py-0.5 text-neutral-300 hover:border-accent"
               >
-                Другой…
+                {t('Другой…')}
               </button>
             )}
             <button
@@ -168,7 +169,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
               onClick={() => createMember(p)}
               className="rounded border border-dashed border-line px-2 py-0.5 text-neutral-300 hover:border-accent disabled:opacity-50"
             >
-              ＋ Новый ученик
+              {t('＋ Новый ученик')}
             </button>
             {p.phone && (
               parentFor === p.id ? (
@@ -178,7 +179,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
                   disabled={busy === p.id}
                   onChange={(e) => e.target.value && markParent(p, e.target.value)}
                 >
-                  <option value="">Чей родитель?</option>
+                  <option value="">{t('Чей родитель?')}</option>
                   {members.filter((m) => m.status !== 'left').map((m) => (
                     <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
                   ))}
@@ -189,7 +190,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
                   onClick={() => setParentFor(p.id)}
                   className="rounded border border-dashed border-line px-2 py-0.5 text-neutral-300 hover:border-accent"
                 >
-                  Родитель…
+                  {t('Родитель…')}
                 </button>
               )
             )}
@@ -198,7 +199,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
       })}
       {parents.length > 0 && (
         <p className="text-xs text-neutral-500">
-          Родители:{' '}
+          {t('Родители:')}{' '}
           {parents.map((p, i) => (
             <span key={p.id}>
               {i > 0 && ' · '}
@@ -213,7 +214,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
   )
 }
 
-const day = (d) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+const day = (d) => new Date(d).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
 function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
   const [price, setPrice] = useState(m.single_price_cents ? String(m.single_price_cents / 100) : '')
@@ -248,7 +249,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
   const addPayment = () =>
     run(async () => {
       const cents = Math.round(Number(String(form.amount).replace(',', '.')) * 100)
-      if (!(cents > 0)) throw new Error('Введите сумму')
+      if (!(cents > 0)) throw new Error(t('Введите сумму'))
       const { error: e } = await supabase.from('member_payments').insert({
         member_id: m.id,
         paid_on: new Date().toISOString().slice(0, 10),
@@ -275,13 +276,13 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
               (linked.approved_at ? (
                 <ApprovedMark approved className="ml-2" />
               ) : (
-                <span className="ml-2 text-xs text-emerald-400">● в приложении</span>
+                <span className="ml-2 text-xs text-emerald-400">{t('● в приложении')}</span>
               ))}
           </p>
           <p className="truncate text-xs text-neutral-500">
-            {[STATUS[m.status], m.discipline && DISCIPLINES[m.discipline], m.parent_name && `родитель: ${m.parent_name}`,
+            {[STATUS[m.status], m.discipline && DISCIPLINES[m.discipline], m.parent_name && t('родитель: {name}', { name: m.parent_name }),
               m.rank_override && RANKS[m.rank_override - 1]?.title,
-              m.single_price_cents && `разовая ${formatPrice(m.single_price_cents)}`].filter(Boolean).join(' · ')}
+              m.single_price_cents && t('разовая {price}', { price: formatPrice(m.single_price_cents) })].filter(Boolean).join(' · ')}
           </p>
           {membership?.valid_until && <MembershipLine row={membership} className="block truncate text-xs" />}
         </div>
@@ -289,12 +290,12 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
           type="button"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
-          title="Оплаты и связка с аккаунтом"
+          title={t('Оплаты и связка с аккаунтом')}
           className="shrink-0 rounded-md px-2 py-1 text-right hover:bg-white/5"
         >
           <p className="font-display text-lg">{formatPrice(total)} <span className="text-xs text-neutral-500">{open ? '▴' : '▾'}</span></p>
           <p className="text-[10px] uppercase tracking-wider text-neutral-500">
-            {pays.length} опл.{last ? ` · ${day(last)}` : ''}
+            {t('{n} опл.', { n: pays.length })}{last ? ` · ${day(last)}` : ''}
           </p>
         </button>
       </div>
@@ -306,14 +307,14 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
             <p className="text-xs text-neutral-500">
               {m.phone && <a href={`tel:+${m.phone}`} className="text-neutral-300 hover:text-white">+{m.phone}</a>}
               {m.phone && m.aliases?.length > 0 && ' · '}
-              {m.aliases?.length > 0 && <>в группе: {m.aliases.join(', ')}</>}
+              {m.aliases?.length > 0 && <>{t('в группе: {names}', { names: m.aliases.join(', ') })}</>}
             </p>
           )}
 
           <label className="block">
-            <span className="label">Аккаунт в приложении</span>
+            <span className="label">{t('Аккаунт в приложении')}</span>
             <select className="input" value={m.profile_id ?? ''} disabled={busy} onChange={(e) => link(e.target.value)}>
-              <option value="">— не связан —</option>
+              <option value="">{t('— не связан —')}</option>
               {profiles
                 .filter((p) => p.id === m.profile_id || !linkedIds.has(p.id))
                 .map((p) => (
@@ -323,7 +324,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
           </label>
 
           <div>
-            <span className="label">Записать оплату (сегодня)</span>
+            <span className="label">{t('Записать оплату (сегодня)')}</span>
             <div className="flex flex-wrap gap-2">
               <input
                 className="input !w-24"
@@ -336,18 +337,18 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
                 {Object.entries(KIND).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
               <select className="input !w-auto" value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
-                <option value="cash">наличные</option>
-                <option value="bank">перевод</option>
+                <option value="cash">{t('наличные')}</option>
+                <option value="bank">{t('перевод')}</option>
               </select>
-              <button type="button" onClick={addPayment} disabled={busy} className="btn-primary disabled:opacity-60">Записать</button>
+              <button type="button" onClick={addPayment} disabled={busy} className="btn-primary disabled:opacity-60">{t('Записать')}</button>
             </div>
             {form.kind === 'membership' && (
-              <p className="mt-1 text-xs text-neutral-500">Абонемент будет действовать месяц с сегодняшнего дня (или с конца текущего).</p>
+              <p className="mt-1 text-xs text-neutral-500">{t('Абонемент будет действовать месяц с сегодняшнего дня (или с конца текущего).')}</p>
             )}
           </div>
 
           <div>
-            <span className="label">Особая цена разовой (пусто — обычная)</span>
+            <span className="label">{t('Особая цена разовой (пусто — обычная)')}</span>
             <div className="flex gap-2">
               <input
                 className="input !w-24"
@@ -363,13 +364,13 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
                 onClick={() =>
                   run(async () => {
                     const cents = price.trim() ? Math.round(Number(price.replace(',', '.')) * 100) : null
-                    if (cents !== null && !(cents > 0)) throw new Error('Введите цену')
+                    if (cents !== null && !(cents > 0)) throw new Error(t('Введите цену'))
                     const { error: e } = await supabase.from('club_members').update({ single_price_cents: cents }).eq('id', m.id)
                     if (e) throw e
                   })
                 }
               >
-                Сохранить
+                {t('Сохранить')}
               </button>
             </div>
           </div>
@@ -381,7 +382,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
               {pays.map((p) => (
                 <li key={p.id} className="flex justify-between gap-3 py-1.5">
                   <span className="truncate text-neutral-300">
-                    {day(p.paid_on)} · {KIND[p.kind]}{p.method === 'cash' ? ' · нал.' : ''}
+                    {day(p.paid_on)} · {KIND[p.kind]}{p.method === 'cash' ? ` · ${t('нал.')}` : ''}
                     {p.payer_name && p.payer_name.toLowerCase() !== `${m.first_name} ${m.last_name}`.toLowerCase() &&
                       <span className="text-neutral-500"> · {p.payer_name}</span>}
                   </span>
@@ -414,14 +415,14 @@ function NewMember({ onAdded }) {
   }
   return (
     <form onSubmit={save} className="grid gap-2 border-t border-line pt-3 sm:grid-cols-5">
-      <input className="input" required placeholder="Имя" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
-      <input className="input" required placeholder="Фамилия" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+      <input className="input" required placeholder={t('Имя')} value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+      <input className="input" required placeholder={t('Фамилия')} value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
       <select className="input" value={form.discipline} onChange={(e) => setForm({ ...form, discipline: e.target.value })}>
-        <option value="">Направление —</option>
+        <option value="">{t('Направление —')}</option>
         {Object.entries(DISCIPLINES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
-      <input className="input" placeholder="Родитель (если ребёнок)" value={form.parent_name} onChange={(e) => setForm({ ...form, parent_name: e.target.value })} />
-      <button className="btn-primary">Добавить</button>
+      <input className="input" placeholder={t('Родитель (если ребёнок)')} value={form.parent_name} onChange={(e) => setForm({ ...form, parent_name: e.target.value })} />
+      <button className="btn-primary">{t('Добавить')}</button>
       {error && <p className="text-sm text-accent sm:col-span-5">{error}</p>}
     </form>
   )
@@ -470,7 +471,7 @@ export default function AdminMembers({ profiles }) {
       .filter((m) => !s || `${m.first_name} ${m.last_name} ${m.parent_name ?? ''} ${(m.aliases ?? []).join(' ')} ${m.phone ?? ''}`.toLowerCase().includes(s))
   }, [members, filter, q, memberships])
 
-  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Ученики клуба: {error}</p>
+  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Ученики клуба: {error}', { error })}</p>
   if (!members) return null
 
   const total = members.reduce((s, m) => s + (m.member_payments ?? []).reduce((a, p) => a + p.amount_cents, 0), 0)
@@ -479,22 +480,22 @@ export default function AdminMembers({ profiles }) {
     <section className="card space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <div>
-          <p className="label">Все ученики клуба</p>
-          <h2 className="text-xl">Ученики и оплаты</h2>
+          <p className="label">{t('Все ученики клуба')}</p>
+          <h2 className="text-xl">{t('Ученики и оплаты')}</h2>
         </div>
         <div className="text-right">
           <p className="font-display text-2xl">{members.length}</p>
-          <p className="text-[10px] uppercase tracking-wider text-neutral-500">{formatPrice(total)} всего</p>
+          <p className="text-[10px] uppercase tracking-wider text-neutral-500">{t('{sum} всего', { sum: formatPrice(total) })}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <input className="input flex-1" type="search" placeholder="Поиск…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input flex-1" type="search" placeholder={t('Поиск…')} value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input !w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="active">Постоянные и иногда</option>
-          <option value="paid">С абонементом</option>
-          <option value="one_time">Были раз</option>
-          <option value="all">Все</option>
+          <option value="active">{t('Постоянные и иногда')}</option>
+          <option value="paid">{t('С абонементом')}</option>
+          <option value="one_time">{t('Были раз')}</option>
+          <option value="all">{t('Все')}</option>
         </select>
       </div>
 

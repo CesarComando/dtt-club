@@ -2,16 +2,17 @@
 // Edge Function создать страницу оплаты и уходит на неё. Статус оплаты
 // в базе меняет вебхук на сервере (supabase/functions/stripe-webhook).
 import { supabase } from './supabaseClient.js'
+import { t, locale } from './i18n.jsx'
 
 // Подписка считается действующей и в статусе past_due: Stripe ещё пытается списать.
 export const LIVE_STATUSES = ['active', 'trialing', 'past_due']
 
 export const formatPrice = (cents, currency = 'eur') =>
-  new Intl.NumberFormat('ru-RU', { style: 'currency', currency: currency.toUpperCase(), minimumFractionDigits: 0 })
+  new Intl.NumberFormat(locale(), { style: 'currency', currency: currency.toUpperCase(), minimumFractionDigits: 0 })
     .format(cents / 100)
 
 export const formatDay = (iso) =>
-  new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })
 
 export async function loadCatalog() {
   const { data, error } = await supabase
@@ -56,7 +57,7 @@ async function callFunction(name, body) {
   const { data, error } = await supabase.functions.invoke(name, { body })
   if (error) {
     // Текст ошибки функции лежит в теле ответа.
-    let message = 'Сервис оплаты недоступен'
+    let message = t('Сервис оплаты недоступен')
     try {
       message = (await error.context?.json())?.error ?? message
     } catch {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ageFrom, bmi, bmiCategory, loadBody, saveBody } from '../lib/diary.js'
+import { t } from '../lib/i18n.jsx'
 
 const EMPTY = { height: '', weight: '', birth_date: '' }
 const toForm = (b) => ({ height: b?.height ?? '', weight: b?.weight ?? '', birth_date: b?.birth_date ?? '' })
@@ -43,9 +44,9 @@ export default function BodyStats({ userId }) {
       })
       setForm(toForm(b))
       setSaved(toForm(b))
-      setMsg('Сохранено')
+      setMsg(t('Сохранено'))
     } catch (err) {
-      setMsg(err.message.includes('check') ? 'Проверьте значения: рост 80–230 см, вес 15–250 кг.' : err.message)
+      setMsg(err.message.includes('check') ? t('Проверьте значения: рост 80–230 см, вес 15–250 кг.') : err.message)
     } finally {
       setBusy(false)
     }
@@ -54,25 +55,25 @@ export default function BodyStats({ userId }) {
   return (
     <section className="card space-y-4">
       <div>
-        <p className="label">Мои параметры</p>
-        <h2 className="text-xl">Рост, вес и ИМТ</h2>
-        <p className="text-xs text-neutral-500">Видите только вы и тренер.</p>
+        <p className="label">{t('Мои параметры')}</p>
+        <h2 className="text-xl">{t('Рост, вес и ИМТ')}</h2>
+        <p className="text-xs text-neutral-500">{t('Видите только вы и тренер.')}</p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="label" htmlFor="height">Рост, см</label>
+            <label className="label" htmlFor="height">{t('Рост, см')}</label>
             <input id="height" name="height" type="number" inputMode="numeric" min="80" max="230" className="input"
               value={form.height} onChange={onChange} disabled={loading} placeholder="178" />
           </div>
           <div>
-            <label className="label" htmlFor="weight">Вес, кг</label>
+            <label className="label" htmlFor="weight">{t('Вес, кг')}</label>
             <input id="weight" name="weight" type="number" inputMode="decimal" step="0.1" min="15" max="250" className="input"
               value={form.weight} onChange={onChange} disabled={loading} placeholder="77.5" />
           </div>
           <div>
-            <label className="label" htmlFor="birth_date">Рождение</label>
+            <label className="label" htmlFor="birth_date">{t('Рождение')}</label>
             <input id="birth_date" name="birth_date" type="date" className="input !px-2"
               value={form.birth_date} onChange={onChange} disabled={loading} />
           </div>
@@ -81,7 +82,7 @@ export default function BodyStats({ userId }) {
         <div className="flex items-center gap-4 rounded-md border border-line p-4">
           <div className="text-center">
             <p className="font-display text-4xl tabular-nums">{value ?? '—'}</p>
-            <p className="text-[11px] uppercase tracking-wider text-neutral-400">ИМТ</p>
+            <p className="text-[11px] uppercase tracking-wider text-neutral-400">{t('ИМТ')}</p>
           </div>
           <div className="min-w-0 flex-1 text-sm">
             {cat ? (
@@ -89,18 +90,18 @@ export default function BodyStats({ userId }) {
                 {cat.label}
               </p>
             ) : (
-              <p className="text-neutral-400">Введите рост и вес — индекс посчитается сам.</p>
+              <p className="text-neutral-400">{t('Введите рост и вес — индекс посчитается сам.')}</p>
             )}
-            {age != null && <p className="text-neutral-400">Возраст: {age}</p>}
+            {age != null && <p className="text-neutral-400">{t('Возраст: {n}', { n: age })}</p>}
             <p className="mt-1 text-xs text-neutral-500">
-              У спортсменов с большой мышечной массой ИМТ завышен — это ориентир, а не диагноз.
+              {t('У спортсменов с большой мышечной массой ИМТ завышен — это ориентир, а не диагноз.')}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button type="submit" disabled={busy || loading || !dirty} className="btn-primary disabled:opacity-50">
-            {busy ? 'Сохраняем…' : 'Сохранить'}
+            {busy ? t('Сохраняем…') : t('Сохранить')}
           </button>
           {msg && <p className="text-sm text-neutral-400" role="status">{msg}</p>}
         </div>

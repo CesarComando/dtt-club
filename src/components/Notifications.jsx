@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { loadNotifications, markNotificationsRead } from '../lib/coach.js'
+import { t, tData } from '../lib/i18n.jsx'
 
 const ICON = { cancelled: '⛔', restored: '✅', moved: '🕒', venue: '📍' }
 
@@ -19,22 +20,22 @@ export default function Notifications() {
   }
 
   return (
-    <section className="space-y-2" aria-label="Уведомления">
+    <section className="space-y-2" aria-label={t('Уведомления')}>
       {items.map((n) => (
         <div key={n.id} className="flex items-start gap-3 rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">
           <span aria-hidden="true">{ICON[n.kind] ?? '🔔'}</span>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-white">{n.title}</p>
-            <p className="text-neutral-300">{n.body}</p>
+            <p className="font-semibold text-white">{tData(n.title)}</p>
+            <p className="text-neutral-300">{tData(n.body)}</p>
           </div>
           <button type="button" onClick={() => dismiss([n.id])} className="shrink-0 text-xs text-neutral-400 hover:text-white">
-            Понятно
+            {t('Понятно')}
           </button>
         </div>
       ))}
       {items.length > 1 && (
         <button type="button" onClick={() => dismiss(items.map((n) => n.id))} className="text-xs text-neutral-500 hover:text-white">
-          Скрыть все
+          {t('Скрыть все')}
         </button>
       )}
     </section>

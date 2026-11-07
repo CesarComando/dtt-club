@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { CATEGORIES, articleDate, coverUrl, loadArticles } from '../lib/articles.js'
+import { t } from '../lib/i18n.jsx'
 
 // «Статьи»: новости клуба, переводы речей и интервью тренеров. Читают все
 // (статьи «только ученикам» — после входа), пишет тренер.
@@ -27,14 +28,14 @@ export default function Articles() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-3xl">Статьи</h1>
+        <h1 className="text-3xl">{t('Статьи')}</h1>
         {isAdmin && (
-          <Link to="/articles/new" className="btn-primary">＋ Новая статья</Link>
+          <Link to="/articles/new" className="btn-primary">{t('＋ Новая статья')}</Link>
         )}
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {[['all', 'Все'], ...Object.entries(CATEGORIES)].map(([id, label]) => (
+        {[['all', t('Все')], ...Object.entries(CATEGORIES)].map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -49,10 +50,10 @@ export default function Articles() {
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
 
       {items == null ? (
-        <p className="card text-neutral-400">Загружаем…</p>
+        <p className="card text-neutral-400">{t('Загружаем…')}</p>
       ) : list.length === 0 ? (
         <p className="card text-neutral-400">
-          {isAdmin ? 'Пока пусто — нажмите «Новая статья».' : 'Скоро здесь появятся новости и переводы.'}
+          {isAdmin ? t('Пока пусто — нажмите «Новая статья».') : t('Скоро здесь появятся новости и переводы.')}
         </p>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
@@ -65,8 +66,8 @@ export default function Articles() {
                 <div className="space-y-1.5 p-4">
                   <p className="text-[11px] uppercase tracking-wider text-neutral-500">
                     {CATEGORIES[a.category]} · {articleDate(a)}
-                    {!a.published && <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-black">черновик</span>}
-                    {a.published && a.members_only && isAdmin && <span className="ml-2 text-neutral-400">· только ученикам</span>}
+                    {!a.published && <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-black">{t('черновик')}</span>}
+                    {a.published && a.members_only && isAdmin && <span className="ml-2 text-neutral-400">· {t('только ученикам')}</span>}
                   </p>
                   <h2 className="text-xl leading-tight">{a.title}</h2>
                   {a.lead && <p className="line-clamp-3 text-sm text-neutral-400">{a.lead}</p>}
@@ -79,8 +80,8 @@ export default function Articles() {
 
       {!user && (
         <p className="text-center text-sm text-neutral-500">
-          Часть статей — только для учеников клуба.{' '}
-          <Link to="/login?next=%2Farticles" className="text-accent hover:underline">Войдите</Link>, чтобы видеть все.
+          {t('Часть статей — только для учеников клуба.')}{' '}
+          <Link to="/login?next=%2Farticles" className="text-accent hover:underline">{t('Войдите')}</Link>{t(', чтобы видеть все.')}
         </p>
       )}
     </div>

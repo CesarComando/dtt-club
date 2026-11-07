@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { createChildAccount, getAvatarUrl, normalizePhone, resetChildPassword, unlinkChild } from '../lib/auth.js'
 import { DISCIPLINES, getRank, hasRanks } from '../lib/ranks.js'
+import { t } from '../lib/i18n.jsx'
 
 // Кабинет родителя → «Мои дети» (слой 24). Родитель добавляет ребёнка: имя, фото, пароль.
 // Ребёнок входит сам по логину «телефон родителя-номер» (вход «MMA дети» или любой другой раздел).
@@ -41,7 +42,7 @@ export default function MyChildren({ profile }) {
   if (profile.parent_id || !/^\d{8,15}$/.test(normalizePhone(profile.phone ?? ''))) return null
 
   const unlink = async (k) => {
-    if (!window.confirm(`Убрать ${k.first_name} из «Мои дети»? Аккаунт ребёнка останется, но связь с вами пропадёт.`)) return
+    if (!window.confirm(t('Убрать {name} из «Мои дети»? Аккаунт ребёнка останется, но связь с вами пропадёт.', { name: k.first_name }))) return
     try {
       await unlinkChild(k.id)
       await load()
@@ -53,26 +54,26 @@ export default function MyChildren({ profile }) {
   return (
     <section className="card space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl">Мои дети</h2>
+        <h2 className="text-xl">{t('Мои дети')}</h2>
         {!open && (
           <button type="button" onClick={() => { setOpen(true); setCreated(null) }} className="btn-outline !px-3 !py-1.5 text-sm">
-            + Добавить ребёнка
+            + {t('Добавить ребёнка')}
           </button>
         )}
       </div>
       <p className="text-xs text-neutral-500">
-        У ребёнка свой аккаунт: посещения, ранг, запись на тренировки. Входит сам — по логину от вашего телефона и паролю, который вы зададите.
+        {t('У ребёнка свой аккаунт: посещения, ранг, запись на тренировки. Входит сам — по логину от вашего телефона и паролю, который вы зададите.')}
       </p>
       {error && <p className="text-sm text-accent">{error}</p>}
 
       {created && (
         <div className="rounded-md border border-emerald-500/60 bg-emerald-500/10 p-3 text-sm">
-          <p className="font-semibold">Аккаунт {created.name} создан ✓</p>
+          <p className="font-semibold">{t('Аккаунт {name} создан ✓', { name: created.name })}</p>
           <p className="mt-1">
-            Логин для входа: <span className="font-display text-lg tracking-wider">{shortLogin(created.login)}</span>
+            {t('Логин для входа:')} <span className="font-display text-lg tracking-wider">{shortLogin(created.login)}</span>
           </p>
-          <p className="text-neutral-300">Пароль — тот, что вы ввели. Запишите логин или сделайте скриншот.</p>
-          <p className="mt-1 text-xs text-neutral-400">На экране входа выберите «MMA дети» (или раздел ребёнка) и введите логин и пароль.</p>
+          <p className="text-neutral-300">{t('Пароль — тот, что вы ввели. Запишите логин или сделайте скриншот.')}</p>
+          <p className="mt-1 text-xs text-neutral-400">{t('На экране входа выберите «MMA дети» (или раздел ребёнка) и введите логин и пароль.')}</p>
         </div>
       )}
 
@@ -89,21 +90,21 @@ export default function MyChildren({ profile }) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{k.first_name} {k.last_name}</p>
                     <p className="truncate text-xs text-neutral-500">
-                      {[DISCIPLINES[k.discipline], `${k.trainings_count} трен.`, rank?.title, !k.approved_at && 'ждёт подтверждения тренера']
+                      {[DISCIPLINES[k.discipline], t('{n} трен.', { n: k.trainings_count }), rank?.title, !k.approved_at && t('ждёт подтверждения тренера')]
                         .filter(Boolean).join(' · ')}
                     </p>
                     {k.login && (
                       <p className="text-xs text-neutral-400">
-                        Логин: <span className="font-display tracking-wider text-white">{shortLogin(k.login)}</span>
+                        {t('Логин:')} <span className="font-display tracking-wider text-white">{shortLogin(k.login)}</span>
                       </p>
                     )}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <button type="button" onClick={() => setPwFor(pwFor === k.id ? null : k.id)} className="text-xs text-neutral-300 hover:text-accent">
-                      Новый пароль
+                      {t('Новый пароль')}
                     </button>
                     <button type="button" onClick={() => unlink(k)} className="text-xs text-neutral-500 hover:text-accent">
-                      Убрать
+                      {t('Убрать')}
                     </button>
                   </div>
                 </div>
@@ -139,13 +140,13 @@ function NewPassword({ child, onDone }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    if (pw !== pw2) return setMsg('Пароли не совпадают.')
+    if (pw !== pw2) return setMsg(t('Пароли не совпадают.'))
     setBusy(true)
     setMsg('')
     try {
       await resetChildPassword(child.id, pw)
       setOk(true)
-      setMsg(`Готово: ${child.first_name} теперь входит с новым паролем.`)
+      setMsg(t('Готово: {name} теперь входит с новым паролем.', { name: child.first_name }))
       setTimeout(onDone, 2500)
     } catch (err) {
       setMsg(err.message)
@@ -156,15 +157,15 @@ function NewPassword({ child, onDone }) {
 
   return (
     <form onSubmit={submit} className="mt-2 space-y-2 rounded-md border border-line p-3">
-      <p className="text-xs text-neutral-400">Новый пароль для {child.first_name} (логин остаётся прежним):</p>
+      <p className="text-xs text-neutral-400">{t('Новый пароль для {name} (логин остаётся прежним):', { name: child.first_name })}</p>
       <div className="grid grid-cols-2 gap-2">
-        <input type="password" required minLength={6} autoComplete="new-password" placeholder="Новый пароль" aria-label="Новый пароль" value={pw} onChange={(e) => setPw(e.target.value)} className="input" />
-        <input type="password" required minLength={6} autoComplete="new-password" placeholder="Повторите" aria-label="Повторите пароль" value={pw2} onChange={(e) => setPw2(e.target.value)} className="input" />
+        <input type="password" required minLength={6} autoComplete="new-password" placeholder={t('Новый пароль')} aria-label={t('Новый пароль')} value={pw} onChange={(e) => setPw(e.target.value)} className="input" />
+        <input type="password" required minLength={6} autoComplete="new-password" placeholder={t('Повторите')} aria-label={t('Повторите пароль')} value={pw2} onChange={(e) => setPw2(e.target.value)} className="input" />
       </div>
       {msg && <p className={`text-sm ${ok ? 'text-emerald-400' : 'text-accent'}`}>{msg}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={busy || ok} className="btn-primary flex-1 disabled:opacity-60">{busy ? 'Сохраняем…' : 'Сохранить пароль'}</button>
-        <button type="button" onClick={onDone} disabled={busy} className="btn-outline">Отмена</button>
+        <button type="submit" disabled={busy || ok} className="btn-primary flex-1 disabled:opacity-60">{busy ? t('Сохраняем…') : t('Сохранить пароль')}</button>
+        <button type="button" onClick={onDone} disabled={busy} className="btn-outline">{t('Отмена')}</button>
       </div>
     </form>
   )
@@ -194,8 +195,8 @@ function AddChild({ profile, onCancel, onDone }) {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
-    if (!photo) return setError('Добавьте фото ребёнка — тренеру нужно узнавать его на тренировке.')
-    if (form.password !== form.password2) return setError('Пароли не совпадают.')
+    if (!photo) return setError(t('Добавьте фото ребёнка — тренеру нужно узнавать его на тренировке.'))
+    if (form.password !== form.password2) return setError(t('Пароли не совпадают.'))
     setBusy(true)
     try {
       const login = await createChildAccount({ parentPhone: profile.phone, ...form, photo })
@@ -210,27 +211,27 @@ function AddChild({ profile, onCancel, onDone }) {
     <form onSubmit={submit} className="space-y-3 rounded-md border border-line p-3">
       <div className="flex items-center gap-3">
         <div className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink ring-2 ${preview ? 'ring-accent' : 'ring-line'}`}>
-          {preview ? <img src={preview} alt="Фото ребёнка" className="h-full w-full object-cover" /> : <span className="text-xs text-neutral-500">фото</span>}
+          {preview ? <img src={preview} alt={t('Фото ребёнка')} className="h-full w-full object-cover" /> : <span className="text-xs text-neutral-500">{t('фото')}</span>}
         </div>
         <div className="flex flex-wrap gap-2">
           <input id="kid-cam" type="file" accept="image/*" capture="user" className="sr-only" onChange={onFile} />
           <input id="kid-gal" type="file" accept="image/*" className="sr-only" onChange={onFile} />
-          <label htmlFor="kid-cam" className="btn-outline cursor-pointer !px-3 !py-1.5 text-sm">Камера</label>
-          <label htmlFor="kid-gal" className="btn-outline cursor-pointer !px-3 !py-1.5 text-sm">Из галереи</label>
+          <label htmlFor="kid-cam" className="btn-outline cursor-pointer !px-3 !py-1.5 text-sm">{t('Камера')}</label>
+          <label htmlFor="kid-gal" className="btn-outline cursor-pointer !px-3 !py-1.5 text-sm">{t('Из галереи')}</label>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="label" htmlFor="kid-first">Имя *</label>
+          <label className="label" htmlFor="kid-first">{t('Имя *')}</label>
           <input id="kid-first" required value={form.firstName} onChange={set('firstName')} className="input" />
         </div>
         <div>
-          <label className="label" htmlFor="kid-last">Фамилия *</label>
+          <label className="label" htmlFor="kid-last">{t('Фамилия *')}</label>
           <input id="kid-last" required value={form.lastName} onChange={set('lastName')} className="input" />
         </div>
       </div>
       <fieldset>
-        <legend className="label">Направление</legend>
+        <legend className="label">{t('Направление')}</legend>
         <div className="grid grid-cols-2 gap-2">
           {Object.entries(DISCIPLINES).map(([v, label]) => (
             <button
@@ -239,26 +240,26 @@ function AddChild({ profile, onCancel, onDone }) {
               onClick={() => setForm((f) => ({ ...f, discipline: v }))}
               className={`rounded-md border px-2 py-2 text-xs font-semibold uppercase tracking-wider ${form.discipline === v ? 'border-accent bg-accent/10 text-white' : 'border-line text-neutral-400'}`}
             >
-              {v === 'mma' ? 'MMA дети' : label}
+              {v === 'mma' ? t('MMA дети') : label}
             </button>
           ))}
         </div>
       </fieldset>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="label" htmlFor="kid-pass">Пароль ребёнка *</label>
-          <input id="kid-pass" type="password" required minLength={6} autoComplete="new-password" value={form.password} onChange={set('password')} className="input" placeholder="мин. 6 символов" />
+          <label className="label" htmlFor="kid-pass">{t('Пароль ребёнка *')}</label>
+          <input id="kid-pass" type="password" required minLength={6} autoComplete="new-password" value={form.password} onChange={set('password')} className="input" placeholder={t('мин. 6 символов')} />
         </div>
         <div>
-          <label className="label" htmlFor="kid-pass2">Повторите *</label>
+          <label className="label" htmlFor="kid-pass2">{t('Повторите *')}</label>
           <input id="kid-pass2" type="password" required minLength={6} autoComplete="new-password" value={form.password2} onChange={set('password2')} className="input" />
         </div>
       </div>
-      {form.password2 && form.password2 !== form.password && <p className="text-xs text-accent">Пароли не совпадают</p>}
+      {form.password2 && form.password2 !== form.password && <p className="text-xs text-accent">{t('Пароли не совпадают')}</p>}
       {error && <p className="text-sm text-accent">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={busy} className="btn-primary flex-1 disabled:opacity-60">{busy ? 'Создаём…' : 'Создать аккаунт ребёнка'}</button>
-        <button type="button" onClick={onCancel} disabled={busy} className="btn-outline">Отмена</button>
+        <button type="submit" disabled={busy} className="btn-primary flex-1 disabled:opacity-60">{busy ? t('Создаём…') : t('Создать аккаунт ребёнка')}</button>
+        <button type="button" onClick={onCancel} disabled={busy} className="btn-outline">{t('Отмена')}</button>
       </div>
     </form>
   )

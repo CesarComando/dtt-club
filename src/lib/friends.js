@@ -1,6 +1,7 @@
 // Слой 29: ученики клуба для других учеников (club_people) и приглашения внутри приложения.
 // Чужие профили напрямую не читаются: только имя и фото (и ранг/направление, если профиль не скрыт).
 import { supabase, AVATARS_BUCKET } from './supabaseClient.js'
+import { t } from './i18n.jsx'
 
 const must = ({ data, error }) => {
   if (error) throw error
@@ -56,8 +57,8 @@ export function attendeesText(a, myId) {
   const extra = a.hidden + (names.length > 3 ? names.length - 3 : 0)
   const shown = names.slice(0, 3)
   if (!shown.length && !extra) return ''
-  if (!shown.length) return `Идут: ${extra} чел.`
-  return `Идут: ${shown.join(', ')}${extra ? ` и ещё ${extra}` : ''}`
+  if (!shown.length) return t('Идут: {n} чел.', { n: extra })
+  return extra ? t('Идут: {names} и ещё {n}', { names: shown.join(', '), n: extra }) : t('Идут: {names}', { names: shown.join(', ') })
 }
 
 export const loadFriendInvites = async () => must(await supabase.rpc('my_friend_invites'))

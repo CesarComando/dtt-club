@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { formatDay, formatPrice, loadCatalog } from '../lib/payments.js'
 import { deleteAthleteAccount, loadDebtors, recordCashPayment } from '../lib/club-ops.js'
+import { t, tData } from '../lib/i18n.jsx'
 
 let catalogCache = null
 const useCashProducts = () => {
@@ -31,7 +32,7 @@ export function CashPayment({ athlete, onDone }) {
     setMsg('')
     try {
       const until = await recordCashPayment(athlete.id, selected)
-      setMsg(until ? `Абонемент оплачен до ${formatDay(until)}` : 'Разовая оплата записана')
+      setMsg(until ? t('Абонемент оплачен до {date}', { date: formatDay(until) }) : t('Разовая оплата записана'))
       onDone?.()
     } catch (e) {
       setMsg(e.message)
@@ -43,15 +44,15 @@ export function CashPayment({ athlete, onDone }) {
   if (!mine.length) return null
   return (
     <div className="space-y-2">
-      <span className="label">Оплата наличными</span>
+      <span className="label">{t('Оплата наличными')}</span>
       <div className="flex gap-2">
         <select className="input" value={selected} onChange={(e) => setProduct(e.target.value)} disabled={busy}>
           {mine.map((p) => (
-            <option key={p.id} value={p.id}>{p.title} · {formatPrice(p.amount_cents, p.currency)}</option>
+            <option key={p.id} value={p.id}>{tData(p.title)} · {formatPrice(p.amount_cents, p.currency)}</option>
           ))}
         </select>
         <button type="button" onClick={save} disabled={busy} className="btn-primary shrink-0 disabled:opacity-60">
-          {busy ? '…' : 'Принял'}
+          {busy ? '…' : t('Принял')}
         </button>
       </div>
       {msg && <p className="text-xs text-neutral-400" role="status">{msg}</p>}
@@ -78,17 +79,17 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
     load()
   }, [load, reloadKey])
 
-  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Должники: {error}</p>
+  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Должники: {error}', { error })}</p>
   if (!list) return null
 
   return (
     <section className="card space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xl">Должники</h2>
+        <h2 className="text-xl">{t('Должники')}</h2>
         <span className={`font-display text-2xl ${list.length ? 'text-accent' : 'text-neutral-500'}`}>{list.length}</span>
       </div>
       {list.length === 0 ? (
-        <p className="text-sm text-neutral-400">Все оплатили — долгов нет.</p>
+        <p className="text-sm text-neutral-400">{t('Все оплатили — долгов нет.')}</p>
       ) : (
         <ul className="divide-y divide-line">
           {list.map((d) => {
@@ -99,8 +100,8 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{d.first_name} {d.last_name}</p>
                     <p className="text-sm text-accent">
-                      {d.reason}
-                      {d.unpaid ? ` · ${d.unpaid} трен.` : ''}
+                      {tData(d.reason)}
+                      {d.unpaid ? ` · ${t('{n} трен.', { n: d.unpaid })}` : ''}
                     </p>
                   </div>
                   <button
@@ -108,7 +109,7 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
                     onClick={() => setOpen(open === d.athlete_id ? null : d.athlete_id)}
                     className="text-xs text-neutral-400 hover:text-white"
                   >
-                    {open === d.athlete_id ? 'Скрыть' : 'Оплатил наличными'}
+                    {open === d.athlete_id ? t('Скрыть') : t('Оплатил наличными')}
                   </button>
                 </div>
                 {open === d.athlete_id && (
@@ -126,7 +127,7 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
         </ul>
       )}
       <p className="text-xs text-neutral-500">
-        Должник — не прошло списание по карте или за 30 дней тренировок больше, чем оплачено (первая тренировка бесплатно).
+        {t('Должник — не прошло списание по карте или за 30 дней тренировок больше, чем оплачено (первая тренировка бесплатно).')}
       </p>
     </section>
   )
@@ -154,19 +155,18 @@ export function DeleteAthlete({ athlete, onDeleted }) {
     <div className="space-y-2 border-t border-line pt-3 text-sm">
       {step === 0 ? (
         <button type="button" onClick={() => setStep(1)} className="text-neutral-500 hover:text-accent">
-          Удалить аккаунт ученика
+          {t('Удалить аккаунт ученика')}
         </button>
       ) : (
         <>
           <p className="text-accent">
-            Удалить аккаунт {athlete.first_name} {athlete.last_name} навсегда? Удалятся профиль, телефон, селфи,
-            посещения и записи; подписки по карте отменятся. Запись в «Ученики и оплаты» останется.
+            {t('Удалить аккаунт {name} навсегда? Удалятся профиль, телефон, селфи, посещения и записи; подписки по карте отменятся. Запись в «Ученики и оплаты» останется.', { name: `${athlete.first_name} ${athlete.last_name}` })}
           </p>
           <div className="flex gap-2">
             <button type="button" onClick={remove} disabled={busy} className="btn-primary disabled:opacity-60">
-              {busy ? 'Удаляем…' : 'Да, удалить'}
+              {busy ? t('Удаляем…') : t('Да, удалить')}
             </button>
-            <button type="button" onClick={() => setStep(0)} disabled={busy} className="btn-outline">Отмена</button>
+            <button type="button" onClick={() => setStep(0)} disabled={busy} className="btn-outline">{t('Отмена')}</button>
           </div>
         </>
       )}

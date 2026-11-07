@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { CLUB } from '../data/club.js'
+import { lang, t } from '../lib/i18n.jsx'
 
 // Политика конфиденциальности (APP_PASSPORT §5: обязательна до публикации в сторах).
 // Текст — по GDPR (Регламент ЕС 2016/679). Реквизиты клуба и контакт — в CONTACT.
 // При изменении обработки данных — обновить текст и дату.
-const UPDATED = '7 ноября 2026 г.'
+const UPDATED = t('7 ноября 2026 г.')
 const CONTACT = 'danilasppc@gmail.com'
 
 function Section({ title, children }) {
@@ -20,11 +21,24 @@ export default function Privacy() {
   return (
     <article className="mx-auto max-w-2xl space-y-6">
       <header className="border-l-4 border-accent pl-4">
-        <p className="label">Документ</p>
-        <h1 className="text-3xl">Политика конфиденциальности</h1>
-        <p className="mt-1 text-sm text-neutral-500">Обновлено: {UPDATED}</p>
+        <p className="label">{t('Документ')}</p>
+        <h1 className="text-3xl">{t('Политика конфиденциальности')}</h1>
+        <p className="mt-1 text-sm text-neutral-500">{t('Обновлено:')} {UPDATED}</p>
       </header>
 
+      {lang === 'lv' ? <BodyLv /> : <BodyRu />}
+
+      <p className="text-sm text-neutral-500">
+        <Link to="/dashboard" className="text-accent hover:underline">← {t('В кабинет')}</Link>
+      </p>
+    </article>
+  )
+}
+
+// Русский текст политики.
+function BodyRu() {
+  return (
+    <>
       <Section title="1. Кто обрабатывает данные">
         <p>
           Приложение спортивного клуба <b>{CLUB.name}</b> и <b>{CLUB.grapplingName}</b>, {CLUB.address}, Латвия.
@@ -93,10 +107,82 @@ export default function Privacy() {
           в Государственную инспекцию данных Латвии (Datu valsts inspekcija, dvi.gov.lv).
         </p>
       </Section>
+    </>
+  )
+}
 
-      <p className="text-sm text-neutral-500">
-        <Link to="/dashboard" className="text-accent hover:underline">← В кабинет</Link>
-      </p>
-    </article>
+// Latviešu teksts (juridiski līdzvērtīgs krievu tekstam).
+function BodyLv() {
+  return (
+    <>
+      <Section title="1. Kas apstrādā datus">
+        <p>
+          Sporta kluba <b>{CLUB.name}</b> un <b>{CLUB.grapplingName}</b> lietotne, {CLUB.address}, Latvija.
+          Personas datu apstrādes pārzinis — kluba treneris {CLUB.coach}. Saziņa datu jautājumos:{' '}
+          <a href={`mailto:${CONTACT}`} className="text-accent hover:underline">{CONTACT}</a>.
+        </p>
+      </Section>
+
+      <Section title="2. Kādus datus mēs vācam un kāpēc">
+        <ul className="list-disc space-y-1 pl-5">
+          <li><b>Vārds, uzvārds, tālruņa numurs</b> — pieslēgšanās lietotnei un saziņa ar jums par treniņiem.</li>
+          <li><b>Pašbilde (selfijs)</b> — lai treneris zālē atpazītu audzēkņus. Foto tiek glabāts slēgtā krātuvē, un to redz tikai pieslēgušies kluba dalībnieki.</li>
+          <li><b>Virziens, apmeklējumi, rangs, pieteikšanās treniņiem</b> — treniņu uzskaite, stāžs un kluba rangu sistēma.</li>
+          <li><b>Augums, svars, dzimšanas datums</b> (ja tos norādāt) — ķermeņa masas indeksa un vecuma aprēķins. Tos redzat tikai jūs un treneris.</li>
+          <li><b>Treniņu dienasgrāmata un apgūtās tehnikas</b> — jūsu ieraksti pēc treniņiem. Tos redzat tikai jūs un treneris.</li>
+          <li><b>Partneru vērtējumi</b> (tehnika, ātrums, spēks u. c., 1–5) — anonīmi: audzēknis redz tikai savus vidējos vērtējumus un tikai tad, ja vērtējumu ir 3 vai vairāk; kurš kādu vērtējumu ir devis, redz tikai treneris.</li>
+          <li><b>Foto un video galerijā</b> — tas, ko esat augšupielādējuši paši. Redzams tikai pieslēgušies kluba dalībniekiem un tikai pēc trenera apstiprinājuma.</li>
+          <li><b>Ielūgumi</b> — kurš kuru uzaicinājis uz treniņu (treneris redz, ka ieradies viesis). Ar saiti uzaicinātais redz tikai uzaicinātāja vārdu.</li>
+          <li><b>Maksājumi</b> — abonementa statuss, maksājumu summas un datumi: ar karti lietotnē, ar pārskaitījumu uz kluba kontu un skaidrā naudā trenerim. Maksājumus ar karti apstrādā Stripe: kartes numurs lietotnē nenonāk, to apstrādā tikai Stripe.</li>
+          <li><b>Kluba audzēkņu saraksts</b> — treneris uzskaita audzēkņus un viņu maksājumus (vārds, virziens, tālrunis, ja esat to norādījuši, pārskaitījumi pēc bankas izraksta). Ja reģistrējaties lietotnē, treneris sasaista šo ierakstu ar jūsu kontu.</li>
+          <li><b>Paziņojumi</b> — par tāda treniņa atcelšanu, pārcelšanu vai zāles maiņu, uz kuru esat pieteicies jūs (vai jūsu bērns).</li>
+          <li><b>Pieteikums izmēģinājuma treniņam</b> (bez reģistrācijas) — vārds, tālrunis, virziens, vecums un ērtākais laiks, ja tos norādījāt. Nepieciešams tikai, lai treneris ar jums sazinātos; to redz tikai treneris.</li>
+        </ul>
+        <p>
+          Apstrādes tiesiskais pamats: sporta pakalpojumu līguma izpilde, kluba leģitīmās intereses (apmeklējumu
+          un maksājumu uzskaite) un jūsu piekrišana (pašbilde, ķermeņa parametri, dienasgrāmata, vērtējumi, foto galerijā).
+        </p>
+        <p>
+          Piekļuve: visu uzskaitīto redz kluba treneris. Trenera palīgs redz tikai apmeklējumus un pieteikšanos
+          treniņiem — bez tālruņiem, maksājumiem, dienasgrāmatām un ķermeņa parametriem.
+        </p>
+      </Section>
+
+      <Section title="3. Bērni">
+        <p>
+          Klubā ir bērnu grupas. Kontu bērnam, kas jaunāks par 13 gadiem, reģistrē vecāks vai likumiskais
+          pārstāvis, kurš arī dod piekrišanu bērna personas datu apstrādei. Bērnu dati tiek izmantoti tikai treniņu
+          uzskaitei un netiek nodoti trešajām personām reklāmas nolūkos.
+        </p>
+      </Section>
+
+      <Section title="4. Kam dati tiek nodoti">
+        <ul className="list-disc space-y-1 pl-5">
+          <li><b>Supabase</b> — datubāzes, foto un video glabāšana (serveri ES, Frankfurtē).</li>
+          <li><b>Stripe</b> — maksājumu ar karti pieņemšana un rēķini.</li>
+          <li><b>GitHub Pages</b> — pašas lietotnes izvietošana (bez jūsu datiem).</li>
+          <li>Kluba grāmatvedis — informācija par maksājumiem nodokļu uzskaitei.</li>
+        </ul>
+        <p>Mēs nepārdodam datus un neizmantojam tos reklāmai.</p>
+      </Section>
+
+      <Section title="5. Cik ilgi glabājam">
+        <p>
+          Kamēr jums ir konts. Pēc konta dzēšanas nekavējoties tiek dzēsti profils, tālrunis, pašbilde, apmeklējumi,
+          pieteikumi treniņiem, ķermeņa parametri, dienasgrāmata, tehnikas, vērtējumi (jūsu dotie un jums dotie), foto
+          un video galerijā. Informācija par maksājumiem tiek glabāta Stripe, kluba uzskaitē un pie grāmatveža tik
+          ilgi, cik to prasa Latvijas grāmatvedības likums. Pieteikumi izmēģinājuma treniņam tiek automātiski dzēsti
+          pēc 180 dienām (vai agrāk — pēc jūsu lūguma).
+        </p>
+      </Section>
+
+      <Section title="6. Jūsu tiesības">
+        <p>
+          Jūs varat pieprasīt savu datu kopiju, labot tos, ierobežot apstrādi vai atsaukt piekrišanu.
+          <b> Kontu varat dzēst paši</b>: Profils → apakšā «Dzēst kontu». Sūdzību var iesniegt Datu valsts
+          inspekcijā (dvi.gov.lv).
+        </p>
+      </Section>
+    </>
   )
 }

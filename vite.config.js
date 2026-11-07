@@ -7,6 +7,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 // (app.daugavpilstopteam.lv), и внутри нативного приложения Capacitor.
 export default defineConfig({
   base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        // Библиотеки — отдельными файлами: они меняются редко, и после обновления
+        // приложения телефон скачивает заново только код клуба, а не React и Supabase.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (/[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/.test(id)) return 'react'
+          if (id.includes('@supabase')) return 'supabase'
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -38,6 +51,8 @@ export default defineConfig({
         // Кэшируем только файлы самого приложения (JS/CSS/иконки).
         // Запросы к Supabase (профили, фото, вход) НЕ кэшируются — всегда свежие данные.
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        // Большие иконки (≈430 КБ) нужны только при установке — браузер берёт их из манифеста сам.
+        globIgnores: ['**/pwa-512x512.png', '**/maskable-icon-512x512.png'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         // Новая версия включается сама, не дожидаясь сигнала от страницы:

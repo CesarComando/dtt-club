@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CLUB, TEAMS } from '../data/club.js'
 import { TRIAL_DISCIPLINES, requestTrial } from '../lib/coach.js'
+import { t } from '../lib/i18n.jsx'
 
 // Публичная страница «Бесплатная пробная тренировка» (без входа).
 // Сюда ведёт кнопка с сайта daugavpilstopteam.lv. Заявку видит только тренер (слой 34).
@@ -19,7 +20,7 @@ export default function Trial() {
     e.preventDefault()
     setError('')
     if (form.website) return setState('done') // поле-ловушка: заполняют только боты
-    if (!agree) return setError('Отметьте согласие на обработку данных')
+    if (!agree) return setError(t('Отметьте согласие на обработку данных'))
     setState('sending')
     try {
       await requestTrial(form)
@@ -34,17 +35,17 @@ export default function Trial() {
     return (
       <div className="mx-auto max-w-md space-y-4 text-center">
         <p className="text-5xl" aria-hidden="true">🥋</p>
-        <h1 className="text-3xl">Заявка отправлена!</h1>
+        <h1 className="text-3xl">{t('Заявка отправлена!')}</h1>
         <p className="text-neutral-300">
-          Тренер {CLUB.coach} свяжется с вами в WhatsApp или по телефону и договорится о времени.
+          {t('Тренер {coach} свяжется с вами в WhatsApp или по телефону и договорится о времени.', { coach: CLUB.coach })}
         </p>
         <p className="text-sm text-neutral-400">
-          Хотите быстрее — напишите сами:{' '}
+          {t('Хотите быстрее — напишите сами:')}{' '}
           <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener" className="text-accent hover:underline">
             {CLUB.coachPhone}
           </a>
         </p>
-        <Link to="/" className="btn-outline">На главную</Link>
+        <Link to="/" className="btn-outline">{t('На главную')}</Link>
       </div>
     )
   }
@@ -53,23 +54,23 @@ export default function Trial() {
     <div className="mx-auto max-w-md space-y-6">
       <header className="border-l-4 border-accent pl-4">
         <p className="label">{CLUB.name} · {CLUB.grapplingName}</p>
-        <h1 className="text-3xl">Первая тренировка — бесплатно</h1>
+        <h1 className="text-3xl">{t('Первая тренировка — бесплатно')}</h1>
         <p className="mt-1 text-sm text-neutral-400">
-          Оставьте заявку — тренер ответит и подскажет группу и время. {CLUB.address}.
+          {t('Оставьте заявку — тренер ответит и подскажет группу и время.')} {CLUB.address}.
         </p>
       </header>
 
       <form onSubmit={submit} className="card space-y-4">
         <div>
-          <label className="label" htmlFor="t-name">Имя</label>
+          <label className="label" htmlFor="t-name">{t('Имя')}</label>
           <input id="t-name" className="input" required minLength={2} maxLength={80} autoComplete="name" value={form.name} onChange={set('name')} />
         </div>
         <div>
-          <label className="label" htmlFor="t-phone">Телефон (WhatsApp)</label>
+          <label className="label" htmlFor="t-phone">{t('Телефон (WhatsApp)')}</label>
           <input id="t-phone" className="input" required type="tel" inputMode="tel" autoComplete="tel" placeholder="+371 2X XXX XXX" value={form.phone} onChange={set('phone')} />
         </div>
         <div>
-          <p className="label">Направление</p>
+          <p className="label">{t('Направление')}</p>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(TRIAL_DISCIPLINES).map(([id, label]) => (
               <button
@@ -88,12 +89,12 @@ export default function Trial() {
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="label" htmlFor="t-age">Возраст</label>
+            <label className="label" htmlFor="t-age">{t('Возраст')}</label>
             <input id="t-age" className="input" type="number" min={4} max={90} inputMode="numeric" value={form.age} onChange={set('age')} />
           </div>
           <div className="col-span-2">
-            <label className="label" htmlFor="t-pref">Когда удобно</label>
-            <input id="t-pref" className="input" maxLength={200} placeholder="напр. по вечерам" value={form.preferred} onChange={set('preferred')} />
+            <label className="label" htmlFor="t-pref">{t('Когда удобно')}</label>
+            <input id="t-pref" className="input" maxLength={200} placeholder={t('напр. по вечерам')} value={form.preferred} onChange={set('preferred')} />
           </div>
         </div>
         {/* Ловушка для ботов: люди это поле не видят */}
@@ -102,19 +103,19 @@ export default function Trial() {
         <label className="flex items-start gap-2 text-xs text-neutral-400">
           <input type="checkbox" className="mt-0.5 h-4 w-4 accent-accent" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
           <span>
-            Согласен(на), чтобы клуб хранил эти данные для связи со мной (до 180 дней).{' '}
-            <Link to="/privacy" className="text-accent hover:underline">Политика конфиденциальности</Link>
+            {t('Согласен(на), чтобы клуб хранил эти данные для связи со мной (до 180 дней).')}{' '}
+            <Link to="/privacy" className="text-accent hover:underline">{t('Политика конфиденциальности')}</Link>
           </span>
         </label>
 
         {error && <p className="text-sm text-accent">{error}</p>}
         <button type="submit" className="btn-primary w-full" disabled={state === 'sending'}>
-          {state === 'sending' ? 'Отправляю…' : 'Записаться бесплатно'}
+          {state === 'sending' ? t('Отправляю…') : t('Записаться бесплатно')}
         </button>
       </form>
 
       <section className="space-y-2 text-sm">
-        <p className="label">Расписание</p>
+        <p className="label">{t('Расписание')}</p>
         {TEAMS.map((t) => (
           <div key={t.id} className="card !p-3">
             <p className="font-semibold">{t.name} · {t.discipline}</p>

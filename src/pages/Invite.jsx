@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { acceptInvite, inviteInfo, isFull, seatsText, sessionDay, sessionTime } from '../lib/booking.js'
+import { t, tData } from '../lib/i18n.jsx'
 
 // Друг открыл ссылку «Позвать друга» → видит, кто зовёт и когда,
 // входит/регистрируется и записывается одним нажатием.
@@ -51,9 +52,9 @@ function InviteFor({ token }) {
   if (!info) {
     return (
       <div className="mx-auto max-w-sm py-12 text-center">
-        <h1 className="text-2xl">Приглашение не найдено</h1>
-        <p className="mt-3 text-neutral-400">{error || 'Ссылка устарела или скопирована не полностью.'}</p>
-        <Link to="/" className="btn-outline mt-6 inline-block">На главную</Link>
+        <h1 className="text-2xl">{t('Приглашение не найдено')}</h1>
+        <p className="mt-3 text-neutral-400">{error || t('Ссылка устарела или скопирована не полностью.')}</p>
+        <Link to="/" className="btn-outline mt-6 inline-block">{t('На главную')}</Link>
       </div>
     )
   }
@@ -66,46 +67,46 @@ function InviteFor({ token }) {
   return (
     <div className="mx-auto max-w-md space-y-5 py-6">
       <div className="text-center">
-        <p className="label">Приглашение</p>
-        <h1 className="text-3xl">{info.inviter_name} зовёт вас на тренировку</h1>
+        <p className="label">{t('Приглашение')}</p>
+        <h1 className="text-3xl">{t('{name} зовёт вас на тренировку', { name: info.inviter_name })}</h1>
       </div>
 
       <div className="card space-y-1">
         <p className="font-display text-xl uppercase tracking-wide">
           {sessionDay(info.starts_at)} · {sessionTime(info)}
         </p>
-        <p className="text-neutral-300">{info.title}</p>
+        <p className="text-neutral-300">{tData(info.title)}</p>
         <p className="text-sm text-neutral-400">📍 {info.venue_name}{info.venue_address && `, ${info.venue_address}`}</p>
         <p className={`text-xs ${full ? 'text-accent' : 'text-neutral-500'}`}>{seatsText(info)}</p>
-        <p className="pt-2 text-sm font-semibold text-accent">Первая тренировка — бесплатно.</p>
+        <p className="pt-2 text-sm font-semibold text-accent">{t('Первая тренировка — бесплатно.')}</p>
       </div>
 
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
 
       {closed ? (
         <p className="card text-center text-neutral-400">
-          {info.cancelled ? 'Это занятие отменено.' : 'Эта тренировка уже прошла.'} Посмотрите расписание в приложении.
+          {info.cancelled ? t('Это занятие отменено.') : t('Эта тренировка уже прошла.')} {t('Посмотрите расписание в приложении.')}
         </p>
       ) : done || info.is_booked ? (
         <div className="card space-y-3 text-center">
-          <p className="text-2xl">✓ Вы записаны!</p>
-          <p className="text-sm text-neutral-400">Возьмите спортивную форму и воду. До встречи на тренировке.</p>
-          <Link to="/dashboard" className="btn-outline inline-block">В кабинет</Link>
+          <p className="text-2xl">{t('✓ Вы записаны!')}</p>
+          <p className="text-sm text-neutral-400">{t('Возьмите спортивную форму и воду. До встречи на тренировке.')}</p>
+          <Link to="/dashboard" className="btn-outline inline-block">{t('В кабинет')}</Link>
         </div>
       ) : info.is_mine ? (
-        <p className="card text-center text-neutral-400">Это ваше приглашение — отправьте ссылку другу.</p>
+        <p className="card text-center text-neutral-400">{t('Это ваше приглашение — отправьте ссылку другу.')}</p>
       ) : !user ? (
         <div className="space-y-2">
           <Link to={`/register?next=${next}`} className="btn-primary block w-full text-center">
-            Зарегистрироваться и записаться
+            {t('Зарегистрироваться и записаться')}
           </Link>
           <Link to={`/login?next=${next}`} className="btn-outline block w-full text-center">
-            Уже есть аккаунт — войти
+            {t('Уже есть аккаунт — войти')}
           </Link>
         </div>
       ) : (
         <button type="button" onClick={accept} disabled={busy || full} className="btn-primary w-full disabled:opacity-60">
-          {busy ? 'Записываем…' : full ? 'Мест нет' : 'Записаться'}
+          {busy ? t('Записываем…') : full ? t('Мест нет') : t('Записаться')}
         </button>
       )}
     </div>

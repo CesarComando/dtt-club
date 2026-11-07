@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from './supabaseClient.js'
 import { getAvatarUrl } from './auth.js'
+import { t } from './i18n.jsx'
 
 const AuthContext = createContext(null)
 
@@ -25,7 +26,7 @@ export function AuthProvider({ children }) {
       supabase.from('profile_contacts').select('phone').eq('id', userId).maybeSingle(),
     ])
     if (pErr) {
-      setError('Не удалось загрузить профиль: ' + pErr.message)
+      setError(t('Не удалось загрузить профиль: ') + pErr.message)
       setProfile(null)
       return
     }
