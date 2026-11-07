@@ -54,6 +54,9 @@ export default function AdminAssistant() {
           <button type="button" className="btn-primary" disabled={state === 'saving' || body === saved} onClick={save}>
             {state === 'saving' ? t('Сохраняю…') : t('Сохранить')}
           </button>
+          {body === saved && state === 'ready' && !msg && (
+            <p className="text-xs text-neutral-500">{t('Этот текст уже сохранён и работает. Измените его — кнопка «Сохранить» станет активной.')}</p>
+          )}
         </>
       )}
       {msg && <p className={`text-sm ${state === 'error' || failed ? 'text-accent' : 'text-emerald-400'}`}>{msg}</p>}
