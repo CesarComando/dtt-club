@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
+import { t } from '../lib/i18n.jsx'
 
 // Зелёная галочка «подтверждён тренером» (profiles.approved_at, слой 16).
 export function ApprovedMark({ approved, className = '' }) {
   if (!approved) return null
   return (
     <span
-      title="Подтверждён тренером"
-      aria-label="Подтверждён тренером"
+      title={t('Подтверждён тренером')}
+      aria-label={t('Подтверждён тренером')}
       className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 align-middle text-xs font-bold text-white ${className}`}
     >
       ✓
@@ -43,7 +44,7 @@ export function ApproveButton({ athlete, onChange, compact = false }) {
             : 'rounded-md border border-emerald-500 px-2 py-0.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50'
         }
       >
-        {busy ? '…' : approved ? 'Снять подтверждение' : '✓ Подтвердить'}
+        {busy ? '…' : approved ? t('Снять подтверждение') : `✓ ${t('Подтвердить')}`}
       </button>
       {error && <span className="text-xs text-accent">{error}</span>}
     </span>

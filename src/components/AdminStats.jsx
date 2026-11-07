@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { loadCoachStats, loadInactive, prettyPhone, waLink } from '../lib/coach.js'
+import { t, locale } from '../lib/i18n.jsx'
 
-const short = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+const short = (d) => new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
 function Tile({ label, value, note }) {
   return (
@@ -23,8 +24,8 @@ function WeeksChart({ weeks }) {
   return (
     <div>
       <p className="mb-2 text-sm text-neutral-300" aria-live="polite">
-        Неделя с {short(cur.week_start)}: <b className="text-white tabular-nums">{cur.visits}</b> посещ.,{' '}
-        <b className="text-white tabular-nums">{cur.people}</b> чел.
+        {t('Неделя с {date}:', { date: short(cur.week_start) })} <b className="text-white tabular-nums">{cur.visits}</b> {t('посещ.,')}{' '}
+        <b className="text-white tabular-nums">{cur.people}</b> {t('чел.')}
       </p>
       <div className="flex h-36 items-end gap-[2px] border-b border-line" onMouseLeave={() => setHover(null)}>
         {weeks.map((w, i) => (
@@ -34,7 +35,7 @@ function WeeksChart({ weeks }) {
             onMouseEnter={() => setHover(i)}
             onFocus={() => setHover(i)}
             onClick={() => setHover(i)}
-            aria-label={`Неделя с ${short(w.week_start)}: ${w.visits} посещений, ${w.people} человек`}
+            aria-label={t('Неделя с {date}: {visits} посещений, {people} человек', { date: short(w.week_start), visits: w.visits, people: w.people })}
             className="group flex h-full flex-1 items-end"
           >
             <span
@@ -46,15 +47,14 @@ function WeeksChart({ weeks }) {
       </div>
       <div className="mt-1 flex justify-between text-[10px] text-neutral-500">
         <span>{short(weeks[0].week_start)}</span>
-        <span>эта неделя</span>
+        <span>{t('эта неделя')}</span>
       </div>
     </div>
   )
 }
 
 const comeBackText = (p) =>
-  `Привет, ${p.first_name}! Давно не видели тебя на тренировке в Daugavpils Top Team — всё в порядке? ` +
-  'Ждём в зале, расписание и запись в приложении app.daugavpilstopteam.lv 💪'
+  t('Привет, {name}! Давно не видели тебя на тренировке в Daugavpils Top Team — всё в порядке? Ждём в зале, расписание и запись в приложении app.daugavpilstopteam.lv 💪', { name: p.first_name })
 
 // Вкладка «Статистика»: посещаемость за 12 недель и кто перестал ходить.
 export default function AdminStats({ athletes = [] }) {
@@ -68,11 +68,11 @@ export default function AdminStats({ athletes = [] }) {
         setWeeks(w)
         setInactive(i)
       })
-      .catch((e) => setError(e.message.includes('coach_stats') ? 'Выполните supabase/layer34_coach_tools.sql' : e.message))
+      .catch((e) => setError(e.message.includes('coach_stats') ? t('Выполните supabase/layer34_coach_tools.sql') : e.message))
   }, [])
 
-  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Статистика: {error}</p>
-  if (!weeks) return <p className="card text-neutral-400">Считаем…</p>
+  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Статистика: {error}', { error })}</p>
+  if (!weeks) return <p className="card text-neutral-400">{t('Считаем…')}</p>
 
   const thisWeek = weeks.at(-1)
   const lastWeek = weeks.at(-2)
@@ -84,22 +84,22 @@ export default function AdminStats({ athletes = [] }) {
   return (
     <section className="space-y-4">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Tile label="Эта неделя" value={thisWeek.visits} note={`${thisWeek.people} чел.`} />
-        <Tile label="Прошлая" value={lastWeek?.visits ?? 0} note={`${lastWeek?.people ?? 0} чел.`} />
-        <Tile label="В среднем" value={avg} note="посещ. в неделю" />
-        <Tile label="Новые" value={newcomers} note="аккаунтов за 30 дн." />
+        <Tile label={t('Эта неделя')} value={thisWeek.visits} note={t('{n} чел.', { n: thisWeek.people })} />
+        <Tile label={t('Прошлая')} value={lastWeek?.visits ?? 0} note={t('{n} чел.', { n: lastWeek?.people ?? 0 })} />
+        <Tile label={t('В среднем')} value={avg} note={t('посещ. в неделю')} />
+        <Tile label={t('Новые')} value={newcomers} note={t('аккаунтов за 30 дн.')} />
       </div>
 
       <div className="card">
-        <p className="label">Посещения по неделям</p>
+        <p className="label">{t('Посещения по неделям')}</p>
         <WeeksChart weeks={weeks} />
       </div>
 
       <div className="card space-y-2">
-        <p className="label">Давно не приходили · {inactive.length}</p>
-        <p className="text-xs text-neutral-500">Были 3+ раза, но последние 2 недели не отмечались — риск, что уйдут.</p>
+        <p className="label">{t('Давно не приходили · {n}', { n: inactive.length })}</p>
+        <p className="text-xs text-neutral-500">{t('Были 3+ раза, но последние 2 недели не отмечались — риск, что уйдут.')}</p>
         {inactive.length === 0 ? (
-          <p className="text-sm text-neutral-400">Таких нет 👍</p>
+          <p className="text-sm text-neutral-400">{t('Таких нет 👍')}</p>
         ) : (
           <ul className="divide-y divide-line">
             {inactive.map((p) => (
@@ -109,7 +109,7 @@ export default function AdminStats({ athletes = [] }) {
                     {p.first_name} {p.last_name}
                   </Link>
                   <span className="block text-xs text-neutral-400">
-                    последний раз {short(p.last_visit)} · всего {p.visits} трен.
+                    {t('последний раз {date} · всего {n} трен.', { date: short(p.last_visit), n: p.visits })}
                   </span>
                 </span>
                 {p.phone && (

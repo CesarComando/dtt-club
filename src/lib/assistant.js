@@ -1,10 +1,11 @@
 import { supabase } from './supabaseClient.js'
+import { t } from './i18n.jsx'
 
 /** Вопрос помощнику клуба (Edge Function ask-club). messages: [{ role, content }] → текст ответа. */
 export async function askClub(messages) {
   const { data, error } = await supabase.functions.invoke('ask-club', { body: { messages } })
   if (error) {
-    let message = 'Помощник сейчас недоступен'
+    let message = t('Помощник сейчас недоступен')
     try {
       message = (await error.context?.json())?.error ?? message
     } catch {

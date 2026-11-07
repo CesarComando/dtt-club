@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
+import { LangSwitch, lang, t } from '../lib/i18n.jsx'
 
 // Сканер с камерой грузится только по нажатию кнопки QR в таб-баре.
 const QrScanner = lazy(() => import('./QrScanner.jsx'))
@@ -26,10 +27,10 @@ const ICONS = {
 
 // Админка намеренно не в списке — панель тренера скрыта.
 const LINKS = [
-  { to: '/', label: 'Главная', icon: 'home', end: true },
-  { to: '/articles', label: 'Статьи', icon: 'articles' },
-  { to: '/dashboard', label: 'Кабинет', icon: 'profile' },
-  { to: '/login', label: 'Вход', icon: 'login' },
+  { to: '/', label: t('Главная'), icon: 'home', end: true },
+  { to: '/articles', label: t('Статьи'), icon: 'articles' },
+  { to: '/dashboard', label: t('Кабинет'), icon: 'profile' },
+  { to: '/login', label: t('Вход'), icon: 'login' },
 ]
 
 export default function Navbar() {
@@ -38,10 +39,10 @@ export default function Navbar() {
   // Вошедшему пользователю вместо «Вход» показываем «Выйти».
   const links = user ? LINKS.filter((l) => l.to !== '/login') : [...LINKS]
   if (user)
-    links.splice(3, 0, { to: '/diary', label: 'Дневник', icon: 'diary' }, { to: '/gallery', label: 'Галерея', icon: 'gallery' })
+    links.splice(3, 0, { to: '/diary', label: t('Дневник'), short: lang === 'lv' ? 'Dienasgr.' : null, icon: 'diary' }, { to: '/gallery', label: t('Галерея'), icon: 'gallery' })
   // Ссылку на CRM видит только тренер; спортсменам панель по-прежнему не видна.
   const staff = ['admin', 'coach'].includes(profile?.role)
-  if (staff) links.push({ to: '/admin', label: 'Тренер', icon: 'coach' })
+  if (staff) links.push({ to: '/admin', label: t('Тренер'), icon: 'coach' })
   // Ученик отмечается по QR: круглая кнопка в середине нижнего меню (тренер код показывает, а не сканирует).
   const canScan = Boolean(user && profile && !staff)
   const [scanning, setScanning] = useState(false)
@@ -66,7 +67,8 @@ export default function Navbar() {
               Daugavpils <span className="text-accent">Top Team</span>
             </span>
           </Link>
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-6">
+            <LangSwitch />
             {links.map((l) => (
               <NavLink
                 key={l.to}
@@ -83,11 +85,11 @@ export default function Navbar() {
             ))}
             {user ? (
               <button onClick={onSignOut} className="btn-outline !py-2">
-                Выйти
+                {t('Выйти')}
               </button>
             ) : (
               <Link to="/register" className="btn-primary !py-2">
-                Записаться
+                {t('Записаться')}
               </Link>
             )}
           </nav>
@@ -100,6 +102,7 @@ export default function Navbar() {
         <span className="font-display uppercase tracking-widest">
           DTT <span className="text-accent">&</span> Grappling
         </span>
+        <LangSwitch className="ml-auto" />
       </header>
 
       {/* Mobile: нижний таб-бар */}
@@ -110,7 +113,7 @@ export default function Navbar() {
               key="qr"
               type="button"
               onClick={() => setScanning(true)}
-              aria-label="Отметиться по QR-коду"
+              aria-label={t('Отметиться по QR-коду')}
               className={`flex flex-col items-center gap-1 pb-2.5 font-semibold uppercase ${tabText} text-white`}
             >
               <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent shadow-[0_0_20px_-4px] shadow-accent/70 ring-4 ring-ink active:scale-95">
@@ -135,7 +138,7 @@ export default function Navbar() {
               <>
                 {isActive && <span className="absolute inset-x-6 top-0 h-0.5 bg-accent" />}
                 <Icon d={ICONS[l.icon]} />
-                {l.label}
+                <span className="max-w-full truncate px-0.5">{l.short ?? l.label}</span>
               </>
             )}
           </NavLink>,

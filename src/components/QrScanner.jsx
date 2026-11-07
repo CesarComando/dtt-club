@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { t } from '../lib/i18n.jsx'
 
 // Сканер QR внутри приложения: открывает заднюю камеру и ищет QR-код отметки.
 // Встроенный BarcodeDetector (Chrome/Android) — быстрее; где его нет (iPhone, Firefox) — jsQR.
@@ -37,7 +38,7 @@ export default function QrScanner({ onClose }) {
 
     async function start() {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setError('Этот браузер не даёт доступ к камере. Отсканируйте QR обычной камерой телефона.')
+        setError(t('Этот браузер не даёт доступ к камере. Отсканируйте QR обычной камерой телефона.'))
         return
       }
       try {
@@ -48,8 +49,8 @@ export default function QrScanner({ onClose }) {
       } catch (e) {
         setError(
           e?.name === 'NotAllowedError'
-            ? 'Нет доступа к камере. Разрешите камеру для этого сайта в настройках браузера — или отсканируйте QR обычной камерой телефона.'
-            : 'Не удалось включить камеру. Отсканируйте QR обычной камерой телефона.',
+            ? t('Нет доступа к камере. Разрешите камеру для этого сайта в настройках браузера — или отсканируйте QR обычной камерой телефона.')
+            : t('Не удалось включить камеру. Отсканируйте QR обычной камерой телефона.'),
         )
         return
       }
@@ -67,11 +68,11 @@ export default function QrScanner({ onClose }) {
       const jsQR = detector ? null : (await import('jsqr')).default
 
       let last = 0
-      const tick = async (t) => {
+      const tick = async (ts) => {
         if (stopped) return
         // ~6 кадров в секунду хватает и не сажает батарею
-        if (t - last > 160 && video.readyState >= 2) {
-          last = t
+        if (ts - last > 160 && video.readyState >= 2) {
+          last = ts
           try {
             if (detector) {
               const codes = await detector.detect(video)
@@ -103,10 +104,10 @@ export default function QrScanner({ onClose }) {
   }, [navigate, onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black" role="dialog" aria-modal="true" aria-label="Сканер QR-кода">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black" role="dialog" aria-modal="true" aria-label={t('Сканер QR-кода')}>
       <div className="flex items-center justify-between p-4">
-        <p className="font-display text-lg uppercase tracking-wider">Отметиться по QR</p>
-        <button type="button" onClick={onClose} className="btn-outline !px-4 !py-2">Закрыть</button>
+        <p className="font-display text-lg uppercase tracking-wider">{t('Отметиться по QR')}</p>
+        <button type="button" onClick={onClose} className="btn-outline !px-4 !py-2">{t('Закрыть')}</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
@@ -122,7 +123,7 @@ export default function QrScanner({ onClose }) {
         )}
       </div>
       <p className="p-4 pb-8 text-center text-sm text-neutral-300">
-        {wrong ? 'Это не QR-код клуба. Наведите камеру на код на экране тренера.' : 'Наведите камеру на QR-код на экране тренера у входа.'}
+        {wrong ? t('Это не QR-код клуба. Наведите камеру на код на экране тренера.') : t('Наведите камеру на QR-код на экране тренера у входа.')}
       </p>
     </div>
   )

@@ -1,5 +1,6 @@
 // Слой 34: уведомления, напоминания о продлении, статистика тренера, пробные тренировки.
 import { supabase } from './supabaseClient.js'
+import { t } from './i18n.jsx'
 
 const must = ({ data, error }) => {
   if (error) throw error
@@ -49,10 +50,10 @@ export const setTrialStatus = async (id, status) =>
 export const deleteTrial = async (id) => must(await supabase.from('trial_requests').delete().eq('id', id))
 
 export const TRIAL_DISCIPLINES = {
-  mma: 'MMA (взрослые)',
+  mma: t('MMA (взрослые)'),
   k1: 'K1',
-  grappling: 'Грэпплинг / BJJ no-gi',
-  kids: 'Детское MMA',
+  grappling: t('Грэпплинг / BJJ no-gi'),
+  kids: t('Детское MMA'),
 }
 
 // Ссылка «написать в WhatsApp» с готовым текстом (открывает WhatsApp тренера).

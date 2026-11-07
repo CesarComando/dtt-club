@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { CLUB, TEAMS, FIRST_TRAINING_FREE } from '../data/club.js'
 import TeamCard from '../components/TeamCard.jsx'
 import { useAuth } from '../lib/AuthContext.jsx'
+import { t } from '../lib/i18n.jsx'
 
 export default function Home() {
   const { profile } = useAuth()
@@ -20,26 +21,26 @@ export default function Home() {
           <span className="block text-accent">& Grappling Team</span>
         </h1>
         <p className="mt-4 text-neutral-300">
-          {CLUB.address} · Тренер: {CLUB.coach} ·{' '}
+          {CLUB.address} · {t('Тренер:')} {CLUB.coach} ·{' '}
           <a href={`tel:${CLUB.coachPhone.replace(/\s/g, '')}`} className="whitespace-nowrap text-white hover:text-accent">
             {CLUB.coachPhone}
           </a>
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/register" className="btn-primary">
-            {FIRST_TRAINING_FREE ? 'Первая тренировка бесплатно' : 'Записаться'}
+            {FIRST_TRAINING_FREE ? t('Первая тренировка бесплатно') : t('Записаться')}
           </Link>
-          <a href="#schedule" className="btn-outline">Расписание</a>
+          <a href="#schedule" className="btn-outline">{t('Расписание')}</a>
         </div>
       </section>
 
       {/* Команды: расписание + цены */}
       <section id="schedule" className="scroll-mt-24 space-y-4">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="text-2xl">Расписание и цены</h2>
+          <h2 className="text-2xl">{t('Расписание и цены')}</h2>
           {FIRST_TRAINING_FREE && (
             <p className="text-right text-sm text-neutral-400">
-              Первая тренировка — <span className="text-accent">бесплатно</span>
+              {t('Первая тренировка —')} <span className="text-accent">{t('бесплатно')}</span>
             </p>
           )}
         </div>

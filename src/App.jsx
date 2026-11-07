@@ -3,12 +3,16 @@ import { Routes, Route, Navigate, Link } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 import Home from './pages/Home.jsx'
-import Login from './pages/Login.jsx'
-import Register from './pages/Register.jsx'
-import Dashboard from './pages/Dashboard.jsx'
 import InstallApp from './components/InstallApp.jsx'
-import AskClub from './components/AskClub.jsx'
-// Редкие и тяжёлые страницы (CRM, QR, галерея) грузятся отдельно — первое открытие быстрее.
+import { t } from './lib/i18n.jsx'
+// Страницы грузятся отдельно — первое открытие быстрее (главная не тянет код кабинета и CRM).
+const Login = lazy(() => import('./pages/Login.jsx'))
+const Register = lazy(() => import('./pages/Register.jsx'))
+const loadDashboard = () => import('./pages/Dashboard.jsx')
+const Dashboard = lazy(loadDashboard)
+const AskClub = lazy(() => import('./components/AskClub.jsx'))
+// Кабинет — самая частая страница: подгружаем его заранее, когда браузер свободен.
+if (typeof window !== 'undefined') (window.requestIdleCallback ?? ((cb) => setTimeout(cb, 1500)))(() => loadDashboard())
 const Admin = lazy(() => import('./pages/Admin.jsx'))
 const Privacy = lazy(() => import('./pages/Privacy.jsx'))
 const Checkin = lazy(() => import('./pages/Checkin.jsx'))
@@ -25,7 +29,9 @@ export default function App() {
   return (
     <div className="min-h-dvh">
       <Navbar />
-      <AskClub />
+      <Suspense fallback={null}>
+        <AskClub />
+      </Suspense>
       {/* pb-24 — место под нижний таб-бар на мобильных */}
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-24 md:pt-24 md:pb-12">
         <InstallApp />
@@ -63,9 +69,9 @@ export default function App() {
         <footer className="mt-12 flex flex-wrap justify-center gap-x-4 gap-y-2 border-t border-line pt-4 text-center text-xs text-neutral-500">
           {/* Сайт клуба (3 языка, для Google) — в том же стиле; оттуда ведёт кнопка «Войти» сюда. */}
           <a href="https://daugavpilstopteam.lv" target="_blank" rel="noopener" className="hover:text-white">
-            Сайт клуба · daugavpilstopteam.lv
+            {t('Сайт клуба')} · daugavpilstopteam.lv
           </a>
-          <Link to="/privacy" className="hover:text-white">Политика конфиденциальности</Link>
+          <Link to="/privacy" className="hover:text-white">{t('Политика конфиденциальности')}</Link>
         </footer>
       </main>
     </div>

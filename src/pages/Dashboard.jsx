@@ -13,6 +13,7 @@ import MyChildren from '../components/MyChildren.jsx'
 import Notifications from '../components/Notifications.jsx'
 import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
+import { t, lang, locale } from '../lib/i18n.jsx'
 // Сканер с камерой грузится только по нажатию кнопки.
 const QrScanner = lazy(() => import('../components/QrScanner.jsx'))
 
@@ -25,7 +26,7 @@ function ScanButton() {
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10" />
         </svg>
-        Сканировать QR — отметиться
+        {t('Сканировать QR — отметиться')}
       </button>
       {open && (
         <Suspense fallback={null}>
@@ -42,10 +43,10 @@ function experience(since) {
   const months = Math.max(0, (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth())
   const y = Math.floor(months / 12)
   const m = months % 12
-  return [y && `${y} г.`, `${m} мес.`].filter(Boolean).join(' ')
+  return [y && t('{n} г.', { n: y }), t('{n} мес.', { n: m })].filter(Boolean).join(' ')
 }
 
-const formatDate = (iso) => new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+const formatDate = (iso) => new Date(iso).toLocaleDateString(locale(),{ day: 'numeric', month: 'short', year: 'numeric' })
 
 // '37120000001' → '+371 2000 0001'
 const formatPhone = (p) => (p?.startsWith('371') && p.length === 11 ? `+371 ${p.slice(3, 7)} ${p.slice(7)}` : p ? `+${p}` : '')
@@ -67,14 +68,14 @@ function SupportClub({ isSponsor, billing }) {
       <section className="card flex items-center gap-3 border-accent/60">
         <HeartIcon className="h-6 w-6 shrink-0 text-accent" />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Спасибо, что поддерживаете клуб!</p>
+          <p className="font-semibold">{t('Спасибо, что поддерживаете клуб!')}</p>
           {sub?.cancel_at_period_end && sub.current_period_end && (
-            <p className="text-sm text-neutral-400">Поддержка действует до {formatDay(sub.current_period_end)}.</p>
+            <p className="text-sm text-neutral-400">{t('Поддержка действует до {date}.', { date: formatDay(sub.current_period_end) })}</p>
           )}
         </div>
         {sub && (
           <button type="button" onClick={billing.portal} className="text-xs text-neutral-500 hover:text-white">
-            Управлять
+            {t('Управлять')}
           </button>
         )}
       </section>
@@ -93,8 +94,8 @@ function SupportClub({ isSponsor, billing }) {
       >
         <HeartIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
         {billing.busy === product.id
-          ? 'Переход к оплате…'
-          : `Поддержать клуб · ${formatPrice(product.amount_cents, product.currency)}/мес`}
+          ? t('Переход к оплате…')
+          : t('Поддержать клуб · {price}/мес', { price: formatPrice(product.amount_cents, product.currency) })}
       </button>
     </section>
   )
@@ -137,17 +138,16 @@ function DeleteAccount({ isAdmin }) {
     <section className="border-t border-line pt-6 text-sm">
       {!open ? (
         <button type="button" onClick={() => setOpen(true)} className="text-neutral-500 hover:text-accent">
-          Удалить аккаунт
+          {t('Удалить аккаунт')}
         </button>
       ) : (
         <div className="card space-y-3 border-accent/60">
-          <h2 className="text-lg text-accent">Удалить аккаунт навсегда?</h2>
+          <h2 className="text-lg text-accent">{t('Удалить аккаунт навсегда?')}</h2>
           <p className="text-neutral-400">
-            Удалятся профиль, телефон, селфи, посещения, ранг и записи на тренировки. Подписки по карте будут
-            отменены сразу. История платежей останется только в Stripe для бухгалтерии клуба. Отменить удаление нельзя.
+            {t('Удалятся профиль, телефон, селфи, посещения, ранг и записи на тренировки. Подписки по карте будут отменены сразу. История платежей останется только в Stripe для бухгалтерии клуба. Отменить удаление нельзя.')}
           </p>
           <label className="block">
-            <span className="label">Для подтверждения введите УДАЛИТЬ</span>
+            <span className="label">{t('Для подтверждения введите УДАЛИТЬ')}</span>
             <input className="input" value={text} onChange={(e) => setText(e.target.value)} disabled={busy} />
           </label>
           {error && <p className="text-accent" role="alert">{error}</p>}
@@ -155,13 +155,14 @@ function DeleteAccount({ isAdmin }) {
             <button
               type="button"
               onClick={remove}
-              disabled={busy || text.trim().toUpperCase() !== 'УДАЛИТЬ'}
+              // Слово подтверждения — на языке интерфейса; на сервер всегда уходит 'УДАЛИТЬ' (club-ops.js).
+              disabled={busy || text.trim().toUpperCase() !== (lang === 'lv' ? 'DZĒST' : 'УДАЛИТЬ')}
               className="btn-primary disabled:opacity-40"
             >
-              {busy ? 'Удаляем…' : 'Удалить навсегда'}
+              {busy ? t('Удаляем…') : t('Удалить навсегда')}
             </button>
             <button type="button" onClick={() => setOpen(false)} disabled={busy} className="btn-outline">
-              Отмена
+              {t('Отмена')}
             </button>
           </div>
         </div>
@@ -180,14 +181,14 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   if (!isSupabaseConfigured) {
-    return <Centered><p className="text-neutral-400">Supabase не настроен — заполните .env</p></Centered>
+    return <Centered><p className="text-neutral-400">{t('Supabase не настроен — заполните .env')}</p></Centered>
   }
 
   if (loading) {
     return (
       <Centered>
         <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-line border-t-accent" />
-        <p className="mt-4 text-sm text-neutral-400">Загружаем профиль…</p>
+        <p className="mt-4 text-sm text-neutral-400">{t('Загружаем профиль…')}</p>
       </Centered>
     )
   }
@@ -195,11 +196,11 @@ export default function Dashboard() {
   if (!user) {
     return (
       <Centered>
-        <h1 className="text-3xl">Личный кабинет</h1>
-        <p className="mt-3 text-neutral-400">Войдите, чтобы увидеть свой ранг, стаж и награды.</p>
+        <h1 className="text-3xl">{t('Личный кабинет')}</h1>
+        <p className="mt-3 text-neutral-400">{t('Войдите, чтобы увидеть свой ранг, стаж и награды.')}</p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link to="/login" className="btn-primary">Войти</Link>
-          <Link to="/register" className="btn-outline">Регистрация</Link>
+          <Link to="/login" className="btn-primary">{t('Войти')}</Link>
+          <Link to="/register" className="btn-outline">{t('Регистрация')}</Link>
         </div>
       </Centered>
     )
@@ -208,8 +209,8 @@ export default function Dashboard() {
   if (error || !profile) {
     return (
       <Centered>
-        <p className="text-accent">{error || 'Профиль не найден.'}</p>
-        <button onClick={() => refreshProfile()} className="btn-outline mt-4">Повторить</button>
+        <p className="text-accent">{error || t('Профиль не найден.')}</p>
+        <button onClick={() => refreshProfile()} className="btn-outline mt-4">{t('Повторить')}</button>
       </Centered>
     )
   }
@@ -231,7 +232,7 @@ export default function Dashboard() {
       <section className="card flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink font-display text-xl ring-2 ring-accent">
           {profile.avatarSignedUrl ? (
-            <img src={profile.avatarSignedUrl} alt="Селфи" className="h-full w-full object-cover" />
+            <img src={profile.avatarSignedUrl} alt={t('Селфи')} className="h-full w-full object-cover" />
           ) : (
             initials
           )}
@@ -242,10 +243,10 @@ export default function Dashboard() {
             <ApprovedMark approved={profile.approved_at} />
           </h1>
           {!profile.approved_at && profile.role === 'athlete' && (
-            <p className="text-xs text-neutral-500">Ожидает подтверждения тренером</p>
+            <p className="text-xs text-neutral-500">{t('Ожидает подтверждения тренером')}</p>
           )}
           <p className="text-sm text-neutral-400">
-            В клубе с {formatDate(since)}
+            {t('В клубе с {date}', { date: formatDate(since) })}
             {profile.phone && <> · {formatPhone(profile.phone)}</>}
           </p>
         </div>
@@ -256,9 +257,9 @@ export default function Dashboard() {
       {/* Статистика */}
       <section className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Тренировок', value: profile.trainings_count },
-          { label: 'Стаж', value: experience(since) },
-          { label: 'Медалей', value: 0 },
+          { label: t('Тренировок'), value: profile.trainings_count },
+          { label: t('Стаж'), value: experience(since) },
+          { label: t('Медалей'), value: 0 },
         ].map((s) => (
           <div key={s.label} className="card !p-4 text-center">
             <p className="font-display text-2xl md:text-3xl">{s.value}</p>
@@ -270,11 +271,11 @@ export default function Dashboard() {
       {/* Ранг и прогресс — только грепплинг (APP_PASSPORT §3) */}
       {showRanks ? (
         <section className="card">
-          <p className="label">Ранг грепплинга · {current.id}/{RANKS.length}</p>
+          <p className="label">{t('Ранг грепплинга')} · {current.id}/{RANKS.length}</p>
           <h2 className="text-3xl text-accent">{current.title}</h2>
 
           {manual ? (
-            <p className="mt-3 text-sm text-neutral-400">Ранг назначен тренером.</p>
+            <p className="mt-3 text-sm text-neutral-400">{t('Ранг назначен тренером.')}</p>
           ) : (
             <>
               <div
@@ -283,7 +284,7 @@ export default function Dashboard() {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={percent}
-                aria-label="Прогресс до следующего ранга"
+                aria-label={t('Прогресс до следующего ранга')}
               >
                 <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${percent}%` }} />
               </div>
@@ -291,9 +292,9 @@ export default function Dashboard() {
                 <span>{percent}%</span>
                 <span className="text-right">
                   {next ? (
-                    <>Ещё <b className="text-white">{remaining}</b> трен. до «{next.title}»</>
+                    <>{t('Ещё')} <b className="text-white">{remaining}</b> {t('трен. до «{rank}»', { rank: next.title })}</>
                   ) : (
-                    'Максимальный ранг клуба'
+                    t('Максимальный ранг клуба')
                   )}
                 </span>
               </div>
@@ -310,19 +311,19 @@ export default function Dashboard() {
                 } ${r.id <= current.id ? 'text-white' : 'text-neutral-600'}`}
               >
                 <p className="font-display text-[10px] uppercase leading-tight md:text-xs">{r.title}</p>
-                <p className="mt-1 text-[10px] text-neutral-500">{r.years ? `${r.years}+ г.` : 'старт'}</p>
+                <p className="mt-1 text-[10px] text-neutral-500">{r.years ? t('{n}+ г.', { n: r.years }) : t('старт')}</p>
               </li>
             ))}
           </ol>
           <p className="mt-4 text-xs text-neutral-500">
-            Ранг растёт с каждой тренировкой (1 год ≈ {TRAININGS_PER_YEAR} тренировок). Тренер может изменить его вручную.
+            {t('Ранг растёт с каждой тренировкой (1 год ≈ {n} тренировок). Тренер может изменить его вручную.', { n: TRAININGS_PER_YEAR })}
           </p>
         </section>
       ) : (
         <section className="card">
-          <p className="label">Направление</p>
+          <p className="label">{t('Направление')}</p>
           <h2 className="text-2xl">{DISCIPLINES[profile.discipline]}</h2>
-          <p className="mt-2 text-sm text-neutral-400">Система рангов пока действует только в грепплинге.</p>
+          <p className="mt-2 text-sm text-neutral-400">{t('Система рангов пока действует только в грепплинге.')}</p>
         </section>
       )}
 
@@ -345,7 +346,7 @@ export default function Dashboard() {
         className="relative overflow-hidden rounded-lg border border-dashed border-line bg-panel/50 p-5 opacity-70"
       >
         <span className="absolute top-3 right-3 rounded border border-line px-2 py-0.5 text-[10px] uppercase tracking-wider text-neutral-400">
-          Скоро
+          {t('Скоро')}
         </span>
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-ink text-neutral-500">
@@ -354,16 +355,16 @@ export default function Dashboard() {
             </svg>
           </div>
           <div className="min-w-0 pr-12">
-            <p className="font-display uppercase tracking-wide">Экипировка и мерч GERA</p>
-            <p className="text-sm text-neutral-500">Скоро в приложении</p>
+            <p className="font-display uppercase tracking-wide">{t('Экипировка и мерч GERA')}</p>
+            <p className="text-sm text-neutral-500">{t('Скоро в приложении')}</p>
           </div>
         </div>
       </section>
 
       {/* Награды — таблица наград появится в следующем слое */}
       <section className="space-y-3">
-        <h2 className="text-lg">Мои награды и соревнования</h2>
-        <p className="card text-neutral-400">Пока нет наград — всё впереди!</p>
+        <h2 className="text-lg">{t('Мои награды и соревнования')}</h2>
+        <p className="card text-neutral-400">{t('Пока нет наград — всё впереди!')}</p>
       </section>
 
       {/* На телефоне «Выйти» — здесь (в нижнем меню не помещается); на компьютере — в шапке */}
@@ -375,7 +376,7 @@ export default function Dashboard() {
         }}
         className="btn-outline w-full md:hidden"
       >
-        Выйти из аккаунта
+        {t('Выйти из аккаунта')}
       </button>
 
       <DeleteAccount isAdmin={profile.role === 'admin'} />

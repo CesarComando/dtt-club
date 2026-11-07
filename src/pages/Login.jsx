@@ -3,9 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { signInWithPhone } from '../lib/auth.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { SECTIONS, getKids, getSection, setKids, setSection } from '../lib/section.js'
+import { t } from '../lib/i18n.jsx'
 
 // Вход: выбор раздела — Grappling, MMA / K1, MMA дети или «Тренер» (отдельный вход для тренера и помощника).
-const MODES = [...Object.entries(SECTIONS), ['mma_kids', 'MMA дети'], ['coach', 'Тренер']]
+const MODES = [...Object.entries(SECTIONS), ['mma_kids', t('MMA дети')], ['coach', t('Тренер')]]
 const LABELS = Object.fromEntries(MODES)
 
 export default function Login() {
@@ -30,7 +31,7 @@ export default function Login() {
         const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
         if (!['admin', 'coach'].includes(data?.role)) {
           await supabase.auth.signOut()
-          throw new Error('Этот вход — только для тренеров. Выберите Grappling или MMA / K1.')
+          throw new Error(t('Этот вход — только для тренеров. Выберите Grappling или MMA / K1.'))
         }
         navigate(nextParam ?? '/admin', { replace: true })
       } else {
@@ -48,9 +49,9 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-sm">
-      <h1 className="mb-6 text-3xl">Вход</h1>
+      <h1 className="mb-6 text-3xl">{t('Вход')}</h1>
 
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist" aria-label="Куда входим">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist" aria-label={t('Куда входим')}>
         {MODES.map(([id, label]) => (
           <button
             key={id}
@@ -68,18 +69,18 @@ export default function Login() {
       </div>
       <p className="mb-4 text-center text-xs text-neutral-500">
         {coach
-          ? 'Вход для тренеров — сразу в панель тренера.'
+          ? t('Вход для тренеров — сразу в панель тренера.')
           : mode === 'grappling'
             ? 'Daugavpils Grappling Team'
             : mode === 'mma_kids'
-              ? 'Детское MMA · Вт и Чт 16:30–17:45. Ребёнок входит по логину от родителя (например 20000000-1).'
-              : 'Daugavpils Top Team — MMA и K1'}
+              ? t('Детское MMA · Вт и Чт 16:30–17:45. Ребёнок входит по логину от родителя (например 20000000-1).')
+              : t('Daugavpils Top Team — MMA и K1')}
       </p>
 
       <form className="card space-y-4" onSubmit={onSubmit}>
         <div>
           <label className="label" htmlFor="phone">
-            {mode === 'mma_kids' ? 'Телефон или логин ребёнка' : 'Номер телефона'}
+            {mode === 'mma_kids' ? t('Телефон или логин ребёнка') : t('Номер телефона')}
           </label>
           {/* Ребёнок входит по логину «телефон родителя-номер», например 20000000-1 (слой 24) */}
           <input
@@ -94,7 +95,7 @@ export default function Login() {
           />
         </div>
         <div>
-          <label className="label" htmlFor="password">Пароль</label>
+          <label className="label" htmlFor="password">{t('Пароль')}</label>
           <input
             id="password"
             type="password"
@@ -107,13 +108,13 @@ export default function Login() {
         </div>
         {error && <p className="text-sm font-semibold text-accent">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? 'Входим…' : coach ? 'Войти как тренер' : `Войти · ${LABELS[mode]}`}
+          {loading ? t('Входим…') : coach ? t('Войти как тренер') : t('Войти · {mode}', { mode: LABELS[mode] })}
         </button>
       </form>
       {!coach && (
         <p className="mt-4 text-center text-sm text-neutral-400">
-          Нет аккаунта?{' '}
-          <Link to="/register" className="text-accent hover:underline">Регистрация</Link>
+          {t('Нет аккаунта?')}{' '}
+          <Link to="/register" className="text-accent hover:underline">{t('Регистрация')}</Link>
         </p>
       )}
     </div>

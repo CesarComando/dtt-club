@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import { TRIAL_DISCIPLINES, deleteTrial, loadTrials, prettyPhone, setTrialStatus, waLink } from '../lib/coach.js'
+// tr, а не t: переменная t здесь — заявка.
+import { t as tr, locale } from '../lib/i18n.jsx'
 
 const STATUS = {
-  new: ['Новая', 'border-accent text-accent'],
-  contacted: ['Связался', 'border-amber-500 text-amber-400'],
-  came: ['Пришёл', 'border-emerald-600 text-emerald-400'],
-  declined: ['Отказ', 'border-line text-neutral-500'],
+  new: [tr('Новая'), 'border-accent text-accent'],
+  contacted: [tr('Связался'), 'border-amber-500 text-amber-400'],
+  came: [tr('Пришёл'), 'border-emerald-600 text-emerald-400'],
+  declined: [tr('Отказ'), 'border-line text-neutral-500'],
 }
 
 const when = (iso) =>
-  new Date(iso).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Riga' })
+  new Date(iso).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Riga' })
 
 const hello = (t) =>
-  `Здравствуйте, ${t.name}! Это Dainis, тренер Daugavpils Top Team. Вы оставили заявку на бесплатную пробную тренировку ` +
-  `(${TRIAL_DISCIPLINES[t.discipline]}). Когда вам удобно прийти?`
+  tr('Здравствуйте, {name}! Это Dainis, тренер Daugavpils Top Team. Вы оставили заявку на бесплатную пробную тренировку ({discipline}). Когда вам удобно прийти?', {
+    name: t.name,
+    discipline: TRIAL_DISCIPLINES[t.discipline],
+  })
 
 // Вкладка «Пробные»: заявки с сайта / страницы /trial. Новые — сверху.
 export default function AdminTrials({ onCount }) {
@@ -27,7 +31,7 @@ export default function AdminTrials({ onCount }) {
         setRows(r)
         onCount?.(r.filter((t) => t.status === 'new').length)
       })
-      .catch((e) => setError(e.message.includes('trial_requests') ? 'Выполните supabase/layer34_coach_tools.sql' : e.message))
+      .catch((e) => setError(e.message.includes('trial_requests') ? tr('Выполните supabase/layer34_coach_tools.sql') : e.message))
   useEffect(() => {
     load()
   }, [])
@@ -44,20 +48,20 @@ export default function AdminTrials({ onCount }) {
     }
   }
 
-  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">Пробные: {error}</p>
-  if (!rows) return <p className="card text-neutral-400">Загружаем…</p>
+  if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{tr('Пробные: {error}', { error })}</p>
+  if (!rows) return <p className="card text-neutral-400">{tr('Загружаем…')}</p>
 
   const link = `${window.location.href.split('#')[0]}#/trial`
 
   return (
     <section className="space-y-3">
       <div className="card space-y-1 text-sm">
-        <p className="label">Ссылка на запись</p>
+        <p className="label">{tr('Ссылка на запись')}</p>
         <p className="break-all text-neutral-300">{link}</p>
-        <p className="text-xs text-neutral-500">Кнопка на сайте клуба ведёт сюда. Можно ставить в Instagram, TikTok, WhatsApp.</p>
+        <p className="text-xs text-neutral-500">{tr('Кнопка на сайте клуба ведёт сюда. Можно ставить в Instagram, TikTok, WhatsApp.')}</p>
       </div>
       {rows.length === 0 ? (
-        <p className="card text-neutral-400">Заявок пока нет.</p>
+        <p className="card text-neutral-400">{tr('Заявок пока нет.')}</p>
       ) : (
         <ul className="space-y-2">
           {rows.map((t) => {
@@ -71,10 +75,10 @@ export default function AdminTrials({ onCount }) {
                 </div>
                 <p className="text-sm text-neutral-300">
                   {TRIAL_DISCIPLINES[t.discipline]}
-                  {t.age && ` · ${t.age} лет`} ·{' '}
+                  {t.age && ` · ${tr('{n} лет', { n: t.age })}`} ·{' '}
                   <a href={`tel:+${t.phone}`} className="hover:text-white">{prettyPhone(t.phone)}</a>
                 </p>
-                {t.preferred && <p className="text-sm text-neutral-400">Когда удобно: {t.preferred}</p>}
+                {t.preferred && <p className="text-sm text-neutral-400">{tr('Когда удобно: {when}', { when: t.preferred })}</p>}
                 <div className="flex flex-wrap gap-2">
                   <a
                     href={waLink(t.phone, hello(t))}
@@ -101,10 +105,10 @@ export default function AdminTrials({ onCount }) {
                   <button
                     type="button"
                     disabled={busy === t.id}
-                    onClick={() => window.confirm(`Удалить заявку «${t.name}»?`) && run(t.id, () => deleteTrial(t.id))}
+                    onClick={() => window.confirm(tr('Удалить заявку «{name}»?', { name: t.name })) && run(t.id, () => deleteTrial(t.id))}
                     className="ml-auto text-xs text-neutral-500 hover:text-accent disabled:opacity-50"
                   >
-                    Удалить
+                    {tr('Удалить')}
                   </button>
                 </div>
               </li>

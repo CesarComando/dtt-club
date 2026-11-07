@@ -15,16 +15,17 @@ import MembershipReminders from '../components/MembershipReminders.jsx'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
+import { t, locale } from '../lib/i18n.jsx'
 
 const TABS = [
-  ['gym', 'Зал'],
-  ['students', 'Ученики'],
-  ['memberships', 'Абонементы'],
-  ['debtors', 'Должники'],
-  ['budget', 'Бюджет'],
-  ['assistant', 'Помощник'],
-  ['stats', 'Статистика'],
-  ['trials', 'Пробные'],
+  ['gym', t('Зал')],
+  ['students', t('Ученики')],
+  ['memberships', t('Абонементы')],
+  ['debtors', t('Должники')],
+  ['budget', t('Бюджет')],
+  ['assistant', t('Помощник')],
+  ['stats', t('Статистика')],
+  ['trials', t('Пробные')],
 ]
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
@@ -37,23 +38,23 @@ const startOfToday = () => {
   return d.toISOString()
 }
 
-const shortDate = (iso) => new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+const shortDate = (iso) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
 // Статус оплаты ученика для CRM: абонемент (подписка) + разовые за 30 дней.
 function PaymentBadge({ billing }) {
   const sub = billing?.membership
   const singles = billing?.singles ?? 0
-  let text = 'Не оплачен'
+  let text = t('Не оплачен')
   let cls = 'border-line text-neutral-500'
   if (sub?.status === 'past_due') {
-    text = 'Долг по абонементу'
+    text = t('Долг по абонементу')
     cls = 'border-accent text-accent'
   } else if (sub) {
-    text = `Оплачен до ${sub.current_period_end ? shortDate(sub.current_period_end) : '—'}`
+    text = t('Оплачен до {date}', { date: sub.current_period_end ? shortDate(sub.current_period_end) : '—' })
     cls = 'border-emerald-600 text-emerald-400'
   } else if (singles) {
     // Сумма важнее числа оплат: кто-то платит по 3 €, а за 3 тренировки сразу — 9 €.
-    text = `Разовые: ${formatPrice(billing.singlesCents ?? 0)} за 30 дн.`
+    text = t('Разовые: {sum} за 30 дн.', { sum: formatPrice(billing.singlesCents ?? 0) })
     cls = 'border-neutral-500 text-neutral-300'
   }
   return (
@@ -108,7 +109,7 @@ export default function Admin() {
     ])
     const firstError = profilesRes.error || contactsRes.error || attendanceRes.error
     if (firstError) {
-      setError('Не удалось загрузить учеников: ' + firstError.message)
+      setError(t('Не удалось загрузить учеников: {error}', { error: firstError.message }))
       setLoading(false)
       return
     }
@@ -222,7 +223,7 @@ export default function Admin() {
       // Новый ранг — ровно на том нажатии, где счётчик перешёл порог.
       const rankNow = getRank(newCount, athlete.rank_override).current
       if (rankNow.id > getRank(newCount - 1, athlete.rank_override).current.id) {
-        setNotice(`🏆 ${athlete.first_name} ${athlete.last_name} получает ранг «${rankNow.title}»!`)
+        setNotice(t('🏆 {name} получает ранг «{rank}»!', { name: `${athlete.first_name} ${athlete.last_name}`, rank: rankNow.title }))
       }
     }
     if (inflight.current[id] === 0) syncCount(id)
@@ -268,17 +269,17 @@ export default function Admin() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="border-l-4 border-accent pl-4">
-          <p className="label">Панель тренера</p>
-          <h1 className="text-3xl">Посещаемость</h1>
+          <p className="label">{t('Панель тренера')}</p>
+          <h1 className="text-3xl">{t('Посещаемость')}</h1>
         </div>
         <div className="flex gap-6 text-right">
           <div>
             <p className="font-display text-3xl">{athletes.length}</p>
-            <p className="text-[11px] uppercase tracking-wider text-neutral-400">Учеников</p>
+            <p className="text-[11px] uppercase tracking-wider text-neutral-400">{t('Учеников')}</p>
           </div>
           <div>
             <p className="font-display text-3xl text-accent">{markedToday}</p>
-            <p className="text-[11px] uppercase tracking-wider text-neutral-400">Сегодня</p>
+            <p className="text-[11px] uppercase tracking-wider text-neutral-400">{t('Сегодня')}</p>
           </div>
         </div>
       </div>
@@ -319,7 +320,7 @@ export default function Admin() {
       <input
         type="search"
         className="input"
-        placeholder="Поиск по имени или телефону…"
+        placeholder={t('Поиск по имени или телефону…')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
@@ -333,7 +334,7 @@ export default function Admin() {
         </div>
       ) : filtered.length === 0 ? (
         <p className="card text-center text-neutral-400">
-          {athletes.length ? 'Никого не нашли' : 'Пока никто не зарегистрировался'}
+          {athletes.length ? t('Никого не нашли') : t('Пока никто не зарегистрировался')}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -387,7 +388,7 @@ export default function Admin() {
                       {ranked ? (
                         <span className="text-accent">
                           {current.title}
-                          {manual && <span className="text-neutral-500"> · вручную</span>}
+                          {manual && <span className="text-neutral-500"> · {t('вручную')}</span>}
                         </span>
                       ) : (
                         <span className="text-neutral-400">{DISCIPLINES[a.discipline]}</span>
@@ -409,21 +410,21 @@ export default function Admin() {
                 <div className="flex items-center gap-3">
                   <div className="w-16 text-center">
                     <p className="font-display text-3xl tabular-nums">{a.trainings_count}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-neutral-500">трен.</p>
+                    <p className="text-[10px] uppercase tracking-wider text-neutral-500">{t('трен.')}</p>
                   </div>
                   <div className="flex flex-1 flex-col items-stretch gap-1 sm:flex-none">
                     <button
                       onClick={() => change(a, +1)}
                       className="btn-primary min-h-14 px-6 text-base select-none active:scale-95"
                     >
-                      +1 Тренировка
+                      {t('+1 Тренировка')}
                     </button>
                     {todayCount > 0 && (
                       <button
                         onClick={() => change(a, -1)}
                         className="text-xs text-neutral-500 hover:text-white"
                       >
-                        Отменить ({todayCount} сегодня)
+                        {t('Отменить ({n} сегодня)', { n: todayCount })}
                       </button>
                     )}
                     {isAdmin && <button
@@ -431,7 +432,7 @@ export default function Admin() {
                       className="text-xs text-neutral-500 hover:text-white"
                       aria-expanded={settingsOpen}
                     >
-                      {settingsOpen ? 'Скрыть настройки' : 'Ранг и направление'}
+                      {settingsOpen ? t('Скрыть настройки') : t('Ранг и направление')}
                     </button>}
                   </div>
                 </div>
@@ -440,7 +441,7 @@ export default function Admin() {
                 {isAdmin && settingsOpen && (
                   <div className="grid basis-full gap-3 border-t border-line pt-4 sm:grid-cols-2">
                     <label className="block">
-                      <span className="label">Направление</span>
+                      <span className="label">{t('Направление')}</span>
                       <select
                         className="input"
                         value={a.discipline}
@@ -453,7 +454,7 @@ export default function Admin() {
                       </select>
                     </label>
                     <label className="block">
-                      <span className="label">Ранг грепплинга</span>
+                      <span className="label">{t('Ранг грепплинга')}</span>
                       <select
                         className="input disabled:opacity-50"
                         value={a.rank_override ?? ''}
@@ -462,9 +463,9 @@ export default function Admin() {
                           saveSettings(a, { rank_override: e.target.value ? Number(e.target.value) : null })
                         }
                       >
-                        <option value="">Авто — {autoRank(a.trainings_count).title}</option>
+                        <option value="">{t('Авто — {rank}', { rank: autoRank(a.trainings_count).title })}</option>
                         {RANKS.map((r) => (
-                          <option key={r.id} value={r.id}>{r.title} (вручную)</option>
+                          <option key={r.id} value={r.id}>{r.title} ({t('вручную')})</option>
                         ))}
                       </select>
                     </label>
@@ -482,7 +483,7 @@ export default function Admin() {
                         athlete={a}
                         onDeleted={() => {
                           setOpenSettings(null)
-                          setNotice(`Аккаунт ${a.first_name} ${a.last_name} удалён`)
+                          setNotice(t('Аккаунт {name} удалён', { name: `${a.first_name} ${a.last_name}` }))
                           load()
                           setReloadKey((k) => k + 1)
                         }}
