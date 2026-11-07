@@ -19,6 +19,7 @@ const Gallery = lazy(() => import('./pages/Gallery.jsx'))
 const Articles = lazy(() => import('./pages/Articles.jsx'))
 const Article = lazy(() => import('./pages/Article.jsx'))
 const ArticleEdit = lazy(() => import('./pages/ArticleEdit.jsx'))
+const Trial = lazy(() => import('./pages/Trial.jsx'))
 
 export default function App() {
   return (
@@ -47,6 +48,8 @@ export default function App() {
           <Route path="/diary" element={<Diary />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/privacy" element={<Privacy />} />
+          {/* Заявка на бесплатную пробную тренировку — без входа (кнопка на сайте клуба) */}
+          <Route path="/trial" element={<Trial />} />
           {/* QR-чекин: телефон ученика открывает ссылку из QR на экране тренера */}
           <Route path="/checkin/:token" element={<Checkin />} />
           <Route path="/invite/:token" element={<Invite />} />

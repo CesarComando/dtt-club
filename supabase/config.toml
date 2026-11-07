@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.ask-club]
 verify_jwt = false
+
+[functions.create-child]
+verify_jwt = false

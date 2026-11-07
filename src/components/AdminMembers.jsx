@@ -110,8 +110,10 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
       {error && <p className="text-sm text-accent">{error}</p>}
       {unlinked.length > 0 && <p className="label">Новые в приложении — с кем связать</p>}
       {unlinked.map((p) => {
+        // Совпал телефон — первая подсказка (📞). Сама база больше не связывает:
+        // номер при регистрации не проверяется, поэтому подтверждает тренер (слой 33).
         const cands = free
-          .map((m) => ({ m, s: matchScore(p, m) }))
+          .map((m) => ({ m, s: p.phone && m.phone === p.phone ? 2 : matchScore(p, m) }))
           .filter((x) => x.s >= 0.5)
           .sort((a, b) => b.s - a.s)
           .slice(0, 3)
@@ -122,15 +124,16 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
             </Link>
             <span className="text-neutral-500">→</span>
             {cands.length ? (
-              cands.map(({ m }) => (
+              cands.map(({ m, s }) => (
                 <button
                   key={m.id}
                   type="button"
                   disabled={busy === p.id}
                   onClick={() => link(m.id, p.id)}
+                  title={s === 2 ? 'Совпадает номер телефона' : undefined}
                   className="rounded border border-line px-2 py-0.5 hover:border-accent disabled:opacity-50"
                 >
-                  {m.first_name} {m.last_name}
+                  {s === 2 && '📞 '}{m.first_name} {m.last_name}
                 </button>
               ))
             ) : (
