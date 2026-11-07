@@ -148,9 +148,14 @@ export default function AdminStudent({ kind }) {
             <ApprovedMark approved={profile?.approved_at} />
           </h1>
           <p className="text-sm text-neutral-400">
-            {[discipline && DISCIPLINES[discipline], member && STATUS[member.status], member?.parent_name && `родитель: ${member.parent_name}`]
-              .filter(Boolean).join(' · ')}
+            {[discipline && DISCIPLINES[discipline], member && STATUS[member.status]].filter(Boolean).join(' · ')}
           </p>
+          {member && (
+            <ParentField
+              member={member}
+              onSaved={(name) => setData((d) => ({ ...d, member: { ...d.member, parent_name: name } }))}
+            />
+          )}
           {phone && <a href={`tel:+${phone}`} className="text-sm text-neutral-300 hover:text-accent">{phoneText(phone)}</a>}
           <p className="text-xs">
             {profile ? (
@@ -420,5 +425,40 @@ function MemberPayments({ member }) {
       )}
       <p className="text-xs text-neutral-500">Записать оплату — во вкладке «Ученики», нажмите на сумму справа от имени.</p>
     </section>
+  )
+}
+
+// «родитель: …» в шапке — тренер может исправить имя (например, Meksa → Mekša).
+function ParentField({ member, onSaved }) {
+  const [edit, setEdit] = useState(false)
+  const [value, setValue] = useState(member.parent_name ?? '')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const save = async () => {
+    setBusy(true)
+    setErr('')
+    const name = value.trim() || null
+    const { error } = await supabase.from('club_members').update({ parent_name: name }).eq('id', member.id)
+    setBusy(false)
+    if (error) return setErr(error.message)
+    onSaved(name)
+    setEdit(false)
+  }
+  if (!edit)
+    return (
+      <button type="button" onClick={() => { setValue(member.parent_name ?? ''); setEdit(true) }} className="text-left text-sm text-neutral-400 hover:text-accent">
+        {member.parent_name ? `родитель: ${member.parent_name} ✎` : '＋ указать родителя'}
+      </button>
+    )
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <input className="input !w-auto !py-1 text-sm" autoFocus placeholder="Имя родителя" value={value}
+        onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
+      <button type="button" disabled={busy} onClick={save} className="rounded border border-accent px-2 py-0.5 text-sm hover:bg-accent/15 disabled:opacity-50">
+        {busy ? '…' : 'Сохранить'}
+      </button>
+      <button type="button" onClick={() => setEdit(false)} className="text-sm text-neutral-400 hover:text-white">Отмена</button>
+      {err && <span className="text-xs text-accent">{err}</span>}
+    </div>
   )
 }

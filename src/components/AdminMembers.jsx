@@ -21,8 +21,18 @@ const CYR = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'z',з:'z',и:
 const norm = (t) =>
   (t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[а-яё]/g, (c) => CYR[c] ?? c).replace(/[^a-z ]/g, ' ')
-const stem = (w) => w.replace(/(s|is|js|ijs)$/, '').slice(0, 5) // Andrejs/Андрей → andre
+// Andrejs/Андрей → andre; Mariss/Maris → mar (двойная «s» на конце схлопывается до окончания).
+const stem = (w) => w.replace(/s+$/, 's').replace(/(ijs|js|is|s)$/, '').slice(0, 5)
 const tokens = (t) => norm(t).split(/\s+/).filter((w) => w.length > 1).map(stem)
+// Одна опечатка в длинном слове — всё ещё совпадение (Gaigulis ≈ Gsigulis).
+const close = (a, b) => {
+  if (a === b) return true
+  if (Math.min(a.length, b.length) < 4 || Math.abs(a.length - b.length) > 1) return false
+  let i = 0
+  while (i < a.length && a[i] === b[i]) i++
+  const ra = a.slice(i + 1), rb = b.slice(i + 1)
+  return ra === rb || a.slice(i) === rb || ra === b.slice(i)
+}
 const matchScore = (profile, m) => {
   const pt = tokens(`${profile.first_name} ${profile.last_name}`)
   const names = [`${m.first_name} ${m.last_name}`, ...(m.aliases ?? [])]
@@ -30,7 +40,7 @@ const matchScore = (profile, m) => {
   for (const n of names) {
     const mt = tokens(n)
     if (!mt.length) continue
-    const hit = mt.filter((w) => pt.includes(w)).length
+    const hit = mt.filter((w) => pt.some((x) => close(w, x))).length
     best = Math.max(best, hit / Math.max(mt.length, pt.length))
   }
   return best
@@ -43,6 +53,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
   const [parentFor, setParentFor] = useState(null) // profile_id, для которого открыт выбор ребёнка
+  const [pickFor, setPickFor] = useState(null) // profile_id, для которого открыт ручной выбор ученика
   const parentOf = Object.fromEntries(contacts.filter((c) => c.phone && c.member_id).map((c) => [c.phone, c.member_id]))
   const unlinked = profiles.filter((p) => !linkedIds.has(p.id) && !(p.phone && parentOf[p.phone]))
   const parents = profiles.filter((p) => !linkedIds.has(p.id) && p.phone && parentOf[p.phone])
@@ -124,6 +135,29 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
               ))
             ) : (
               <span className="text-neutral-500">совпадений нет</span>
+            )}
+            {pickFor === p.id ? (
+              <select
+                className="input !w-auto !py-1 text-sm"
+                defaultValue=""
+                disabled={busy === p.id}
+                onChange={(e) => e.target.value && (setPickFor(null), link(Number(e.target.value), p.id))}
+              >
+                <option value="">Кто это?</option>
+                {free.filter((m) => m.status !== 'left')
+                  .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`))
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
+                  ))}
+              </select>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setPickFor(p.id)}
+                className="rounded border border-dashed border-line px-2 py-0.5 text-neutral-300 hover:border-accent"
+              >
+                Другой…
+              </button>
             )}
             <button
               type="button"
