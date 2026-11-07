@@ -193,6 +193,8 @@ export default {
   'Соревнования': 'Sacensības',
   'Разное': 'Dažādi',
   'Можно добавлять только фото и видео': 'Var pievienot tikai foto un video',
+  'Не удалось обработать фото. Сохраните его как JPEG (или сделайте снимок экрана фото) и попробуйте снова.':
+    'Neizdevās apstrādāt foto. Saglabājiet to kā JPEG (vai uzņemiet foto ekrānuzņēmumu) un mēģiniet vēlreiz.',
   'Видео больше {mb} МБ — обрежьте его': 'Video ir lielāks par {mb} MB — saīsiniet to',
 
   // Дневник

@@ -31,8 +31,9 @@ export async function loadGallery() {
 }
 
 // Фото ужимаем на телефоне до 1920 px по длинной стороне (JPEG) — быстрее грузится, меньше места.
-async function shrinkImage(file) {
-  if (!file.type.startsWith('image/')) return file
+// Перерисовка через canvas заодно стирает «историю» снимка (EXIF): GPS-место съёмки,
+// модель телефона, дату, имя владельца камеры. Оригинал с этими данными на сервер не уходит.
+export async function shrinkImage(file) {
   try {
     const bitmap = await createImageBitmap(file)
     const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height))
@@ -41,9 +42,12 @@ async function shrinkImage(file) {
     canvas.height = Math.round(bitmap.height * scale)
     canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85))
-    return blob ?? file
+    bitmap.close?.()
+    if (!blob) throw new Error('toBlob')
+    return blob
   } catch {
-    return file // формат, который браузер не умеет открыть (напр. HEIC) — грузим как есть
+    // Браузер не смог открыть формат (напр. HEIC) — оригинал не грузим: в нём остались бы GPS и данные телефона.
+    throw new Error(t('Не удалось обработать фото. Сохраните его как JPEG (или сделайте снимок экрана фото) и попробуйте снова.'))
   }
 }
 
