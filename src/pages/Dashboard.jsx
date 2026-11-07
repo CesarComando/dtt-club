@@ -10,6 +10,7 @@ import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
 import MyChildren from '../components/MyChildren.jsx'
+import Notifications from '../components/Notifications.jsx'
 import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 // Сканер с камерой грузится только по нажатию кнопки.
@@ -221,6 +222,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Отмена / перенос тренировки, другой зал (слой 34) */}
+      <Notifications />
       {/* Приглашения от друзей (слой 29) */}
       <FriendInvites onBooked={() => setBookingKey((k) => k + 1)} />
 

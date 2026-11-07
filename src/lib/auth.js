@@ -83,41 +83,42 @@ export async function registerAthlete({ firstName, lastName, phone, password, di
 }
 
 /**
- * Родитель добавляет ребёнка (слой 24). Аккаунт создаётся во временном клиенте без сохранения
- * сессии — родитель остаётся в своём аккаунте. Логин ребёнка: <телефон родителя>-<n>;
- * триггер в базе сам привязывает ребёнка к родителю по этому логину.
+ * Родитель добавляет ребёнка. Аккаунт создаёт сервер (Edge Function create-child, слой 33):
+ * он проверяет, что это действительно родитель, — из браузера детский логин не зарегистрировать.
+ * Логин ребёнка: <телефон родителя>-<n>. Фото загружаем во временном клиенте под входом
+ * ребёнка (без сохранения сессии — родитель остаётся в своём аккаунте).
  * Возвращает логин для входа ребёнка.
  */
 export async function createChildAccount({ parentPhone, firstName, lastName, discipline, password, photo }) {
   ensureConfigured()
-  const base = normalizePhone(parentPhone ?? '')
-  if (!/^\d{8,15}$/.test(base)) throw new Error('В вашем профиле нет номера телефона — добавить ребёнка нельзя.')
-  const tmp = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'dtt-child-tmp' },
-  })
-  const blob = photo ? await compressImage(photo) : null
-  // Свободный номер: 1, 2, 3… (занят — пробуем следующий)
-  for (let n = 1; n <= 20; n++) {
-    const login = `${base}-${n}`
-    const { data, error } = await tmp.auth.signUp({
-      email: `${login}@${EMAIL_DOMAIN}`,
-      password,
-      options: { data: { first_name: firstName.trim(), last_name: lastName.trim(), discipline } },
-    })
-    if (error) {
-      if (/already registered|already been registered/i.test(error.message)) continue
-      throw translateAuthError(error)
-    }
-    if (!data.session) throw new Error('Аккаунт создан, но требуется подтверждение email (Confirm email в Supabase).')
-    if (blob) {
-      const path = `${data.user.id}/selfie.jpg`
-      const up = await tmp.storage.from(AVATARS_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-      if (!up.error) await tmp.from('profiles').update({ avatar_url: path }).eq('id', data.user.id)
-    }
-    await tmp.auth.signOut()
-    return login
+  if (!/^\d{8,15}$/.test(normalizePhone(parentPhone ?? ''))) {
+    throw new Error('В вашем профиле нет номера телефона — добавить ребёнка нельзя.')
   }
-  throw new Error('Не удалось подобрать логин для ребёнка.')
+  const { data, error } = await supabase.functions.invoke('create-child', {
+    body: { first_name: firstName.trim(), last_name: lastName.trim(), discipline, password },
+  })
+  if (error) {
+    let message = 'Не удалось создать аккаунт ребёнка'
+    try {
+      message = (await error.context?.json())?.error ?? message
+    } catch {
+      /* тело не JSON */
+    }
+    throw new Error(message)
+  }
+  if (photo) {
+    const tmp = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'dtt-child-tmp' },
+    })
+    const signIn = await tmp.auth.signInWithPassword({ email: data.email, password })
+    if (!signIn.error) {
+      const path = `${signIn.data.user.id}/selfie.jpg`
+      const up = await tmp.storage.from(AVATARS_BUCKET).upload(path, await compressImage(photo), { contentType: 'image/jpeg', upsert: true })
+      if (!up.error) await tmp.from('profiles').update({ avatar_url: path }).eq('id', signIn.data.user.id)
+      await tmp.auth.signOut()
+    }
+  }
+  return data.login
 }
 
 /** Родитель задаёт ребёнку новый пароль (слой 25: только своему ребёнку). */

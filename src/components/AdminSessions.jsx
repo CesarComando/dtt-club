@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { cancelBooking, isFull, loadUpcoming, seatsText, sessionDay, sessionTime, setSessionVenue } from '../lib/booking.js'
+import { setSessionCancelled } from '../lib/coach.js'
 
 // CRM тренера: ближайшие занятия, кто записался, перенос в другой зал
 // (для субботы — «Олимпийский центр», лимит 50). Расписание и лимиты — в базе.
@@ -84,6 +85,7 @@ export default function AdminSessions() {
                     <p className="truncate text-sm text-neutral-400">
                       {s.title}
                       {s.venue_id !== 'club' && <span className="text-accent"> · {s.venue_name}</span>}
+                      {s.cancelled && <span className="font-semibold text-accent"> · отменена</span>}
                     </p>
                     {/* Кто записался — видно сразу, без раскрытия */}
                     {!expanded && (
@@ -128,6 +130,38 @@ export default function AdminSessions() {
 
                 {expanded && (
                   <div className="space-y-3 border-t border-line p-4">
+                    {/* Отмена / возврат занятия — всем записанным придёт уведомление (слой 34) */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {s.cancelled ? (
+                        <>
+                          <span className="text-sm font-semibold text-accent">⛔ Тренировка отменена</span>
+                          <button
+                            type="button"
+                            disabled={busy === `c${s.id}`}
+                            onClick={() => run(`c${s.id}`, () => setSessionCancelled(s.id, false))}
+                            className="rounded border border-line px-2 py-1 text-xs hover:border-accent disabled:opacity-50"
+                          >
+                            Вернуть в расписание
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={busy === `c${s.id}`}
+                          onClick={() => {
+                            const reason = window.prompt(
+                              `Отменить «${s.title}», ${sessionDay(s.starts_at)} ${sessionTime(s)}?\n` +
+                                `Записанные (${list.length}) получат уведомление в приложении.\n\nПричина (можно оставить пустой):`,
+                              '',
+                            )
+                            if (reason !== null) run(`c${s.id}`, () => setSessionCancelled(s.id, true, reason))
+                          }}
+                          className="rounded border border-line px-2 py-1 text-xs text-neutral-300 hover:border-accent hover:text-accent disabled:opacity-50"
+                        >
+                          Отменить тренировку
+                        </button>
+                      )}
+                    </div>
                     {list.length === 0 ? (
                       <p className="text-sm text-neutral-500">Пока никто не записался.</p>
                     ) : (

@@ -9,6 +9,9 @@ import AdminMembers from '../components/AdminMembers.jsx'
 import AdminMemberships from '../components/AdminMemberships.jsx'
 import AdminBudget from '../components/AdminBudget.jsx'
 import AdminAssistant from '../components/AdminAssistant.jsx'
+import AdminStats from '../components/AdminStats.jsx'
+import AdminTrials from '../components/AdminTrials.jsx'
+import MembershipReminders from '../components/MembershipReminders.jsx'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
@@ -20,6 +23,8 @@ const TABS = [
   ['debtors', 'Должники'],
   ['budget', 'Бюджет'],
   ['assistant', 'Помощник'],
+  ['stats', 'Статистика'],
+  ['trials', 'Пробные'],
 ]
 
 // CRM тренера (Dainis Miglāns): список учеников + отметка посещений.
@@ -279,14 +284,14 @@ export default function Admin() {
       </div>
 
       {tabs.length > 1 && (
-      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2'}`} role="tablist">
+      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-4 sm:grid-cols-8' : 'grid-cols-2'}`} role="tablist">
         {tabs.map(([id, label]) => (
           <button
             key={id}
             role="tab"
             aria-selected={tab === id}
             onClick={() => setParams(id === 'gym' ? {} : { tab: id }, { replace: true })}
-            className={`rounded-md border py-2.5 font-display text-sm uppercase tracking-wider ${
+            className={`rounded-md border px-0.5 py-2.5 font-display text-[11px] uppercase tracking-wide sm:text-sm sm:tracking-wider ${
               tab === id ? 'border-accent bg-accent/10 text-white' : 'border-line text-neutral-400 hover:text-white'
             }`}
           >
@@ -297,9 +302,12 @@ export default function Admin() {
       )}
 
       {tab === 'students' && <AdminMembers profiles={athletes} />}
+      {tab === 'memberships' && isAdmin && <MembershipReminders />}
       {tab === 'memberships' && <AdminMemberships full={isAdmin} />}
       {tab === 'budget' && isAdmin && <AdminBudget />}
       {tab === 'assistant' && isAdmin && <AdminAssistant />}
+      {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} />}
+      {tab === 'trials' && isAdmin && <AdminTrials />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
 
       {tab === 'gym' && (
