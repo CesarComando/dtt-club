@@ -53,7 +53,7 @@ export async function loadMyBilling(userId) {
   }
 }
 
-async function callFunction(name, body) {
+export async function callFunction(name, body) {
   const { data, error } = await supabase.functions.invoke(name, { body })
   if (error) {
     // Текст ошибки функции лежит в теле ответа.

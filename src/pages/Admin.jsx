@@ -8,6 +8,7 @@ import CheckinQR from '../components/CheckinQR.jsx'
 import AdminMembers from '../components/AdminMembers.jsx'
 import AdminMemberships from '../components/AdminMemberships.jsx'
 import AdminBudget from '../components/AdminBudget.jsx'
+import AdminShop from '../components/AdminShop.jsx'
 import AdminAssistant from '../components/AdminAssistant.jsx'
 import AdminStats from '../components/AdminStats.jsx'
 import AdminTrials from '../components/AdminTrials.jsx'
@@ -24,6 +25,7 @@ const TABS = [
   ['debtors', t('Должники')],
   ['budget', t('Бюджет')],
   ['assistant', t('Помощник')],
+  ['shop', t('Магазин')],
   ['stats', t('Статистика')],
   ['trials', t('Пробные')],
 ]
@@ -285,7 +287,7 @@ export default function Admin() {
       </div>
 
       {tabs.length > 1 && (
-      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-4 sm:grid-cols-8' : 'grid-cols-2'}`} role="tablist">
+      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5 lg:grid-cols-9' : 'grid-cols-2'}`} role="tablist">
         {tabs.map(([id, label]) => (
           <button
             key={id}
@@ -307,6 +309,7 @@ export default function Admin() {
       {tab === 'memberships' && <AdminMemberships full={isAdmin} />}
       {tab === 'budget' && isAdmin && <AdminBudget />}
       {tab === 'assistant' && isAdmin && <AdminAssistant />}
+      {tab === 'shop' && isAdmin && <AdminShop />}
       {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} />}
       {tab === 'trials' && isAdmin && <AdminTrials />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}

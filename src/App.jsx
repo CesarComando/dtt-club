@@ -18,6 +18,7 @@ const Privacy = lazy(() => import('./pages/Privacy.jsx'))
 const Checkin = lazy(() => import('./pages/Checkin.jsx'))
 const Invite = lazy(() => import('./pages/Invite.jsx'))
 const Diary = lazy(() => import('./pages/Diary.jsx'))
+const Shop = lazy(() => import('./pages/Shop.jsx'))
 const AdminStudent = lazy(() => import('./pages/AdminStudent.jsx'))
 const Gallery = lazy(() => import('./pages/Gallery.jsx'))
 const Articles = lazy(() => import('./pages/Articles.jsx'))
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/articles/:id/edit" element={<AdminRoute adminOnly><ArticleEdit /></AdminRoute>} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/diary" element={<Diary />} />
+          <Route path="/shop" element={<Shop />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/privacy" element={<Privacy />} />
           {/* Заявка на бесплатную пробную тренировку — без входа (кнопка на сайте клуба) */}
