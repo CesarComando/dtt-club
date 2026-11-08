@@ -322,7 +322,9 @@ export default function BillingSection({ billing, discipline }) {
 }
 
 // «Своя сумма» (слой 26): ученик сам вводит сумму (1–500 €) и, по желанию, за что платит.
-function CustomAmount({ onPay, busy }) {
+// Своя сумма: оплата клубу (в «Оплате») или поддержка клуба (variant="support").
+export function CustomAmount({ onPay, busy, variant }) {
+  const support = variant === 'support'
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
@@ -332,7 +334,7 @@ function CustomAmount({ onPay, busy }) {
   if (!open)
     return (
       <button type="button" onClick={() => setOpen(true)} className="btn-outline w-full">
-        {t('Оплатить свою сумму')}
+        {support ? t('Поддержать своей суммой') : t('Оплатить свою сумму')}
       </button>
     )
   return (
@@ -340,10 +342,10 @@ function CustomAmount({ onPay, busy }) {
       className="space-y-2 rounded-md border border-line p-3"
       onSubmit={(e) => {
         e.preventDefault()
-        if (valid) onPay(cents, note.trim())
+        if (valid) onPay(cents, support ? [t('Поддержка клуба'), note.trim()].filter(Boolean).join(': ') : note.trim())
       }}
     >
-      <p className="text-sm font-semibold">{t('Своя сумма')}</p>
+      <p className="text-sm font-semibold">{support ? t('Поддержка клуба — своя сумма') : t('Своя сумма')}</p>
       <div className="grid grid-cols-[8rem_1fr] gap-2">
         <input
           inputMode="decimal"
@@ -357,7 +359,7 @@ function CustomAmount({ onPay, busy }) {
         />
         <input
           maxLength={120}
-          placeholder={t('За что (необязательно): 3 тренировки, долг…')}
+          placeholder={support ? t('Пожелание (необязательно)') : t('За что (необязательно): 3 тренировки, долг…')}
           aria-label={t('За что')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -373,7 +375,9 @@ function CustomAmount({ onPay, busy }) {
           {t('Отмена')}
         </button>
       </div>
-      <p className="text-xs text-neutral-500">{t('Разовая оплата картой. Абонемент так не продлевается — для него кнопки выше.')}</p>
+      <p className="text-xs text-neutral-500">
+        {support ? t('Разовая оплата картой. Спасибо, что поддерживаете клуб!') : t('Разовая оплата картой. Абонемент так не продлевается — для него кнопки выше.')}
+      </p>
     </form>
   )
 }
