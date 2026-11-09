@@ -11,6 +11,7 @@ import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
 import MyChildren from '../components/MyChildren.jsx'
 import Notifications from '../components/Notifications.jsx'
+import { openTour } from '../components/Tour.jsx'
 import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 import { t, lang, locale } from '../lib/i18n.jsx'
@@ -380,6 +381,11 @@ export default function Dashboard() {
         <h2 className="text-lg">{t('Мои награды и соревнования')}</h2>
         <p className="card text-neutral-400">{t('Пока нет наград — всё впереди!')}</p>
       </section>
+
+      {/* Знакомство с приложением — пройти заново */}
+      <button type="button" onClick={openTour} className="w-full text-center text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline">
+        {t('Как пользоваться приложением')}
+      </button>
 
       {/* На телефоне «Выйти» — здесь (в нижнем меню не помещается); на компьютере — в шапке */}
       <button
