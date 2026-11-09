@@ -100,6 +100,11 @@ export default {
   'Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.':
     'Apmaksa ar karti caur Stripe. Cenas norādītas ar PVN. Pirmais treniņš — bez maksas.',
   'Оплатить свою сумму': 'Apmaksāt citu summu',
+  'Поддержать своей суммой': 'Atbalstīt ar savu summu',
+  'Поддержка клуба': 'Kluba atbalsts',
+  'Поддержка клуба — своя сумма': 'Kluba atbalsts — sava summa',
+  'Пожелание (необязательно)': 'Novēlējums (nav obligāti)',
+  'Разовая оплата картой. Спасибо, что поддерживаете клуб!': 'Vienreizējs maksājums ar karti. Paldies, ka atbalstāt klubu!',
   'Своя сумма': 'Cita summa',
   'Сумма, €': 'Summa, €',
   'Сумма в евро': 'Summa eiro',

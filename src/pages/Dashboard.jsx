@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getRank, hasRanks, RANKS, DISCIPLINES, TRAININGS_PER_YEAR } from '../lib/ranks.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
-import BillingSection, { liveSubscription, useBilling } from '../components/Billing.jsx'
+import BillingSection, { CustomAmount, liveSubscription, useBilling } from '../components/Billing.jsx'
 import { formatDay, formatPrice } from '../lib/payments.js'
 import { deleteMyAccount, loadMyFamily } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
@@ -65,7 +65,8 @@ function SupportClub({ isSponsor, billing }) {
 
   if (isSponsor || sub) {
     return (
-      <section className="card flex items-center gap-3 border-accent/60">
+      <section className="card space-y-3 border-accent/60">
+        <div className="flex items-center gap-3">
         <HeartIcon className="h-6 w-6 shrink-0 text-accent" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{t('Спасибо, что поддерживаете клуб!')}</p>
@@ -78,6 +79,8 @@ function SupportClub({ isSponsor, billing }) {
             {t('Управлять')}
           </button>
         )}
+        </div>
+        <CustomAmount variant="support" onPay={billing.custom} busy={billing.busy} />
       </section>
     )
   }
@@ -85,7 +88,7 @@ function SupportClub({ isSponsor, billing }) {
   if (!product) return null
 
   return (
-    <section>
+    <section className="space-y-2">
       <button
         type="button"
         disabled={Boolean(billing.busy)}
@@ -97,6 +100,8 @@ function SupportClub({ isSponsor, billing }) {
           ? t('Переход к оплате…')
           : t('Поддержать клуб · {price}/мес', { price: formatPrice(product.amount_cents, product.currency) })}
       </button>
+      {/* Разово — любую сумму от 1 до 500 € */}
+      <CustomAmount variant="support" onPay={billing.custom} busy={billing.busy} />
     </section>
   )
 }
