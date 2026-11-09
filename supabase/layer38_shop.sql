@@ -270,9 +270,10 @@ insert into public.shop_designs (id, title, description, club, images, sort) val
   ('brazil', 'Brazilian Jiu-Jitsu', 'Сине-жёлто-зелёный, Daugavpils Grappling Team', 'grappling',
      array['shop/brazil-shorts.jpg','shop/brazil-leggings.jpg'], 20),
   ('troll', 'Rollin'' Troll', 'Чёрный с молниями, Daugavpils Grappling Team', 'grappling',
-     array['shop/troll-rashguard.jpg','shop/troll-shorts.jpg'], 30),
+     array['shop/troll-rashguard.jpg','shop/troll-tee.jpg','shop/troll-shorts.jpg'], 30),
   ('fightclub', 'Daugavpils Fight Club', 'Чёрно-красный, Daugavpils Top Team', 'dtt',
-     array['shop/fightclub-tee.jpg'], 40)
+     array['shop/fightclub-tee.jpg','shop/fightclub-rashguard-ls.jpg','shop/fightclub-shorts.jpg','shop/fightclub-leggings.jpg',
+           'shop/fightclub-hoodie.jpg','shop/fightclub-jacket.jpg','shop/fightclub-pants.jpg'], 40)
 on conflict (id) do nothing;
 
 -- Вещи GERA: (код, название, розница GERA взр/дет в центах, порядок). Цена ученику = +10 %, до 10 центов.
