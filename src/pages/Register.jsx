@@ -4,6 +4,7 @@ import { registerAthlete } from '../lib/auth.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { DISCIPLINES, hasRanks } from '../lib/ranks.js'
 import { t } from '../lib/i18n.jsx'
+import { friendlyError } from '../lib/offline.js'
 
 // Регистрация (APP_PASSPORT §2): Имя, Фамилия, Телефон + обязательное селфи.
 // Supabase: auth.signUp → триггер создаёт profiles → селфи в Storage (бакет avatars).
@@ -65,7 +66,7 @@ export default function Register() {
       await refreshProfile(user.id)
       setSubmitted(true)
     } catch (err) {
-      setError(err.message)
+      setError(friendlyError(err))
     } finally {
       setLoading(false)
     }
@@ -151,8 +152,9 @@ export default function Register() {
             required
             autoComplete="tel"
             pattern="\+?[0-9\s]{8,15}"
-            placeholder="+371 2X XXX XXX"
+            placeholder="2X XXX XXX"
           />
+          <p className="mt-1 text-xs text-neutral-500">{t('Код +371 можно не вводить — достаточно 8 цифр.')}</p>
         </div>
         <fieldset>
           <legend className="label">{t('Направление *')}</legend>

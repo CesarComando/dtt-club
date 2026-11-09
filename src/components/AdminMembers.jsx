@@ -6,6 +6,9 @@ import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { RANKS, DISCIPLINES } from '../lib/ranks.js'
 import { t, locale } from '../lib/i18n.jsx'
+import { useAuth } from '../lib/AuthContext.jsx'
+import { cached, friendlyError, isNetworkError } from '../lib/offline.js'
+import { enqueue } from '../lib/outbox.js'
 
 // CRM: все ученики клуба, в том числе без аккаунта в приложении,
 // с историей оплат вне приложения (банк, наличные). Связка с аккаунтом —
@@ -217,6 +220,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
 const day = (d) => new Date(d).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
 function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
+  const { profile: me } = useAuth()
   const [price, setPrice] = useState(m.single_price_cents ? String(m.single_price_cents / 100) : '')
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -267,7 +271,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
     run(async () => {
       const cents = Math.round(Number(String(form.amount).replace(',', '.')) * 100)
       if (!(cents > 0)) throw new Error(t('Введите сумму'))
-      const { error: e } = await supabase.from('member_payments').insert({
+      const row = {
         member_id: m.id,
         paid_on: form.date || today,
         amount_cents: cents,
@@ -275,7 +279,15 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
         method: form.method,
         // время в описании — чтобы две одинаковые оплаты за день не считались дублем
         description: `${form.method === 'cash' ? 'Наличные тренеру' : 'Перевод'} ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
-      })
+      }
+      const label = `${formatPrice(cents)} ${KIND[form.kind] ?? ''} · ${m.first_name} ${m.last_name}`
+      const { error: e } = navigator.onLine ? await supabase.from('member_payments').insert(row) : { error: { message: 'Failed to fetch' } }
+      if (e && isNetworkError(e)) {
+        // Нет интернета — оплата сохранена на телефоне и уйдёт на сервер сама
+        enqueue('member_payment', { row }, label, me?.id)
+        setForm((f) => ({ ...f, amount: '', date: today }))
+        throw new Error(t('Нет интернета: оплата сохранена на телефоне и отправится сама.'))
+      }
       if (e) throw e
       setForm((f) => ({ ...f, amount: '', date: today }))
     })
@@ -464,19 +476,27 @@ export default function AdminMembers({ profiles }) {
   const [contacts, setContacts] = useState([]) // club_contacts: телефон родителя → ученик
 
   const load = useCallback(async () => {
-    loadMemberships()
+    cached('admin-memberships', loadMemberships)
       .then((rows) => setMemberships(Object.fromEntries(rows.filter((r) => r.member_id).map((r) => [r.member_id, r]))))
       .catch(() => setMemberships({}))
-    const { data, error: e } = await supabase
-      .from('club_members')
-      .select('*, member_payments(id, paid_on, amount_cents, kind, method, payer_name, description)')
-      .order('last_name')
-      .order('paid_on', { referencedTable: 'member_payments', ascending: false })
-    if (e) return setError(e.message)
-    // Контакты (родители и т.п.) — если таблицы нет или ошибка, просто без них.
-    const { data: c } = await supabase.from('club_contacts').select('phone, member_id').not('member_id', 'is', null)
-    setContacts(c ?? [])
-    setMembers(data)
+    try {
+      // Без интернета — последний сохранённый список
+      const { data, contacts: c } = await cached('admin-members', async () => {
+        const { data, error: e } = await supabase
+          .from('club_members')
+          .select('*, member_payments(id, paid_on, amount_cents, kind, method, payer_name, description)')
+          .order('last_name')
+          .order('paid_on', { referencedTable: 'member_payments', ascending: false })
+        if (e) throw e
+        // Контакты (родители и т.п.) — если таблицы нет или ошибка, просто без них.
+        const { data: c } = await supabase.from('club_contacts').select('phone, member_id').not('member_id', 'is', null)
+        return { data, contacts: c ?? [] }
+      })
+      setContacts(c)
+      setMembers(data)
+    } catch (e) {
+      setError(friendlyError(e))
+    }
   }, [])
 
   useEffect(() => {

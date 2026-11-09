@@ -5,6 +5,7 @@ import { bookSession, cancelBooking, isFull, loadUpcoming, seatsText, sessionDay
 import FriendPicker from './FriendPicker.jsx'
 import { attendeesText, loadAttendees } from '../lib/friends.js'
 import { t, tData } from '../lib/i18n.jsx'
+import { friendlyError } from '../lib/offline.js'
 
 // Кабинет ученика: ближайшие тренировки его направления, «Записаться / Отменить».
 export default function Booking({ kidsOnly = false }) {
@@ -27,7 +28,7 @@ export default function Booking({ kidsOnly = false }) {
       // «Идут: …» — не критично: если функции ещё нет в базе, просто не показываем
       loadAttendees(list.filter((x) => !x.cancelled).map((x) => x.id)).then(setGoing).catch(() => {})
     } catch (e) {
-      setError(t('Не удалось загрузить расписание: ') + e.message)
+      setError(t('Не удалось загрузить расписание: ') + friendlyError(e))
     } finally {
       setLoading(false)
     }
@@ -45,7 +46,7 @@ export default function Booking({ kidsOnly = false }) {
       setSessions((list) => list.map((x) => (x.id === s.id ? { ...x, booked, is_booked: !s.is_booked } : x)))
       loadAttendees([s.id]).then((m) => setGoing((g) => ({ ...g, [s.id]: m[s.id] ?? { people: [], hidden: 0 } }))).catch(() => {})
     } catch (e) {
-      setError(e.message)
+      setError(friendlyError(e))
       refresh() // счётчик мог измениться — перечитываем
     } finally {
       setBusy(null)
