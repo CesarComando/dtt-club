@@ -345,7 +345,12 @@ export default function Admin() {
       </div>
       )}
 
-      {tab === 'students' && <AdminMembers profiles={athletes} />}
+      {tab === 'students' && (
+        <AdminMembers
+          profiles={athletes}
+          onProfileChange={(id, at) => setAthletes((list) => list.map((x) => (x.id === id ? { ...x, approved_at: at } : x)))}
+        />
+      )}
       {tab === 'memberships' && isAdmin && <MembershipReminders />}
       {tab === 'memberships' && <AdminMemberships full={isAdmin} />}
       {tab === 'budget' && isAdmin && <AdminBudget />}

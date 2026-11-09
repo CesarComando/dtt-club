@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ApprovedMark } from './Approved.jsx'
+import { ApprovedMark, ApproveButton } from './Approved.jsx'
 import { MembershipLine, loadMemberships } from './AdminMemberships.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
@@ -219,7 +219,7 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
 
 const day = (d) => new Date(d).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
-function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
+function MemberRow({ m, profiles, linkedIds, membership, onChanged, onProfileChange }) {
   const { profile: me } = useAuth()
   const [price, setPrice] = useState(m.single_price_cents ? String(m.single_price_cents / 100) : '')
   const [open, setOpen] = useState(false)
@@ -308,6 +308,10 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
                 <span className="ml-2 text-xs text-emerald-400">{t('● в приложении')}</span>
               ))}
           </p>
+          {/* Зарегистрирован, но тренер ещё не подтвердил — кнопка прямо в списке */}
+          {linked && !linked.approved_at && (
+            <ApproveButton athlete={linked} compact onChange={(at) => onProfileChange?.(linked.id, at)} />
+          )}
           <p className="truncate text-xs text-neutral-500">
             {[STATUS[m.status], m.discipline && DISCIPLINES[m.discipline], m.parent_name && t('родитель: {name}', { name: m.parent_name }),
               m.rank_override && RANKS[m.rank_override - 1]?.title,
@@ -467,7 +471,7 @@ function NewMember({ onAdded }) {
   )
 }
 
-export default function AdminMembers({ profiles }) {
+export default function AdminMembers({ profiles, onProfileChange }) {
   const [members, setMembers] = useState(null)
   const [filter, setFilter] = useState('active')
   const [q, setQ] = useState('')
@@ -504,6 +508,7 @@ export default function AdminMembers({ profiles }) {
   }, [load])
 
   const linkedIds = useMemo(() => new Set((members ?? []).map((m) => m.profile_id).filter(Boolean)), [members])
+  const approvedIds = useMemo(() => new Set((profiles ?? []).filter((p) => p.approved_at).map((p) => p.id)), [profiles])
 
   // Дети — у кого записан родитель или привязан телефон родителя (кнопка «Родитель…»).
   const withParent = useMemo(() => new Set(contacts.map((c) => c.member_id)), [contacts])
@@ -515,11 +520,14 @@ export default function AdminMembers({ profiles }) {
       occasional: (m) => m.status === 'occasional',
       kids: (m) => m.status !== 'left' && isKid(m),
       paid: (m) => memberships[m.id]?.active,
+      in_app: (m) => Boolean(m.profile_id),
+      not_approved: (m) => Boolean(m.profile_id) && !approvedIds.has(m.profile_id),
+      no_app: (m) => m.status !== 'left' && !m.profile_id,
       one_time: (m) => m.status === 'one_time',
       left: (m) => m.status === 'left',
       all: () => true,
     }),
-    [memberships, isKid],
+    [memberships, isKid, approvedIds],
   )
 
   const list = useMemo(() => {
@@ -543,6 +551,13 @@ export default function AdminMembers({ profiles }) {
         </div>
         <div className="text-right">
           <p className="font-display text-2xl">{members.length}</p>
+          {/* Сколько из списка уже зарегистрированы в приложении и сколько подтверждено */}
+          <button type="button" onClick={() => setFilter('in_app')} className="text-xs text-emerald-400 hover:underline">
+            {t('{n} в приложении · {k} ✓', {
+              n: members.filter((m) => m.profile_id).length,
+              k: members.filter((m) => m.profile_id && approvedIds.has(m.profile_id)).length,
+            })}
+          </button>
           <p className="text-[10px] uppercase tracking-wider text-neutral-500">{t('{sum} всего', { sum: formatPrice(total) })}</p>
         </div>
       </div>
@@ -556,6 +571,9 @@ export default function AdminMembers({ profiles }) {
             ['occasional', t('Иногда')],
             ['kids', t('Дети и родители')],
             ['paid', t('С абонементом')],
+            ['in_app', t('В приложении')],
+            ['not_approved', t('В приложении, не подтверждены')],
+            ['no_app', t('Ещё не в приложении')],
             ['one_time', t('Были раз')],
             ['left', t('Ушли')],
             ['all', t('Все')],
@@ -569,7 +587,7 @@ export default function AdminMembers({ profiles }) {
 
       <ul className="divide-y divide-line">
         {list.map((m) => (
-          <MemberRow key={m.id} m={m} profiles={profiles} linkedIds={linkedIds} membership={memberships[m.id]} onChanged={load} />
+          <MemberRow key={m.id} m={m} profiles={profiles} linkedIds={linkedIds} membership={memberships[m.id]} onChanged={load} onProfileChange={onProfileChange} />
         ))}
       </ul>
 

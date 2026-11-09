@@ -306,4 +306,8 @@ export default {
   'Удалить заявку «{name}»?': 'Dzēst pieteikumu «{name}»?',
   'Удалить': 'Dzēst',
   'Нет интернета: оплата сохранена на телефоне и отправится сама.': 'Nav interneta: maksājums saglabāts tālrunī un tiks nosūtīts pats.',
+  '{n} в приложении · {k} ✓': '{n} lietotnē · {k} ✓',
+  'В приложении': 'Lietotnē',
+  'В приложении, не подтверждены': 'Lietotnē, nav apstiprināti',
+  'Ещё не в приложении': 'Vēl nav lietotnē',
 }
