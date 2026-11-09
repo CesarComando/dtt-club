@@ -1,0 +1,48 @@
+# Автопубликация: после слияния PR в main приложение само собирается и выкладывается
+# на GitHub Pages (ветка gh-pages → app.daugavpilstopteam.lv). То же, что «npm run deploy»
+# на компьютере, только без компьютера — можно сливать PR с телефона в приложении GitHub.
+name: Deploy app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # кнопка «Run workflow» во вкладке Actions — пересобрать вручную
+
+permissions:
+  contents: write # запись в ветку gh-pages
+
+concurrency:
+  group: deploy-app
+  cancel-in-progress: true # слили несколько PR подряд — публикуется только последний
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Сборка
+        run: npm run build
+        env:
+          # Адрес проекта и publishable-ключ Supabase публичны по задумке (они и так видны в коде
+          # опубликованного сайта); данные защищают правила доступа (RLS) в базе.
+          # Если заведёте секреты репозитория с теми же именами — возьмутся они.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://latnwksisoziluhdadgy.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_3-Gt0ELg3dm5JhnVWB3Tkw_crsYB0J6' }}
+
+      - name: Публикация на GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          cname: app.daugavpilstopteam.lv
+          commit_message: 'Deploy'
