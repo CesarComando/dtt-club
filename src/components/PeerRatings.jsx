@@ -288,7 +288,8 @@ function ScoreInput({ label, value, onChange }) {
         <span className="text-sm text-neutral-300">{label}</span>
         <span className="font-display text-lg tabular-nums">{fmtScore(value)}</span>
       </div>
-      <div className="grid grid-cols-10 gap-1" role="radiogroup" aria-label={label}>
+      {/* На телефоне 2 ряда по 5 — кнопки крупнее, по ним легко попасть пальцем */}
+      <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10 sm:gap-1" role="radiogroup" aria-label={label}>
         {Array.from({ length: MAX_SCORE }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
@@ -296,7 +297,7 @@ function ScoreInput({ label, value, onChange }) {
             role="radio"
             aria-checked={base === n}
             onClick={() => pick(n)}
-            className={`h-8 rounded-md border text-sm font-semibold ${
+            className={`h-10 rounded-md border text-base font-semibold sm:h-8 sm:text-sm ${
               base === n ? 'border-accent bg-accent text-white' : base > n ? 'border-accent/40 bg-accent/20 text-white' : 'border-line text-neutral-500'
             }`}
           >
@@ -316,7 +317,7 @@ function ScoreInput({ label, value, onChange }) {
                   onChange(v)
                   setOwn('')
                 }}
-                className={`rounded border px-2 py-1 text-sm tabular-nums ${value === v ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-300'}`}
+                className={`rounded border px-3 py-1.5 text-sm tabular-nums ${value === v ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-300'}`}
               >
                 {fmtScore(v)}
               </button>

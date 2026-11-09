@@ -30,7 +30,7 @@ const markDone = (uid) => {
   }
 }
 
-function steps({ staff, athlete }) {
+function steps({ staff, admin, athlete }) {
   return [
     {
       to: '/dashboard',
@@ -90,7 +90,9 @@ function steps({ staff, athlete }) {
       to: '/admin',
       icon: '🧑‍🏫',
       title: t('Тренер'),
-      text: t('Панель тренера: ученики и оплаты, кто уже в приложении, расписание, магазин, бюджет.'),
+      text: admin
+        ? t('Панель тренера: ученики и оплаты, кто уже в приложении, расписание, магазин, бюджет.')
+        : t('Панель тренера: отметка учеников в зале и абонементы учеников MMA / K1 — до какого числа оплачено.'),
     },
     {
       to: '/dashboard',
@@ -109,7 +111,8 @@ export default function Tour() {
   const [i, setI] = useState(0)
 
   const staff = ['admin', 'coach'].includes(profile?.role)
-  const list = useMemo(() => steps({ staff, athlete: Boolean(profile) && !staff }), [staff, profile])
+  const admin = profile?.role === 'admin'
+  const list = useMemo(() => steps({ staff, admin, athlete: Boolean(profile) && !staff }), [staff, admin, profile])
   const uid = user?.id
 
   // Предложить один раз — когда профиль загрузился и человек не на входе/регистрации.
