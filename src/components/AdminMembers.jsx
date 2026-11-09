@@ -221,8 +221,25 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ amount: '', kind: 'training', method: 'cash' })
   const pays = m.member_payments ?? []
+  const today = new Date().toISOString().slice(0, 10)
+  const [form, setForm] = useState({ amount: '', kind: 'training', method: 'cash', date: today })
+  // До какого числа будет абонемент после этой оплаты — тот же расчёт, что в базе
+  // (member_membership_until): месяц от дня оплаты или от конца действующего.
+  const untilAfter = (() => {
+    if (form.kind !== 'membership' || !form.date) return null
+    const days = [...new Set(pays.filter((p) => p.kind === 'membership').map((p) => p.paid_on).concat(form.date))].sort()
+    let end = null
+    for (const d of days) {
+      const from = end && end > d ? end : d
+      const x = new Date(from + 'T12:00:00Z')
+      const dd = x.getUTCDate()
+      x.setUTCMonth(x.getUTCMonth() + 1)
+      if (x.getUTCDate() !== dd) x.setUTCDate(0) // 31.01 + месяц = 28.02, как в Postgres
+      end = x.toISOString().slice(0, 10)
+    }
+    return end
+  })()
   const total = pays.reduce((s, p) => s + p.amount_cents, 0)
   const last = pays[0]?.paid_on
   const linked = profiles.find((p) => p.id === m.profile_id)
@@ -252,7 +269,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
       if (!(cents > 0)) throw new Error(t('Введите сумму'))
       const { error: e } = await supabase.from('member_payments').insert({
         member_id: m.id,
-        paid_on: new Date().toISOString().slice(0, 10),
+        paid_on: form.date || today,
         amount_cents: cents,
         kind: form.kind,
         method: form.method,
@@ -260,7 +277,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
         description: `${form.method === 'cash' ? 'Наличные тренеру' : 'Перевод'} ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
       })
       if (e) throw e
-      setForm((f) => ({ ...f, amount: '' }))
+      setForm((f) => ({ ...f, amount: '', date: today }))
     })
 
   return (
@@ -324,7 +341,7 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
           </label>
 
           <div>
-            <span className="label">{t('Записать оплату (сегодня)')}</span>
+            <span className="label">{t('Записать оплату')}</span>
             <div className="flex flex-wrap gap-2">
               <input
                 className="input !w-24"
@@ -340,10 +357,20 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged }) {
                 <option value="cash">{t('наличные')}</option>
                 <option value="bank">{t('перевод')}</option>
               </select>
+              <input
+                type="date"
+                className="input !w-auto"
+                title={t('С какого числа считать абонемент')}
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+              />
               <button type="button" onClick={addPayment} disabled={busy} className="btn-primary disabled:opacity-60">{t('Записать')}</button>
             </div>
             {form.kind === 'membership' && (
-              <p className="mt-1 text-xs text-neutral-500">{t('Абонемент будет действовать месяц с сегодняшнего дня (или с конца текущего).')}</p>
+              <p className="mt-1 text-xs text-neutral-500">
+                {t('Месяц от даты оплаты (или от конца действующего).')}
+                {untilAfter && <> {t('Будет действовать до {date}', { date: untilAfter.split('-').reverse().join('.') })}</>}
+              </p>
             )}
           </div>
 
@@ -458,18 +485,29 @@ export default function AdminMembers({ profiles }) {
 
   const linkedIds = useMemo(() => new Set((members ?? []).map((m) => m.profile_id).filter(Boolean)), [members])
 
+  // Дети — у кого записан родитель или привязан телефон родителя (кнопка «Родитель…»).
+  const withParent = useMemo(() => new Set(contacts.map((c) => c.member_id)), [contacts])
+  const isKid = useCallback((m) => Boolean(m.parent_name) || withParent.has(m.id), [withParent])
+  const FILTERS = useMemo(
+    () => ({
+      active: (m) => ['regular', 'occasional'].includes(m.status),
+      regular: (m) => m.status === 'regular',
+      occasional: (m) => m.status === 'occasional',
+      kids: (m) => m.status !== 'left' && isKid(m),
+      paid: (m) => memberships[m.id]?.active,
+      one_time: (m) => m.status === 'one_time',
+      left: (m) => m.status === 'left',
+      all: () => true,
+    }),
+    [memberships, isKid],
+  )
+
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
     return (members ?? [])
-      .filter((m) =>
-        filter === 'paid'
-          ? memberships[m.id]?.active
-          : filter === 'active'
-            ? ['regular', 'occasional'].includes(m.status)
-            : filter === 'all' || m.status === filter,
-      )
+      .filter(FILTERS[filter] ?? FILTERS.active)
       .filter((m) => !s || `${m.first_name} ${m.last_name} ${m.parent_name ?? ''} ${(m.aliases ?? []).join(' ')} ${m.phone ?? ''}`.toLowerCase().includes(s))
-  }, [members, filter, q, memberships])
+  }, [members, filter, q, FILTERS])
 
   if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Ученики клуба: {error}', { error })}</p>
   if (!members) return null
@@ -490,12 +528,20 @@ export default function AdminMembers({ profiles }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <input className="input flex-1" type="search" placeholder={t('Поиск…')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input min-w-40 flex-1" type="search" placeholder={t('Поиск…')} value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input !w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="active">{t('Постоянные и иногда')}</option>
-          <option value="paid">{t('С абонементом')}</option>
-          <option value="one_time">{t('Были раз')}</option>
-          <option value="all">{t('Все')}</option>
+          {[
+            ['active', t('Постоянные и иногда')],
+            ['regular', t('Постоянные')],
+            ['occasional', t('Иногда')],
+            ['kids', t('Дети и родители')],
+            ['paid', t('С абонементом')],
+            ['one_time', t('Были раз')],
+            ['left', t('Ушли')],
+            ['all', t('Все')],
+          ].map(([v, l]) => (
+            <option key={v} value={v}>{l} · {members.filter(FILTERS[v]).length}</option>
+          ))}
         </select>
       </div>
 
