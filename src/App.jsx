@@ -12,6 +12,7 @@ const Register = lazy(() => import('./pages/Register.jsx'))
 const loadDashboard = () => import('./pages/Dashboard.jsx')
 const Dashboard = lazy(loadDashboard)
 const AskClub = lazy(() => import('./components/AskClub.jsx'))
+const Tour = lazy(() => import('./components/Tour.jsx'))
 // Кабинет — самая частая страница: подгружаем его заранее, когда браузер свободен.
 if (typeof window !== 'undefined') (window.requestIdleCallback ?? ((cb) => setTimeout(cb, 1500)))(() => loadDashboard())
 const Admin = lazy(() => import('./pages/Admin.jsx'))
@@ -33,6 +34,7 @@ export default function App() {
       <Navbar />
       <Suspense fallback={null}>
         <AskClub />
+        <Tour />
       </Suspense>
       {/* pb-24 — место под нижний таб-бар на мобильных */}
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-24 md:pt-24 md:pb-12">
