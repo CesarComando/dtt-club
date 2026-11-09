@@ -51,12 +51,43 @@ export function bmiCategory(value, age) {
 export const loadTechniques = async () =>
   must(await supabase.from('techniques_dictionary').select('id, name, category, discipline').order('category').order('name'))
 
+/** { [technique_id]: { status, confirmed } } — confirmed: тренер подтвердил «в спарринге». */
 export const loadLearned = async (userId) => {
-  const rows = must(await supabase.from('user_learned_techniques').select('technique_id, status').eq('user_id', userId))
-  return Object.fromEntries(rows.map((r) => [r.technique_id, r.status]))
+  const rows = must(
+    await supabase.from('user_learned_techniques').select('technique_id, status, confirmed_at').eq('user_id', userId),
+  )
+  return Object.fromEntries(rows.map((r) => [r.technique_id, { status: r.status, confirmed: Boolean(r.confirmed_at) }]))
 }
 
-/** status: 'learning' | 'mastered' | null (убрать из своих). */
+// Слой 40: три уровня. mastered = «получается в спарринге», подтверждает тренер.
+export const LEVELS = ['learning', 'drill', 'mastered']
+export const LEVEL = {
+  learning: { icon: '◔', label: t('Изучаю'), cls: 'border-white/50 text-white' },
+  drill: { icon: '◑', label: t('На дрилле'), cls: 'border-amber-400/70 bg-amber-400/10 text-white' },
+  mastered: { icon: '✓', label: t('В спарринге'), cls: 'border-accent bg-accent/15 text-white' },
+}
+/** Нажатие по приёму: нет → изучаю → на дрилле → в спарринге → убрать. */
+export const nextLevel = (s) => (s == null ? 'learning' : s === 'learning' ? 'drill' : s === 'drill' ? 'mastered' : null)
+
+/** Действующая тема (club_focus) для направления ученика. */
+export async function loadFocus(discipline) {
+  const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Riga' })
+  const rows = must(
+    await supabase.from('club_focus').select('*').lte('starts_on', day).gte('ends_on', day).order('starts_on', { ascending: false }),
+  )
+  return rows.find((f) => f.discipline === 'both' || !discipline || discipline === 'both' || f.discipline === discipline) ?? null
+}
+export const loadFocusProgress = async (focusId) =>
+  must(await supabase.rpc('focus_progress', { p_focus: focusId })) ?? []
+export const saveFocus = async (id, patch) =>
+  must(await supabase.from('club_focus').update(patch).eq('id', id).select('*').single())
+
+// Тренер: подтверждения «в спарринге».
+export const loadPendingConfirmations = async () => must(await supabase.rpc('pending_technique_confirmations')) ?? []
+export const confirmTechnique = async (userId, techniqueId, ok) =>
+  must(await supabase.rpc('confirm_technique', { p_user: userId, p_technique: techniqueId, p_ok: ok }))
+
+/** status: 'learning' | 'drill' | 'mastered' | null (убрать из своих). */
 export async function setLearned(userId, techniqueId, status) {
   if (!status) {
     must(await supabase.from('user_learned_techniques').delete().eq('user_id', userId).eq('technique_id', techniqueId))
