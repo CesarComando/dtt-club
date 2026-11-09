@@ -1,13 +1,78 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CRITERIA, MIN_RATINGS, deleteRating, loadMyGiven, loadSummary, loadTeammates, saveRating } from '../lib/ratings.js'
+import { CRITERIA, MAX_SCORE, MIN_RATINGS, deleteRating, fmtScore, loadLeaderboard, loadMyGiven, loadSummary, loadTeammates, saveRating } from '../lib/ratings.js'
+import { DISCIPLINES } from '../lib/ranks.js'
 import { t } from '../lib/i18n.jsx'
 
 // Дневник → «Оценки»: мои средние от партнёров + оценить партнёра по всем критериям (CRITERIA).
 // Оценивают только ученики друг друга (RLS в layer14) — тренеру показываем пояснение.
-export default function PeerRatings({ userId, isAdmin }) {
-  if (isAdmin) return <CoachNote userId={userId} />
-  return <AthleteRatings userId={userId} />
+export default function PeerRatings({ userId, isAdmin, discipline }) {
+  return (
+    <div className="space-y-4">
+      <Leaderboard myId={userId} initial={discipline === 'mma' ? 'mma' : 'grappling'} />
+      {isAdmin ? <CoachNote userId={userId} /> : <AthleteRatings userId={userId} />}
+    </div>
+  )
+}
+
+// Рейтинг клуба (слой 39): отдельно MMA и грэпплинг, средний балл 7 критериев (без гигиены).
+const MEDALS = ['🥇', '🥈', '🥉']
+function Leaderboard({ myId, initial }) {
+  const [tab, setTab] = useState(initial)
+  const [data, setData] = useState({}) // discipline → rows | { error }
+
+  useEffect(() => {
+    if (data[tab]) return
+    loadLeaderboard(tab)
+      .then((rows) => setData((d) => ({ ...d, [tab]: rows })))
+      .catch((e) => setData((d) => ({ ...d, [tab]: { error: e.message } })))
+  }, [tab, data])
+
+  const rows = data[tab]
+  return (
+    <section className="card space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl">{t('Рейтинг клуба')}</h2>
+        <div className="flex gap-1" role="tablist">
+          {['mma', 'grappling'].map((d) => (
+            <button
+              key={d}
+              type="button"
+              role="tab"
+              aria-selected={tab === d}
+              onClick={() => setTab(d)}
+              className={`rounded-full border px-3 py-1 text-xs ${tab === d ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-400'}`}
+            >
+              {DISCIPLINES[d]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-neutral-500">
+        {t('Средний балл от партнёров по 7 критериям (гигиена не считается), максимум 10. В рейтинге — у кого {n}+ оценок.', { n: MIN_RATINGS })}
+      </p>
+      {!rows ? (
+        <p className="text-sm text-neutral-400">{t('Загружаем…')}</p>
+      ) : rows.error ? (
+        <p className="text-sm text-accent">{/peer_leaderboard/.test(rows.error) ? t('Рейтинг ещё не включён в базе.') : rows.error}</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-neutral-400">{t('Пока никого: нужно {n}+ оценок от партнёров.', { n: MIN_RATINGS })}</p>
+      ) : (
+        <ol className="divide-y divide-line">
+          {rows.map((r, i) => (
+            <li key={r.id} className={`flex items-center gap-3 py-2 ${r.id === myId ? 'text-accent' : ''}`}>
+              <span className="w-7 shrink-0 text-center font-display tabular-nums">{MEDALS[i] ?? i + 1}</span>
+              <span className={`min-w-0 flex-1 truncate ${r.id === myId ? 'font-semibold' : ''}`}>
+                {r.first_name} {r.last_name}
+              </span>
+              <span className="shrink-0 text-xs text-neutral-500">{t('{n} оц.', { n: r.ratings })}</span>
+              <span className="w-12 shrink-0 text-right font-display text-lg tabular-nums">{fmtScore(r.score)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  )
 }
 
 function CoachNote({ userId }) {
@@ -75,7 +140,7 @@ function AthleteRatings({ userId }) {
         <div>
           <h2 className="text-xl">{t('Оценить партнёра')}</h2>
           <p className="text-xs text-neutral-500">
-            {t('Оценка 1–5. Ваше имя партнёр не увидит — только средний балл, когда оценок наберётся {n}+.', { n: MIN_RATINGS })}
+            {t('Оценка 1–10: нажмите цифру, потом уточните (9,5 или 9,76). Ваше имя партнёр не увидит — только средний балл, когда оценок наберётся {n}+.', { n: MIN_RATINGS })}
           </p>
         </div>
         {error && <p className="text-sm text-accent">{error}</p>}
@@ -150,9 +215,9 @@ function MySummary({ summary }) {
               <li key={c.key} className="flex items-center gap-3 text-sm">
                 <span className="w-24 shrink-0 text-neutral-300">{c.label}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink">
-                  <div className="h-full bg-accent" style={{ width: `${((v ?? 0) / 5) * 100}%` }} />
+                  <div className="h-full bg-accent" style={{ width: `${((v ?? 0) / MAX_SCORE) * 100}%` }} />
                 </div>
-                <span className="w-8 text-right font-display tabular-nums">{v == null ? '—' : v.toFixed(1)}</span>
+                <span className="w-10 text-right font-display tabular-nums">{fmtScore(v)}</span>
               </li>
             )
           })}
@@ -182,25 +247,7 @@ function RateForm({ initial, onSave, onDelete }) {
   return (
     <div className="mt-3 space-y-3 rounded-md border border-line p-3">
       {CRITERIA.map((c) => (
-        <div key={c.key} className="flex items-center justify-between gap-2">
-          <span className="text-sm text-neutral-300">{c.label}</span>
-          <div className="flex gap-1" role="radiogroup" aria-label={c.label}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                role="radio"
-                aria-checked={scores[c.key] === n}
-                onClick={() => setScores((s) => ({ ...s, [c.key]: n }))}
-                className={`h-8 w-8 rounded-md border text-sm font-semibold ${
-                  scores[c.key] >= n ? 'border-accent bg-accent text-white' : 'border-line text-neutral-500'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ScoreInput key={c.key} label={c.label} value={scores[c.key]} onChange={(v) => setScores((s) => ({ ...s, [c.key]: v }))} />
       ))}
       {error && <p className="text-sm text-accent">{error}</p>}
       <div className="flex items-center gap-2">
@@ -214,6 +261,80 @@ function RateForm({ initial, onSave, onDelete }) {
         )}
         {!complete && <span className="text-xs text-neutral-500">{t('Оцените все {n} пунктов', { n: CRITERIA.length })}</span>}
       </div>
+    </div>
+  )
+}
+
+// Оценка 1–10 с сотыми: нажал «9» → ниже 9 · 9,25 · 9,5 · 9,75 или вписать своё (9,76).
+function ScoreInput({ label, value, onChange }) {
+  const [refine, setRefine] = useState(false)
+  const [own, setOwn] = useState('')
+  const base = value ? Math.floor(value) : null
+
+  const pick = (n) => {
+    onChange(n)
+    setOwn('')
+    setRefine(n < MAX_SCORE)
+  }
+  const typed = (text) => {
+    setOwn(text)
+    const v = Number(text.replace(',', '.'))
+    if (Number.isFinite(v) && v >= 1 && v <= MAX_SCORE) onChange(Math.round(v * 100) / 100)
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm text-neutral-300">{label}</span>
+        <span className="font-display text-lg tabular-nums">{fmtScore(value)}</span>
+      </div>
+      <div className="grid grid-cols-10 gap-1" role="radiogroup" aria-label={label}>
+        {Array.from({ length: MAX_SCORE }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={base === n}
+            onClick={() => pick(n)}
+            className={`h-8 rounded-md border text-sm font-semibold ${
+              base === n ? 'border-accent bg-accent text-white' : base > n ? 'border-accent/40 bg-accent/20 text-white' : 'border-line text-neutral-500'
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      {refine && base != null && base < MAX_SCORE && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[0, 0.25, 0.5, 0.75].map((d) => {
+            const v = base + d
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => {
+                  onChange(v)
+                  setOwn('')
+                }}
+                className={`rounded border px-2 py-1 text-sm tabular-nums ${value === v ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-300'}`}
+              >
+                {fmtScore(v)}
+              </button>
+            )
+          })}
+          <input
+            className="input !w-20 !py-1 text-sm"
+            inputMode="decimal"
+            placeholder={fmtScore(base + 0.76)}
+            value={own}
+            onChange={(e) => typed(e.target.value)}
+            aria-label={t('Своя оценка')}
+          />
+          <button type="button" onClick={() => setRefine(false)} className="text-xs text-neutral-500 hover:text-white">
+            {t('Готово')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

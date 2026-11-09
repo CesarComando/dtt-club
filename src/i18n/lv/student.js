@@ -274,8 +274,15 @@ export default {
   'Эту оценку поставить нельзя: оценивают только ученики друг друга (не себя и не тренера).':
     'Šo vērtējumu nevar likt: audzēkņi vērtē tikai cits citu (ne sevi un ne treneri).',
   'Оценить партнёра': 'Novērtēt partneri',
-  'Оценка 1–5. Ваше имя партнёр не увидит — только средний балл, когда оценок наберётся {n}+.':
-    'Vērtējums 1–5. Partneris neredzēs jūsu vārdu — tikai vidējo atzīmi, kad būs sakrājušies {n}+ vērtējumi.',
+  'Оценка 1–10: нажмите цифру, потом уточните (9,5 или 9,76). Ваше имя партнёр не увидит — только средний балл, когда оценок наберётся {n}+.':
+    'Vērtējums 1–10: nospiediet ciparu, tad precizējiet (9,5 vai 9,76). Partneris neredzēs jūsu vārdu — tikai vidējo atzīmi, kad būs sakrājušies {n}+ vērtējumi.',
+  'Рейтинг клуба': 'Kluba reitings',
+  'Средний балл от партнёров по 7 критериям (гигиена не считается), максимум 10. В рейтинге — у кого {n}+ оценок.':
+    'Partneru vidējais vērtējums 7 kritērijos (higiēna netiek skaitīta), maksimums 10. Reitingā — tie, kam ir {n}+ vērtējumi.',
+  'Рейтинг ещё не включён в базе.': 'Reitings datubāzē vēl nav ieslēgts.',
+  'Пока никого: нужно {n}+ оценок от партнёров.': 'Pagaidām neviena: vajag {n}+ partneru vērtējumus.',
+  'Своя оценка': 'Savs vērtējums',
+  'Готово': 'Gatavs',
   'Поиск партнёра': 'Partnera meklēšana',
   'Никого не нашли.': 'Neviens nav atrasts.',
   'оценён': 'novērtēts',
