@@ -357,25 +357,23 @@ export default function Dashboard() {
       <ClubPayments profile={profile} family={family} onPaid={() => refreshProfile()} />
 
       {/* Мерч GERA — неактивная карточка-анонс */}
-      <section
-        aria-disabled="true"
-        className="relative overflow-hidden rounded-lg border border-dashed border-line bg-panel/50 p-5 opacity-70"
+      <Link
+        to="/shop"
+        className="relative block overflow-hidden rounded-lg border border-line bg-panel p-5 transition hover:border-accent"
       >
-        <span className="absolute top-3 right-3 rounded border border-line px-2 py-0.5 text-[10px] uppercase tracking-wider text-neutral-400">
-          {t('Скоро')}
-        </span>
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-ink text-neutral-500">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-accent/15 text-accent">
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 3l5 3-2 4-2-1v12H7V9L5 10 3 6l5-3a4 4 0 0 0 8 0z" />
             </svg>
           </div>
-          <div className="min-w-0 pr-12">
-            <p className="font-display uppercase tracking-wide">{t('Экипировка и мерч GERA')}</p>
-            <p className="text-sm text-neutral-500">{t('Скоро в приложении')}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-display uppercase tracking-wide">{t('Экипировка и мерч')}</p>
+            <p className="text-sm text-neutral-400">{t('Форма GERA с дизайнами клуба, брелоки и аксессуары')}</p>
           </div>
+          <span className="text-accent">→</span>
         </div>
-      </section>
+      </Link>
 
       {/* Награды — таблица наград появится в следующем слое */}
       <section className="space-y-3">

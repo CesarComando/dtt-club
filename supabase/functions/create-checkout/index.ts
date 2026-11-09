@@ -1,5 +1,6 @@
 // POST { product_id } → { url } страницы оплаты Stripe Checkout.
 // POST { custom_amount_cents, note? } → то же, но на свою сумму 1–500 € (слой 26).
+// POST { shop_order_id } → оплата заказа магазина (слой 38): строки и цены — из заказа в базе.
 // Цену берём из каталога payment_products; если товара/цены в Stripe ещё нет — создаём.
 import { admin, appUrl, cors, getOrCreateCustomer, getUser, json, stripe } from '../_shared/common.ts'
 
@@ -80,6 +81,43 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}))
     const base = appUrl(req)
+
+    // Магазин (слой 38): заказ уже посчитан в базе функцией shop_place_order — берём оттуда.
+    // Оплату отметит триггер shop_on_payment по примечанию «Магазин: заказ №N».
+    if (body.shop_order_id != null) {
+      const { data: order } = await admin
+        .from('shop_orders').select('id, user_id, items, total_cents, status')
+        .eq('id', Number(body.shop_order_id)).maybeSingle()
+      if (!order || order.user_id !== user.id) return json(req, { error: 'Заказ не найден' }, 404)
+      if (order.status !== 'awaiting_payment') return json(req, { error: 'Этот заказ уже оплачен или отменён' }, 409)
+      type Item = { title: string; design_title?: string | null; variant: string; size?: string | null; qty: number; price_cents: number }
+      const line_items = (order.items as Item[]).map((it) => ({
+        price_data: {
+          currency: 'eur',
+          unit_amount: it.price_cents,
+          product_data: {
+            name: [it.title, it.design_title, it.variant === 'kid' ? 'детский' : null, it.size].filter(Boolean).join(' · ').slice(0, 250),
+          },
+        },
+        quantity: it.qty,
+      }))
+      const note = `Магазин: заказ №${order.id}`
+      const customer = await getOrCreateCustomer(user.id)
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer,
+        client_reference_id: user.id,
+        line_items,
+        metadata: { kind: 'shop', shop_order: String(order.id), note },
+        payment_intent_data: { description: note, metadata: { kind: 'shop', shop_order: String(order.id), note } },
+        locale: 'auto',
+        success_url: `${base}/#/shop?paid=${order.id}`,
+        cancel_url: `${base}/#/shop`,
+        invoice_creation: { enabled: true },
+        integration_identifier: 'dtt-club-checkout-qhvmzpta',
+      })
+      return json(req, { url: session.url })
+    }
 
     // «Своя сумма» (слой 26): разовая оплата на сумму, которую ввёл ученик, 1–500 €.
     // Без товара из каталога — на абонемент не влияет; «за что» уходит в metadata.note.
