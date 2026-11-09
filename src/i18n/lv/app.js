@@ -34,4 +34,5 @@ export default {
   'Панель тренера: отметка учеников в зале и абонементы учеников MMA / K1 — до какого числа оплачено.': 'Trenera panelis: audzēkņu atzīmēšana zālē un MMA / K1 audzēkņu abonementi — līdz kuram datumam apmaksāts.',
   'Показать пароль': 'Rādīt paroli',
   'Скрыть пароль': 'Paslēpt paroli',
+  'Красная круглая кнопка с облачком справа внизу — «Спросить»: помощник клуба ответит про расписание, цены и правила. Пройти знакомство заново: Кабинет → «Как пользоваться приложением».': 'Sarkanā apaļā poga ar mākonīti labajā apakšējā stūrī — «Jautāt»: kluba palīgs atbildēs par grafiku, cenām un noteikumiem. Iziet iepazīšanos vēlreiz: Profils → «Kā lietot lietotni».',
 }
