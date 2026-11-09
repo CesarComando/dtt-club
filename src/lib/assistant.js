@@ -24,6 +24,11 @@ export async function loadFacts() {
 }
 
 export async function saveFacts(body) {
-  const { error } = await supabase.from('club_info').upsert({ key: 'facts', body, updated_at: new Date().toISOString() })
+  // select() — чтобы увидеть, что строка реально записалась (RLS может молча отбросить изменение).
+  const { data, error } = await supabase
+    .from('club_info')
+    .upsert({ key: 'facts', body, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    .select('key')
   if (error) throw error
+  if (!data?.length) throw new Error('нет прав на запись (нужна роль тренера admin)')
 }
