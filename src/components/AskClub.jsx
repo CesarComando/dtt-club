@@ -58,13 +58,14 @@ export default function AskClub() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-4 z-40 flex items-center gap-2 rounded-full bg-accent px-4 py-3 font-display text-sm uppercase tracking-wider text-white shadow-lg shadow-black/60 hover:bg-accent/90 md:bottom-6"
+          className="fixed bottom-24 right-3 z-40 flex items-center gap-2 rounded-full bg-accent p-3.5 font-display sm:right-4 sm:px-4 sm:py-3 text-sm uppercase tracking-wider text-white shadow-lg shadow-black/60 hover:bg-accent/90 md:bottom-6"
           aria-label={t('Спросить помощника клуба')}
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
           </svg>
-          {t('Спросить')}
+          {/* На телефоне — только значок: кнопка не закрывает «Записаться», «Оплатить» и т.п. */}
+          <span className="hidden sm:inline">{t('Спросить')}</span>
         </button>
       )}
 

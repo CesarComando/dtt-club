@@ -36,8 +36,8 @@ export default function App() {
         <AskClub />
         <Tour />
       </Suspense>
-      {/* pb-24 — место под нижний таб-бар на мобильных */}
-      <main className="mx-auto max-w-5xl px-4 pt-6 pb-24 md:pt-24 md:pb-12">
+      {/* pb-40 — место под нижний таб-бар и кнопку «Спросить» на мобильных */}
+      <main className="mx-auto max-w-5xl px-4 pt-6 pb-40 md:pt-24 md:pb-12">
         <OfflineBanner />
         <InstallApp />
         <Suspense
