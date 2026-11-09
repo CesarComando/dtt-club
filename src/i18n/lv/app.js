@@ -32,4 +32,6 @@ export default {
   'Есть вопрос?': 'Ir jautājums?',
   'Кнопка «Спросить» справа внизу — помощник клуба ответит про расписание, цены и правила. Пройти знакомство заново: Кабинет → «Как пользоваться приложением».': 'Poga «Jautāt» labajā apakšējā stūrī — kluba palīgs atbildēs par grafiku, cenām un noteikumiem. Iziet iepazīšanos vēlreiz: Profils → «Kā lietot lietotni».',
   'Панель тренера: отметка учеников в зале и абонементы учеников MMA / K1 — до какого числа оплачено.': 'Trenera panelis: audzēkņu atzīmēšana zālē un MMA / K1 audzēkņu abonementi — līdz kuram datumam apmaksāts.',
+  'Показать пароль': 'Rādīt paroli',
+  'Скрыть пароль': 'Paslēpt paroli',
 }

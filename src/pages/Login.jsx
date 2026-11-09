@@ -4,6 +4,7 @@ import { signInWithPhone } from '../lib/auth.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { SECTIONS, getKids, getSection, setKids, setSection } from '../lib/section.js'
 import { t } from '../lib/i18n.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 import { friendlyError } from '../lib/offline.js'
 
 // Вход: выбор раздела — Grappling, MMA / K1, MMA дети или «Тренер» (отдельный вход для тренера и помощника).
@@ -98,9 +99,8 @@ export default function Login() {
         </div>
         <div>
           <label className="label" htmlFor="password">{t('Пароль')}</label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
             className="input"
             required
             autoComplete="current-password"

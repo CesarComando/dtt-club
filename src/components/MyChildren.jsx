@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient.js'
 import { createChildAccount, getAvatarUrl, normalizePhone, resetChildPassword, unlinkChild } from '../lib/auth.js'
 import { DISCIPLINES, getRank, hasRanks } from '../lib/ranks.js'
 import { t } from '../lib/i18n.jsx'
+import PasswordInput from './PasswordInput.jsx'
 
 // Кабинет родителя → «Мои дети» (слой 24). Родитель добавляет ребёнка: имя, фото, пароль.
 // Ребёнок входит сам по логину «телефон родителя-номер» (вход «MMA дети» или любой другой раздел).
@@ -159,8 +160,8 @@ function NewPassword({ child, onDone }) {
     <form onSubmit={submit} className="mt-2 space-y-2 rounded-md border border-line p-3">
       <p className="text-xs text-neutral-400">{t('Новый пароль для {name} (логин остаётся прежним):', { name: child.first_name })}</p>
       <div className="grid grid-cols-2 gap-2">
-        <input type="password" required minLength={6} autoComplete="new-password" placeholder={t('Новый пароль')} aria-label={t('Новый пароль')} value={pw} onChange={(e) => setPw(e.target.value)} className="input" />
-        <input type="password" required minLength={6} autoComplete="new-password" placeholder={t('Повторите')} aria-label={t('Повторите пароль')} value={pw2} onChange={(e) => setPw2(e.target.value)} className="input" />
+        <PasswordInput required minLength={6} autoComplete="new-password" placeholder={t('Новый пароль')} aria-label={t('Новый пароль')} value={pw} onChange={(e) => setPw(e.target.value)} className="input" />
+        <PasswordInput required minLength={6} autoComplete="new-password" placeholder={t('Повторите')} aria-label={t('Повторите пароль')} value={pw2} onChange={(e) => setPw2(e.target.value)} className="input" />
       </div>
       {msg && <p className={`text-sm ${ok ? 'text-emerald-400' : 'text-accent'}`}>{msg}</p>}
       <div className="flex gap-2">
@@ -248,11 +249,11 @@ function AddChild({ profile, onCancel, onDone }) {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="label" htmlFor="kid-pass">{t('Пароль ребёнка *')}</label>
-          <input id="kid-pass" type="password" required minLength={6} autoComplete="new-password" value={form.password} onChange={set('password')} className="input" placeholder={t('мин. 6 символов')} />
+          <PasswordInput id="kid-pass" required minLength={6} autoComplete="new-password" value={form.password} onChange={set('password')} className="input" placeholder={t('мин. 6 символов')} />
         </div>
         <div>
           <label className="label" htmlFor="kid-pass2">{t('Повторите *')}</label>
-          <input id="kid-pass2" type="password" required minLength={6} autoComplete="new-password" value={form.password2} onChange={set('password2')} className="input" />
+          <PasswordInput id="kid-pass2" required minLength={6} autoComplete="new-password" value={form.password2} onChange={set('password2')} className="input" />
         </div>
       </div>
       {form.password2 && form.password2 !== form.password && <p className="text-xs text-accent">{t('Пароли не совпадают')}</p>}

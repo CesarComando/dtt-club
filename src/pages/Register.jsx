@@ -4,6 +4,7 @@ import { registerAthlete } from '../lib/auth.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { DISCIPLINES, hasRanks } from '../lib/ranks.js'
 import { t } from '../lib/i18n.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 import { friendlyError } from '../lib/offline.js'
 
 // Регистрация (APP_PASSPORT §2): Имя, Фамилия, Телефон + обязательное селфи.
@@ -181,10 +182,9 @@ export default function Register() {
         </fieldset>
         <div>
           <label className="label" htmlFor="password">{t('Пароль *')}</label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             value={form.password}
             onChange={onChange}
             className="input"
@@ -196,10 +196,9 @@ export default function Register() {
         </div>
         <div>
           <label className="label" htmlFor="password2">{t('Повторите пароль *')}</label>
-          <input
+          <PasswordInput
             id="password2"
             name="password2"
-            type="password"
             value={form.password2}
             onChange={onChange}
             className="input"
