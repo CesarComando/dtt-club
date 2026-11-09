@@ -510,9 +510,9 @@ export default function AdminMembers({ profiles, onProfileChange }) {
   const linkedIds = useMemo(() => new Set((members ?? []).map((m) => m.profile_id).filter(Boolean)), [members])
   const approvedIds = useMemo(() => new Set((profiles ?? []).filter((p) => p.approved_at).map((p) => p.id)), [profiles])
 
-  // Дети — у кого записан родитель или привязан телефон родителя (кнопка «Родитель…»).
-  const withParent = useMemo(() => new Set(contacts.map((c) => c.member_id)), [contacts])
-  const isKid = useCallback((m) => Boolean(m.parent_name) || withParent.has(m.id), [withParent])
+  // Ребёнок — только если у него записан родитель. Контакт из WhatsApp — это обычно
+  // телефон самого ученика, по нему взрослые раньше ошибочно попадали в «Дети и родители».
+  const isKid = useCallback((m) => Boolean(m.parent_name), [])
   const FILTERS = useMemo(
     () => ({
       active: (m) => ['regular', 'occasional'].includes(m.status),
