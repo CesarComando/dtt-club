@@ -42,3 +42,12 @@
     @apply mb-1 block text-xs font-semibold uppercase tracking-wider text-neutral-400;
   }
 }
+
+/* Фото и видео учеников: без «Сохранить изображение» по долгому нажатию и без перетаскивания.
+   Полностью запретить сохранение в браузере нельзя, но обычным способом скачать не выйдет. */
+img,
+video {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}

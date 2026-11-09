@@ -107,6 +107,7 @@ export default {
   'Имя родителя': 'Vecāka vārds',
   'Сохранить': 'Saglabāt',
   'Отмена': 'Atcelt',
+  'Исправить имя': 'Labot vārdu',
 
   // AdminMembers.jsx
   'У аккаунта нет телефона': 'Kontam nav tālruņa numura',
