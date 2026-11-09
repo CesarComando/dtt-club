@@ -270,6 +270,14 @@ export default function Shop() {
   )
 }
 
+// Размерная сетка GERA (см): рост, грудь, талия, бёдра. Таблица от GERA, 09.11.2026.
+const GERA_SIZES = {
+  S: [170, 92, 80, 98], M: [176, 96, 84, 101], L: [182, 100, 88, 104], XL: [182, 104, 92, 107],
+  XXL: [188, '108–112', '96–100', '110–113'], XXXL: [188, '116–120', '104–108', '116–119'],
+  '8XS': [122, 63, 57, 67], '7XS': [128, 66, 60, 70], '6XS': [134, 69, 62, 73], '5XS': [140, 72, 65, 76],
+  '4XS': [146, 75, 67, 79], '3XS': [152, 78, 70, 82], XXS: [158, 81, 72, 85], XS: [164, 84, 75, 88],
+}
+
 function Picker({ product, onAdd, disabled }) {
   const [variant, setVariant] = useState('adult')
   const [size, setSize] = useState('')
@@ -309,6 +317,21 @@ function Picker({ product, onAdd, disabled }) {
             </button>
           ))}
         </div>
+      )}
+      {product.brand === 'gera' && sizes.length > 0 && (
+        <p className="text-xs text-neutral-400">
+          {size && GERA_SIZES[size]
+            ? t('{size}: рост {h} · грудь {b} · талия {w} · бёдра {hip} см', {
+                size,
+                h: GERA_SIZES[size][0],
+                b: GERA_SIZES[size][1],
+                w: GERA_SIZES[size][2],
+                hip: GERA_SIZES[size][3],
+              })
+            : variant === 'kid'
+              ? t('Детские размеры: 8XS — рост 122 … XS — рост 164. Нажмите размер, чтобы увидеть мерки.')
+              : t('Нажмите размер, чтобы увидеть мерки (рост, грудь, талия, бёдра).')}
+        </p>
       )}
       <div className="flex items-center gap-2">
         <div className="flex items-center rounded border border-line">

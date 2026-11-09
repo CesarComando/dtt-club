@@ -88,4 +88,7 @@ export default {
   'Размеры: S, M, L': 'Izmēri: S, M, L',
   'Название и цена обязательны': 'Nosaukums un cena ir obligāti',
   'Добавить в магазин': 'Pievienot veikalam',
+  '{size}: рост {h} · грудь {b} · талия {w} · бёдра {hip} см': '{size}: augums {h} · krūtis {b} · viduklis {w} · gurni {hip} cm',
+  'Детские размеры: 8XS — рост 122 … XS — рост 164. Нажмите размер, чтобы увидеть мерки.': 'Bērnu izmēri: 8XS — augums 122 … XS — augums 164. Nospiediet izmēru, lai redzētu mērus.',
+  'Нажмите размер, чтобы увидеть мерки (рост, грудь, талия, бёдра).': 'Nospiediet izmēru, lai redzētu mērus (augums, krūtis, viduklis, gurni).',
 }

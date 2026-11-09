@@ -300,8 +300,8 @@ insert into public.shop_products (id, brand, title, price_cents, price_kid_cents
 select id, 'gera', title,
        (round(cost * 1.1 / 10.0) * 10)::int,
        case when cost_kid is null then null else (round(cost_kid * 1.1 / 10.0) * 10)::int end,
-       case when has_sizes then array['XS','S','M','L','XL','XXL','3XL'] else '{}'::text[] end,
-       case when has_sizes and cost_kid is not null then array['110','122','134','146','158'] else '{}'::text[] end,
+       case when has_sizes then array['S','M','L','XL','XXL','XXXL'] else '{}'::text[] end,
+       case when has_sizes and cost_kid is not null then array['8XS','7XS','6XS','5XS','4XS','3XS','XXS','XS'] else '{}'::text[] end,
        sort
   from gera
 on conflict (id) do nothing;
