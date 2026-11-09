@@ -4,7 +4,7 @@ import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, DISCIPLINES, RANKS } from '../lib/ranks.js'
 import { formatDay, formatPrice, LIVE_STATUSES } from '../lib/payments.js'
 import { ageFrom, bmi, bmiCategory } from '../lib/diary.js'
-import { CRITERIA } from '../lib/ratings.js'
+import { CRITERIA, MAX_SCORE, fmtScore } from '../lib/ratings.js'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { MembershipLine, loadMemberships } from '../components/AdminMemberships.jsx'
 import { sessionDay, sessionTime } from '../lib/booking.js'
@@ -338,9 +338,9 @@ function AppData({ profile }) {
               <li key={c.key} className="flex items-center gap-3 text-sm">
                 <span className="w-24 shrink-0 text-neutral-300">{c.label}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink">
-                  <div className="h-full bg-accent" style={{ width: `${(Number(r[c.key] ?? 0) / 5) * 100}%` }} />
+                  <div className="h-full bg-accent" style={{ width: `${(Number(r[c.key] ?? 0) / MAX_SCORE) * 100}%` }} />
                 </div>
-                <span className="w-8 text-right tabular-nums">{r[c.key] == null ? '—' : Number(r[c.key]).toFixed(1)}</span>
+                <span className="w-10 text-right tabular-nums">{fmtScore(r[c.key])}</span>
               </li>
             ))}
           </ul>

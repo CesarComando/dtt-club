@@ -54,7 +54,7 @@ function BodyRu() {
           <li><b>Направление, посещения, ранг, записи на тренировки</b> — учёт тренировок, стаж и клубная система рангов.</li>
           <li><b>Рост, вес, дата рождения</b> (если вы их укажете) — расчёт индекса массы тела и возраста. Видите только вы и тренер.</li>
           <li><b>Дневник тренировок и освоенные приёмы</b> — ваши записи после тренировок. Видите только вы и тренер.</li>
-          <li><b>Оценки партнёров</b> (техника, скорость, сила и т.д., 1–5) — анонимно: ученик видит только свои средние баллы и только когда оценок 3 и больше; кто какую оценку поставил, видит только тренер.</li>
+          <li><b>Оценки партнёров</b> (техника, скорость, сила и т.д., 1–10) — анонимно: ученик видит свои средние баллы, когда оценок 3 и больше; кто какую оценку поставил, видит только тренер. В рейтинге клуба (отдельно MMA и грэпплинг) участники клуба видят имя и общий средний балл тех, у кого 3+ оценок; гигиена в рейтинг не входит. Кто скрыл профиль, в рейтинг не попадает.</li>
           <li><b>Фото и видео в галерее</b> — то, что вы сами загрузили. Видно только вошедшим участникам клуба и только после одобрения тренером.</li>
           <li><b>Приглашения</b> — кто кого позвал на тренировку (тренер видит, что пришёл гость). Приглашённый по ссылке видит только имя пригласившего.</li>
           <li><b>Платежи</b> — статус абонемента, суммы и даты оплат: картой в приложении, переводом на счёт клуба и наличными тренеру. Оплату картой проводит Stripe: номер карты в приложение не попадает, его обрабатывает только Stripe.</li>
@@ -130,7 +130,7 @@ function BodyLv() {
           <li><b>Virziens, apmeklējumi, rangs, pieteikšanās treniņiem</b> — treniņu uzskaite, stāžs un kluba rangu sistēma.</li>
           <li><b>Augums, svars, dzimšanas datums</b> (ja tos norādāt) — ķermeņa masas indeksa un vecuma aprēķins. Tos redzat tikai jūs un treneris.</li>
           <li><b>Treniņu dienasgrāmata un apgūtās tehnikas</b> — jūsu ieraksti pēc treniņiem. Tos redzat tikai jūs un treneris.</li>
-          <li><b>Partneru vērtējumi</b> (tehnika, ātrums, spēks u. c., 1–5) — anonīmi: audzēknis redz tikai savus vidējos vērtējumus un tikai tad, ja vērtējumu ir 3 vai vairāk; kurš kādu vērtējumu ir devis, redz tikai treneris.</li>
+          <li><b>Partneru vērtējumi</b> (tehnika, ātrums, spēks u. c., 1–10) — anonīmi: audzēknis redz savus vidējos vērtējumus, ja vērtējumu ir 3 vai vairāk; kurš kādu vērtējumu ir devis, redz tikai treneris. Kluba reitingā (atsevišķi MMA un grapplings) kluba dalībnieki redz vārdu un kopējo vidējo vērtējumu tiem, kam ir 3+ vērtējumi; higiēna reitingā netiek ieskaitīta. Kas paslēpis profilu, reitingā neparādās.</li>
           <li><b>Foto un video galerijā</b> — tas, ko esat augšupielādējuši paši. Redzams tikai pieslēgušies kluba dalībniekiem un tikai pēc trenera apstiprinājuma.</li>
           <li><b>Ielūgumi</b> — kurš kuru uzaicinājis uz treniņu (treneris redz, ka ieradies viesis). Ar saiti uzaicinātais redz tikai uzaicinātāja vārdu.</li>
           <li><b>Maksājumi</b> — abonementa statuss, maksājumu summas un datumi: ar karti lietotnē, ar pārskaitījumu uz kluba kontu un skaidrā naudā trenerim. Maksājumus ar karti apstrādā Stripe: kartes numurs lietotnē nenonāk, to apstrādā tikai Stripe.</li>
