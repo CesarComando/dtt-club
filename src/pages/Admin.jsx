@@ -356,7 +356,7 @@ export default function Admin() {
       {tab === 'budget' && isAdmin && <AdminBudget />}
       {tab === 'assistant' && isAdmin && <AdminAssistant />}
       {tab === 'shop' && isAdmin && <AdminShop />}
-      {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} />}
+      {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} userId={me?.id} discipline={me?.discipline} />}
       {tab === 'trials' && isAdmin && <AdminTrials />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
 

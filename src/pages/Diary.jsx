@@ -34,6 +34,7 @@ export default function Diary() {
   const [techniques, setTechniques] = useState([])
   const [learned, setLearnedMap] = useState({})
   const [error, setError] = useState('')
+  const headCoach = profile?.role === 'admin'
 
   useEffect(() => {
     if (!user) return
@@ -64,11 +65,12 @@ export default function Diary() {
   return (
     <div className="space-y-5">
       <h1 className="text-3xl">{t('Дневник')}</h1>
-      <div className="grid grid-cols-3 gap-2" role="tablist">
+      <div className={`grid gap-2 ${headCoach ? 'grid-cols-2' : 'grid-cols-3'}`} role="tablist">
         {[
           ['diary', t('Записи')],
           ['techniques', t('Мои приёмы')],
-          ['ratings', t('Оценки')],
+          // У главного тренера оценки — в «Тренерская → Статистика»
+          ...(headCoach ? [] : [['ratings', t('Оценки')]]),
         ].map(([id, label]) => (
           <button
             key={id}

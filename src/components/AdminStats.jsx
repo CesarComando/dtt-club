@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { loadCoachStats, loadInactive, prettyPhone, waLink } from '../lib/coach.js'
+import PeerRatings from './PeerRatings.jsx'
 import { t, locale } from '../lib/i18n.jsx'
 
 const short = (d) => new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
@@ -56,8 +57,8 @@ function WeeksChart({ weeks }) {
 const comeBackText = (p) =>
   t('Привет, {name}! Давно не видели тебя на тренировке в Daugavpils Top Team — всё в порядке? Ждём в зале, расписание и запись в приложении app.daugavpilstopteam.lv 💪', { name: p.first_name })
 
-// Вкладка «Статистика»: посещаемость за 12 недель и кто перестал ходить.
-export default function AdminStats({ athletes = [] }) {
+// Вкладка «Статистика»: посещаемость за 12 недель, кто перестал ходить и рейтинг учеников.
+export default function AdminStats({ athletes = [], userId, discipline }) {
   const [weeks, setWeeks] = useState(null)
   const [inactive, setInactive] = useState([])
   const [error, setError] = useState('')
@@ -128,6 +129,9 @@ export default function AdminStats({ athletes = [] }) {
           </ul>
         )}
       </div>
+
+      {/* Рейтинг клуба и оценки партнёров — у главного тренера здесь, а не в «Дневнике» */}
+      <PeerRatings userId={userId} isAdmin discipline={discipline} />
     </section>
   )
 }
