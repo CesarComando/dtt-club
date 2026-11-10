@@ -82,7 +82,7 @@ function SelfCheckIn({ userId, onDone }) {
       {msg && <p className="text-center text-sm text-emerald-400">{msg}</p>}
       {error && <p className="text-center text-sm text-accent">{error}</p>}
       {state === 'ready' && !error && (
-        <p className="text-center text-xs text-neutral-500">{t('Без QR — один раз в день. Тренер видит, что вы отметились сами.')}</p>
+        <p className="text-center text-xs text-neutral-500">{t('Без QR — раз в день, во время тренировки и до 3 часов после. Тренер видит, что вы отметились сами.')}</p>
       )}
     </div>
   )
