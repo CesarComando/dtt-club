@@ -1,4 +1,4 @@
-﻿// Слой 28: статьи — новости клуба, переводы, интервью. Пишет только тренер.
+// Слой 28: статьи — новости клуба, переводы, интервью. Пишет только тренер.
 import { supabase } from './supabaseClient.js'
 import { locale, t } from './i18n.jsx'
 import { shrinkImage } from './gallery.js'
