@@ -5,7 +5,7 @@ import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
 import BillingSection, { CustomAmount, liveSubscription, useBilling } from '../components/Billing.jsx'
 import { formatDay, formatPrice } from '../lib/payments.js'
-import { deleteMyAccount, loadMyFamily } from '../lib/club-ops.js'
+import { checkedInToday, deleteMyAccount, loadMyFamily, selfCheckIn } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
@@ -36,6 +36,55 @@ function ScanButton() {
         </Suspense>
       )}
     </>
+  )
+}
+
+// Отметиться самому, без QR — не чаще раза в день (слой 42). Тренер видит «сам» и может отменить.
+function SelfCheckIn({ userId, onDone }) {
+  const [state, setState] = useState('loading') // loading | ready | busy | done
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+  useEffect(() => {
+    checkedInToday(userId)
+      .then((yes) => setState(yes ? 'done' : 'ready'))
+      .catch(() => setState('ready'))
+  }, [userId])
+
+  const go = async () => {
+    setState('busy')
+    setError('')
+    try {
+      const r = await selfCheckIn()
+      setMsg(
+        r?.already
+          ? t('Сегодня вы уже отмечены.')
+          : t('Отмечено! Тренировок: {n}', { n: r?.trainings ?? '' }) + (r?.session_title ? ` · ${r.session_title}` : ''),
+      )
+      setState('done')
+      if (!r?.already) onDone?.()
+    } catch (e) {
+      setError(e.message)
+      setState('ready')
+    }
+  }
+
+  if (state === 'loading') return null
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={go}
+        disabled={state !== 'ready'}
+        className="btn-outline flex w-full items-center justify-center gap-2 disabled:opacity-70"
+      >
+        {state === 'done' ? `✓ ${t('Сегодня отмечен')}` : state === 'busy' ? t('Отмечаю…') : t('Я на тренировке — отметиться')}
+      </button>
+      {msg && <p className="text-center text-sm text-emerald-400">{msg}</p>}
+      {error && <p className="text-center text-sm text-accent">{error}</p>}
+      {state === 'ready' && !error && (
+        <p className="text-center text-xs text-neutral-500">{t('Без QR — один раз в день. Тренер видит, что вы отметились сами.')}</p>
+      )}
+    </div>
   )
 }
 
@@ -272,6 +321,7 @@ export default function Dashboard() {
       </section>
 
       {profile.role === 'athlete' && <ScanButton />}
+      {profile.role === 'athlete' && <SelfCheckIn userId={profile.id} onDone={refreshProfile} />}
 
       {/* Статистика */}
       <section className="grid grid-cols-3 gap-3">

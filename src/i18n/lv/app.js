@@ -35,4 +35,5 @@ export default {
   'Показать пароль': 'Rādīt paroli',
   'Скрыть пароль': 'Paslēpt paroli',
   'Красная круглая кнопка с облачком справа внизу — «Спросить»: помощник клуба ответит про расписание, цены и правила. Пройти знакомство заново: Кабинет → «Как пользоваться приложением».': 'Sarkanā apaļā poga ar mākonīti labajā apakšējā stūrī — «Jautāt»: kluba palīgs atbildēs par grafiku, cenām un noteikumiem. Iziet iepazīšanos vēlreiz: Profils → «Kā lietot lietotni».',
+  'Пришли на тренировку — нажмите красную кнопку QR внизу и наведите камеру на код у тренера. Или в Кабинете «Я на тренировке — отметиться» (раз в день). Тренировка засчитается в ваш ранг.': 'Atnācāt uz treniņu — nospiediet sarkano QR pogu apakšā un pavērsiet kameru pret trenera kodu. Vai Profilā «Esmu treniņā — atzīmēties» (reizi dienā). Treniņš tiks ieskaitīts jūsu rangā.',
 }

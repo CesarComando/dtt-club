@@ -311,4 +311,5 @@ export default {
   'В приложении, не подтверждены': 'Lietotnē, nav apstiprināti',
   'Ещё не в приложении': 'Vēl nav lietotnē',
   'Приёмы · в спарринге {m} · на дрилле {d} · изучает {l}': 'Tehnikas · sparingā {m} · drillā {d} · apgūst {l}',
+  'сам': 'pats',
 }

@@ -13,6 +13,21 @@ const rpc = async (fn, args) => {
 export const newCheckinToken = (sessionId) => rpc('checkin_qr', { p_session: sessionId })
 export const checkIn = async (token) => (await rpc('check_in', { p_token: token }))?.[0]
 
+// Слой 42: отметиться самому — не чаще раза в день. → { trainings, already, session_title }
+export const selfCheckIn = async () => (await rpc('self_check_in'))?.[0]
+/** Есть ли у меня отметка сегодня (любая: тренер, QR, сам). */
+export async function checkedInToday(userId) {
+  const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Riga' })
+  const since = new Date(`${day}T00:00:00`)
+  const { count, error } = await supabase
+    .from('attendance')
+    .select('id', { count: 'exact', head: true })
+    .eq('athlete_id', userId)
+    .gte('created_at', since.toISOString())
+  if (error) throw error
+  return (count ?? 0) > 0
+}
+
 // Ссылка, которую кодирует QR: телефон ученика открывает её обычной камерой.
 export const checkinUrl = (token) => {
   const base = window.location.href.split('#')[0]
