@@ -64,6 +64,8 @@ export default function App() {
           <Route path="/trial" element={<Trial />} />
           {/* QR-чекин: телефон ученика открывает ссылку из QR на экране тренера */}
           <Route path="/checkin/:token" element={<Checkin />} />
+          {/* Постоянный QR на стене зала (слой 43): отметка самому, правила — как у «Я на тренировке» */}
+          <Route path="/zal/:group" element={<Checkin />} />
           <Route path="/invite/:token" element={<Invite />} />
           {/* Скрытая панель тренера: нет ссылки в навигации, пускает только role = 'admin'. */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />

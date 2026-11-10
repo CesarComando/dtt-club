@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, DISCIPLINES, RANKS } from '../lib/ranks.js'
 import { formatDay, formatPrice, LIVE_STATUSES } from '../lib/payments.js'
-import { ageFrom, bmi, bmiCategory } from '../lib/diary.js'
+import { LEVEL, ageFrom, bmi, bmiCategory } from '../lib/diary.js'
+import Competitions from '../components/Competitions.jsx'
 import { CRITERIA, MAX_SCORE, fmtScore } from '../lib/ratings.js'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { MembershipLine, loadMemberships } from '../components/AdminMemberships.jsx'
@@ -62,7 +63,7 @@ async function loadStudent(kind, id) {
       .eq('user_id', profileId).order('created_at', { ascending: false }).limit(20),
     supabase.from('training_diary').select('id, date, notes, applied_techniques').eq('user_id', profileId)
       .order('date', { ascending: false }).limit(10),
-    supabase.from('user_learned_techniques').select('status, technique:techniques_dictionary(name)').eq('user_id', profileId),
+    supabase.from('user_learned_techniques').select('status, confirmed_at, technique:techniques_dictionary(name)').eq('user_id', profileId),
     supabase.rpc('peer_rating_summary', { p_target: profileId }),
   ])
   if (p.error) throw p.error
@@ -224,6 +225,7 @@ function AppData({ profile }) {
   const live = profile.subscriptions.filter((s) => LIVE_STATUSES.includes(s.status))
   const month = profile.attendance.filter((a) => new Date(a.created_at).getTime() > Date.now() - 30 * 864e5).length
   const mastered = profile.learned.filter((l) => l.status === 'mastered')
+  const drill = profile.learned.filter((l) => l.status === 'drill')
   const learning = profile.learned.filter((l) => l.status === 'learning')
   const r = profile.rating
 
@@ -293,7 +295,7 @@ function AppData({ profile }) {
           <div className="flex flex-wrap gap-1.5">
             {profile.attendance.slice(0, 40).map((a) => (
               <span key={a.id} className="rounded border border-line px-2 py-0.5 text-xs text-neutral-300">
-                {shortDay(a.created_at)}{a.method === 'qr' && ' · QR'}
+                {shortDay(a.created_at)}{a.method === 'qr' && ' · QR'}{a.method === 'self' && ` · ${t('сам')}`}
               </span>
             ))}
           </div>
@@ -316,12 +318,15 @@ function AppData({ profile }) {
       </section>
 
       <section className="card space-y-2">
-        <p className="label">{t('Приёмы · освоил {m} · изучает {l}', { m: mastered.length, l: learning.length })}</p>
+        <p className="label">
+          {t('Приёмы · в спарринге {m} · на дрилле {d} · изучает {l}', { m: mastered.length, d: drill.length, l: learning.length })}
+        </p>
         {profile.learned.length ? (
           <div className="flex flex-wrap gap-1.5">
-            {[...mastered, ...learning].map((l, i) => (
-              <span key={i} className={`rounded-full border px-2.5 py-0.5 text-xs ${l.status === 'mastered' ? 'border-accent bg-accent/15' : 'border-line text-neutral-400'}`}>
-                {l.status === 'mastered' ? '✓ ' : '◐ '}{l.technique?.name}
+            {[...mastered, ...drill, ...learning].map((l, i) => (
+              <span key={i} className={`rounded-full border px-2.5 py-0.5 text-xs ${LEVEL[l.status]?.cls ?? 'border-line text-neutral-400'}`}>
+                {l.status === 'mastered' && !l.confirmed_at ? '⏳ ' : `${LEVEL[l.status]?.icon ?? ''} `}
+                {l.technique?.name}
               </span>
             ))}
           </div>
@@ -329,6 +334,9 @@ function AppData({ profile }) {
           <p className="text-sm text-neutral-400">{t('Пока ничего не отметил.')}</p>
         )}
       </section>
+
+      {/* Соревнования ученика (слой 41) — только просмотр */}
+      {profile.id && <Competitions userId={profile.id} readOnly />}
 
       <section className="card space-y-2">
         <p className="label">{t('Оценки партнёров · {n}', { n: r?.ratings ?? 0 })}</p>

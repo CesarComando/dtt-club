@@ -5,13 +5,14 @@ import { useAuth } from '../lib/AuthContext.jsx'
 import { isSupabaseConfigured } from '../lib/supabaseClient.js'
 import BillingSection, { CustomAmount, liveSubscription, useBilling } from '../components/Billing.jsx'
 import { formatDay, formatPrice } from '../lib/payments.js'
-import { deleteMyAccount, loadMyFamily } from '../lib/club-ops.js'
+import { checkedInToday, deleteMyAccount, loadMyFamily, selfCheckIn } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
 import MyChildren from '../components/MyChildren.jsx'
 import Notifications from '../components/Notifications.jsx'
 import { openTour } from '../components/Tour.jsx'
+import Competitions from '../components/Competitions.jsx'
 import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 import { t, lang, locale } from '../lib/i18n.jsx'
@@ -35,6 +36,55 @@ function ScanButton() {
         </Suspense>
       )}
     </>
+  )
+}
+
+// Отметиться самому, без QR — не чаще раза в день (слой 42). Тренер видит «сам» и может отменить.
+function SelfCheckIn({ userId, onDone }) {
+  const [state, setState] = useState('loading') // loading | ready | busy | done
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+  useEffect(() => {
+    checkedInToday(userId)
+      .then((yes) => setState(yes ? 'done' : 'ready'))
+      .catch(() => setState('ready'))
+  }, [userId])
+
+  const go = async () => {
+    setState('busy')
+    setError('')
+    try {
+      const r = await selfCheckIn()
+      setMsg(
+        r?.already
+          ? t('Сегодня вы уже отмечены.')
+          : t('Отмечено! Тренировок: {n}', { n: r?.trainings ?? '' }) + (r?.session_title ? ` · ${r.session_title}` : ''),
+      )
+      setState('done')
+      if (!r?.already) onDone?.()
+    } catch (e) {
+      setError(e.message)
+      setState('ready')
+    }
+  }
+
+  if (state === 'loading') return null
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={go}
+        disabled={state !== 'ready'}
+        className="btn-outline flex w-full items-center justify-center gap-2 disabled:opacity-70"
+      >
+        {state === 'done' ? `✓ ${t('Сегодня отмечен')}` : state === 'busy' ? t('Отмечаю…') : t('Я на тренировке — отметиться')}
+      </button>
+      {msg && <p className="text-center text-sm text-emerald-400">{msg}</p>}
+      {error && <p className="text-center text-sm text-accent">{error}</p>}
+      {state === 'ready' && !error && (
+        <p className="text-center text-xs text-neutral-500">{t('Без QR — раз в день, во время тренировки и до 3 часов после. Тренер видит, что вы отметились сами.')}</p>
+      )}
+    </div>
   )
 }
 
@@ -186,6 +236,7 @@ export default function Dashboard() {
   const [bookingKey, setBookingKey] = useState(0) // перечитать запись после «Записаться» по приглашению
   // Режим родителя (слой 35): сам не тренируется — видит только детское MMA и статус детей.
   const [family, setFamily] = useState(null)
+  const [compStats, setCompStats] = useState(null)
   useEffect(() => {
     if (!user) return
     let alive = true
@@ -270,13 +321,14 @@ export default function Dashboard() {
       </section>
 
       {profile.role === 'athlete' && <ScanButton />}
+      {profile.role === 'athlete' && <SelfCheckIn userId={profile.id} onDone={refreshProfile} />}
 
       {/* Статистика */}
       <section className="grid grid-cols-3 gap-3">
         {[
           { label: t('Тренировок'), value: profile.trainings_count },
           { label: t('Стаж'), value: experience(since) },
-          { label: t('Медалей'), value: 0 },
+          { label: t('Медалей'), value: compStats?.medals ?? 0 },
         ].map((s) => (
           <div key={s.label} className="card !p-4 text-center">
             <p className="font-display text-2xl md:text-3xl">{s.value}</p>
@@ -376,11 +428,8 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* Награды — таблица наград появится в следующем слое */}
-      <section className="space-y-3">
-        <h2 className="text-lg">{t('Мои награды и соревнования')}</h2>
-        <p className="card text-neutral-400">{t('Пока нет наград — всё впереди!')}</p>
-      </section>
+      {/* Награды и соревнования (слой 41): турниры, место, бои с разбором */}
+      <Competitions userId={profile.id} discipline={profile.discipline} onStats={setCompStats} />
 
       {/* Знакомство с приложением — пройти заново */}
       <button type="button" onClick={openTour} className="w-full text-center text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline">
