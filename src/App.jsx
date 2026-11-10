@@ -8,6 +8,7 @@ import InstallApp from './components/InstallApp.jsx'
 import { t } from './lib/i18n.jsx'
 // Страницы грузятся отдельно — первое открытие быстрее (главная не тянет код кабинета и CRM).
 const Login = lazy(() => import('./pages/Login.jsx'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'))
 const Register = lazy(() => import('./pages/Register.jsx'))
 const loadDashboard = () => import('./pages/Dashboard.jsx')
 const Dashboard = lazy(loadDashboard)
@@ -50,6 +51,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset" element={<ResetPassword />} />
           <Route path="/register" element={<Register />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/articles/new" element={<AdminRoute adminOnly><ArticleEdit /></AdminRoute>} />

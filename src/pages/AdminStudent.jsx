@@ -5,6 +5,7 @@ import { getRank, hasRanks, DISCIPLINES, RANKS } from '../lib/ranks.js'
 import { formatDay, formatPrice, LIVE_STATUSES } from '../lib/payments.js'
 import { LEVEL, ageFrom, bmi, bmiCategory } from '../lib/diary.js'
 import Competitions from '../components/Competitions.jsx'
+import { resetMemberPassword } from '../lib/password.js'
 import { CRITERIA, MAX_SCORE, fmtScore } from '../lib/ratings.js'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { MembershipLine, loadMemberships } from '../components/AdminMemberships.jsx'
@@ -205,6 +206,7 @@ export default function AdminStudent({ kind }) {
           onChange={(role) => setData((d) => ({ ...d, profile: { ...d.profile, role } }))}
         />
       )}
+      {profile && <ResetPass profile={profile} />}
       {member?.aliases?.length > 0 && <p className="text-xs text-neutral-500">{t('В группе: {names}', { names: member.aliases.join(', ') })}</p>}
 
       {profile ? <AppData profile={profile} /> : member?.rank_override && (
@@ -374,6 +376,52 @@ function AppData({ profile }) {
         )}
       </section>
     </>
+  )
+}
+
+// Главный тренер: временный пароль ученику (слой 44) — показать один раз, передать лично.
+function ResetPass({ profile }) {
+  const [busy, setBusy] = useState(false)
+  const [pw, setPw] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState('')
+  if (profile.role === 'admin') return null
+  const reset = async () => {
+    if (!window.confirm(t('Поставить {name} временный пароль? Старый пароль перестанет работать.', { name: profile.first_name }))) return
+    setBusy(true)
+    setError('')
+    try {
+      setPw(await resetMemberPassword(profile.id))
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <section className="card space-y-2">
+      <p className="label">{t('Пароль')}</p>
+      {pw ? (
+        <>
+          <p className="text-sm text-neutral-300">{t('Временный пароль — передайте лично. Пусть войдёт и сменит его в Кабинете → «Сменить пароль».')}</p>
+          <div className="flex items-center gap-2">
+            <span className="font-display text-2xl tracking-wider">{pw}</span>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(pw).then(() => setCopied(true)).catch(() => {})}
+              className="btn-outline !px-3 !py-1 text-sm"
+            >
+              {copied ? t('Скопировано') : t('Копировать')}
+            </button>
+          </div>
+        </>
+      ) : (
+        <button type="button" onClick={reset} disabled={busy} className="btn-outline disabled:opacity-60">
+          {busy ? '…' : t('Сбросить пароль')}
+        </button>
+      )}
+      {error && <p className="text-sm text-accent">{error}</p>}
+    </section>
   )
 }
 

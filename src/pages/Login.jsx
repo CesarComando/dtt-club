@@ -113,8 +113,11 @@ export default function Login() {
           {loading ? t('Входим…') : coach ? t('Войти как тренер') : t('Войти · {mode}', { mode: LABELS[mode] })}
         </button>
       </form>
+      <p className="mt-4 text-center text-sm">
+        <Link to="/reset" className="text-neutral-400 hover:text-white hover:underline">{t('Забыли пароль?')}</Link>
+      </p>
       {!coach && (
-        <p className="mt-4 text-center text-sm text-neutral-400">
+        <p className="mt-2 text-center text-sm text-neutral-400">
           {t('Нет аккаунта?')}{' '}
           <Link to="/register" className="text-accent hover:underline">{t('Регистрация')}</Link>
         </p>
