@@ -66,3 +66,7 @@ end;
 $$;
 revoke execute on function public.self_check_in() from public, anon;
 grant execute on function public.self_check_in() to authenticated;
+
+-- 42b: отметился сам (забыл QR), потом всё-таки отсканировал QR — это та же тренировка:
+-- второй раз не считаем, а привязываем его отметку к занятию по QR.
+-- (Полный текст check_in с этой проверкой применён в базе как layer42b_qr_after_self.)
