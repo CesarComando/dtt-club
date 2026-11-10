@@ -14,7 +14,8 @@ export const newCheckinToken = (sessionId) => rpc('checkin_qr', { p_session: ses
 export const checkIn = async (token) => (await rpc('check_in', { p_token: token }))?.[0]
 
 // Слой 42: отметиться самому — не чаще раза в день. → { trainings, already, session_title }
-export const selfCheckIn = async () => (await rpc('self_check_in'))?.[0]
+// group — код группы с плаката в зале (слой 43): 'grappling' | 'mma-beg' | 'mma-pro' | 'mma-kids'.
+export const selfCheckIn = async (group) => (await rpc('self_check_in', group ? { p_group: group } : {}))?.[0]
 /** Есть ли у меня отметка сегодня (любая: тренер, QR, сам). */
 export async function checkedInToday(userId) {
   const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Riga' })
