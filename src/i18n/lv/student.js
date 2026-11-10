@@ -413,5 +413,5 @@ export default {
   'Сегодня отмечен': 'Šodien atzīmēts',
   'Отмечаю…': 'Atzīmēju…',
   'Я на тренировке — отметиться': 'Esmu treniņā — atzīmēties',
-  'Без QR — один раз в день. Тренер видит, что вы отметились сами.': 'Bez QR — vienu reizi dienā. Treneris redz, ka atzīmējāties paši.',
+  'Без QR — раз в день, во время тренировки и до 3 часов после. Тренер видит, что вы отметились сами.': 'Bez QR — reizi dienā, treniņa laikā un līdz 3 stundām pēc tā. Treneris redz, ka atzīmējāties paši.',
 }
