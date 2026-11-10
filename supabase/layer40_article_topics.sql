@@ -19,3 +19,9 @@ update public.articles set topic = case
   else 'control'
 end
 where id between 5 and 44 and category = 'article' and topic is null;
+
+-- До слоя 40 тема временно стояла в начале заголовка («Удушения · …») —
+-- теперь её показывают кнопки, приставку убираем.
+update public.articles
+set title = regexp_replace(title, '^(Болевые на ноги|Болевые на руки|Удушения|Контроль и позиции|Тренировки и восстановление) · ', '')
+where id between 5 and 44 and topic is not null;
