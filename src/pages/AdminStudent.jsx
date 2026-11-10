@@ -4,6 +4,7 @@ import { supabase, AVATARS_BUCKET } from '../lib/supabaseClient.js'
 import { getRank, hasRanks, DISCIPLINES, RANKS } from '../lib/ranks.js'
 import { formatDay, formatPrice, LIVE_STATUSES } from '../lib/payments.js'
 import { LEVEL, ageFrom, bmi, bmiCategory } from '../lib/diary.js'
+import Competitions from '../components/Competitions.jsx'
 import { CRITERIA, MAX_SCORE, fmtScore } from '../lib/ratings.js'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { MembershipLine, loadMemberships } from '../components/AdminMemberships.jsx'
@@ -333,6 +334,9 @@ function AppData({ profile }) {
           <p className="text-sm text-neutral-400">{t('Пока ничего не отметил.')}</p>
         )}
       </section>
+
+      {/* Соревнования ученика (слой 41) — только просмотр */}
+      {profile.id && <Competitions userId={profile.id} readOnly />}
 
       <section className="card space-y-2">
         <p className="label">{t('Оценки партнёров · {n}', { n: r?.ratings ?? 0 })}</p>

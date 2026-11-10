@@ -12,6 +12,7 @@ import CrossTraining from '../components/CrossTraining.jsx'
 import MyChildren from '../components/MyChildren.jsx'
 import Notifications from '../components/Notifications.jsx'
 import { openTour } from '../components/Tour.jsx'
+import Competitions from '../components/Competitions.jsx'
 import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 import { t, lang, locale } from '../lib/i18n.jsx'
@@ -186,6 +187,7 @@ export default function Dashboard() {
   const [bookingKey, setBookingKey] = useState(0) // перечитать запись после «Записаться» по приглашению
   // Режим родителя (слой 35): сам не тренируется — видит только детское MMA и статус детей.
   const [family, setFamily] = useState(null)
+  const [compStats, setCompStats] = useState(null)
   useEffect(() => {
     if (!user) return
     let alive = true
@@ -276,7 +278,7 @@ export default function Dashboard() {
         {[
           { label: t('Тренировок'), value: profile.trainings_count },
           { label: t('Стаж'), value: experience(since) },
-          { label: t('Медалей'), value: 0 },
+          { label: t('Медалей'), value: compStats?.medals ?? 0 },
         ].map((s) => (
           <div key={s.label} className="card !p-4 text-center">
             <p className="font-display text-2xl md:text-3xl">{s.value}</p>
@@ -376,11 +378,8 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* Награды — таблица наград появится в следующем слое */}
-      <section className="space-y-3">
-        <h2 className="text-lg">{t('Мои награды и соревнования')}</h2>
-        <p className="card text-neutral-400">{t('Пока нет наград — всё впереди!')}</p>
-      </section>
+      {/* Награды и соревнования (слой 41): турниры, место, бои с разбором */}
+      <Competitions userId={profile.id} discipline={profile.discipline} onStats={setCompStats} />
 
       {/* Знакомство с приложением — пройти заново */}
       <button type="button" onClick={openTour} className="w-full text-center text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline">
