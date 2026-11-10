@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
-import { checkIn } from '../lib/club-ops.js'
+import { checkIn, selfCheckIn } from '../lib/club-ops.js'
 import { t, tData } from '../lib/i18n.jsx'
 
 // Ученик сканирует QR на экране тренера обычной камерой телефона →
 // открывается эта страница → посещение засчитывается само.
-// key={token}: новый QR-код — новая попытка (иначе React переиспользует состояние).
+// Постоянный QR на стене зала (/zal/:group) — та же страница, но отметка «сам»:
+// раз в день, во время занятия группы и до 3 часов после (слой 43).
+// key: новый QR-код — новая попытка (иначе React переиспользует состояние).
 export default function Checkin() {
-  const { token } = useParams()
-  return <CheckinFor key={token} token={token} />
+  const { token, group } = useParams()
+  return <CheckinFor key={token ?? `zal-${group}`} token={token} group={group} />
 }
 
-function CheckinFor({ token }) {
+function CheckinFor({ token, group }) {
   const { user, loading, refreshProfile } = useAuth()
   const [state, setState] = useState({ status: 'idle' })
   const sent = useRef(false)
@@ -21,13 +23,13 @@ function CheckinFor({ token }) {
     if (loading || !user || sent.current) return
     sent.current = true
     setState({ status: 'pending' })
-    checkIn(token)
+    ;(group ? selfCheckIn(group) : checkIn(token))
       .then((r) => {
         setState({ status: 'ok', ...r })
         refreshProfile()
       })
       .catch((e) => setState({ status: 'error', message: e.message }))
-  }, [loading, user, token, refreshProfile])
+  }, [loading, user, token, group, refreshProfile])
 
   if (loading || state.status === 'pending' || (user && state.status === 'idle')) {
     return (
@@ -43,7 +45,7 @@ function CheckinFor({ token }) {
       <div className="mx-auto max-w-sm py-12 text-center">
         <h1 className="text-3xl">{t('Отметка на тренировке')}</h1>
         <p className="mt-3 text-neutral-400">{t('Войдите в приложение — и тренировка засчитается автоматически.')}</p>
-        <Link to={`/login?next=${encodeURIComponent(`/checkin/${token}`)}`} className="btn-primary mt-6 inline-block">
+        <Link to={`/login?next=${encodeURIComponent(group ? `/zal/${group}` : `/checkin/${token}`)}`} className="btn-primary mt-6 inline-block">
           {t('Войти')}
         </Link>
       </div>
