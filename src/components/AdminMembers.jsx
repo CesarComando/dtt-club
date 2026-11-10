@@ -552,7 +552,7 @@ export default function AdminMembers({ profiles, onProfileChange }) {
         <div className="text-right">
           <p className="font-display text-2xl">{members.length}</p>
           {/* Сколько из списка уже зарегистрированы в приложении и сколько подтверждено */}
-          <button type="button" onClick={() => setFilter('in_app')} className="text-xs text-emerald-400 hover:underline">
+          <button type="button" onClick={() => setFilter('in_app')} className="whitespace-nowrap text-xs text-emerald-400 hover:underline">
             {t('{n} в приложении · {k} ✓', {
               n: members.filter((m) => m.profile_id).length,
               k: members.filter((m) => m.profile_id && approvedIds.has(m.profile_id)).length,
