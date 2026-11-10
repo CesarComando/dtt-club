@@ -13,6 +13,8 @@ import MyChildren from '../components/MyChildren.jsx'
 import Notifications from '../components/Notifications.jsx'
 import { openTour } from '../components/Tour.jsx'
 import Competitions from '../components/Competitions.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
+import { changeMyPassword } from '../lib/password.js'
 import FriendInvites, { HideProfile } from '../components/FriendInvites.jsx'
 import { ApprovedMark } from '../components/Approved.jsx'
 import { t, lang, locale } from '../lib/i18n.jsx'
@@ -84,6 +86,55 @@ function SelfCheckIn({ userId, onDone }) {
       {state === 'ready' && !error && (
         <p className="text-center text-xs text-neutral-500">{t('Без QR — раз в день, во время тренировки и до 3 часов после. Тренер видит, что вы отметились сами.')}</p>
       )}
+    </div>
+  )
+}
+
+// Сменить свой пароль (слой 44) — например, после временного пароля от тренера.
+function ChangePassword() {
+  const [open, setOpen] = useState(false)
+  const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+  const save = async (e) => {
+    e.preventDefault()
+    setError('')
+    setMsg('')
+    if (pw !== pw2) return setError(t('Пароли не совпадают'))
+    setBusy(true)
+    try {
+      await changeMyPassword(pw)
+      setMsg(t('Пароль изменён.'))
+      setPw('')
+      setPw2('')
+      setOpen(false)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="space-y-2">
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)} className="w-full text-center text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline">
+          {t('Сменить пароль')}
+        </button>
+      ) : (
+        <form onSubmit={save} className="card space-y-3">
+          <p className="label">{t('Сменить пароль')}</p>
+          <PasswordInput required minLength={6} autoComplete="new-password" placeholder={t('Новый пароль, мин. 6 символов')} aria-label={t('Новый пароль')} value={pw} onChange={(e) => setPw(e.target.value)} className="input" />
+          <PasswordInput required minLength={6} autoComplete="new-password" placeholder={t('Повторите пароль')} aria-label={t('Повторите пароль')} value={pw2} onChange={(e) => setPw2(e.target.value)} className="input" />
+          {error && <p className="text-sm text-accent">{error}</p>}
+          <div className="flex gap-2">
+            <button type="submit" disabled={busy} className="btn-primary flex-1 disabled:opacity-60">{busy ? t('Сохраняем…') : t('Сохранить')}</button>
+            <button type="button" onClick={() => setOpen(false)} className="btn-outline flex-1">{t('Отмена')}</button>
+          </div>
+        </form>
+      )}
+      {msg && <p className="text-center text-sm text-emerald-400">{msg}</p>}
     </div>
   )
 }
@@ -430,6 +481,8 @@ export default function Dashboard() {
 
       {/* Награды и соревнования (слой 41): турниры, место, бои с разбором */}
       <Competitions userId={profile.id} discipline={profile.discipline} onStats={setCompStats} />
+
+      <ChangePassword />
 
       {/* Знакомство с приложением — пройти заново */}
       <button type="button" onClick={openTour} className="w-full text-center text-sm text-neutral-400 underline-offset-4 hover:text-white hover:underline">
