@@ -408,4 +408,10 @@ export default {
   'Технический нокаут': 'Tehniskais nokauts',
   'По преимуществу': 'Pēc priekšrocībām',
   'Дисквалификация': 'Diskvalifikācija',
+  'Сегодня вы уже отмечены.': 'Šodien jūs jau esat atzīmēts.',
+  'Отмечено! Тренировок: {n}': 'Atzīmēts! Treniņi: {n}',
+  'Сегодня отмечен': 'Šodien atzīmēts',
+  'Отмечаю…': 'Atzīmēju…',
+  'Я на тренировке — отметиться': 'Esmu treniņā — atzīmēties',
+  'Без QR — один раз в день. Тренер видит, что вы отметились сами.': 'Bez QR — vienu reizi dienā. Treneris redz, ka atzīmējāties paši.',
 }

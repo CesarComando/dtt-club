@@ -295,7 +295,7 @@ function AppData({ profile }) {
           <div className="flex flex-wrap gap-1.5">
             {profile.attendance.slice(0, 40).map((a) => (
               <span key={a.id} className="rounded border border-line px-2 py-0.5 text-xs text-neutral-300">
-                {shortDay(a.created_at)}{a.method === 'qr' && ' · QR'}
+                {shortDay(a.created_at)}{a.method === 'qr' && ' · QR'}{a.method === 'self' && ` · ${t('сам')}`}
               </span>
             ))}
           </div>
