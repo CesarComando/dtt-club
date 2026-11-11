@@ -266,9 +266,9 @@ create trigger shop_on_refund after update of status on public.payments
 -- ---------------------------------------------------------------------
 insert into public.shop_designs (id, title, description, club, images, sort) values
   ('samurai', 'Самурай', 'Красный, Daugavpils Grappling Team', 'grappling',
-     array['shop/samurai-rashguard.jpg','shop/samurai-shorts.jpg','shop/samurai-leggings.jpg'], 10),
+     array['shop/samurai-rashguard.jpg','shop/samurai-rashguard-ls.jpg','shop/samurai-shorts.jpg','shop/samurai-leggings.jpg'], 10),
   ('brazil', 'Brazilian Jiu-Jitsu', 'Сине-жёлто-зелёный, Daugavpils Grappling Team', 'grappling',
-     array['shop/brazil-shorts.jpg','shop/brazil-leggings.jpg'], 20),
+     array['shop/brazil-tee.jpg','shop/brazil-rashguard-ls.jpg','shop/brazil-shorts.jpg','shop/brazil-leggings.jpg'], 20),
   ('troll', 'Rollin'' Troll', 'Чёрный с молниями, Daugavpils Grappling Team', 'grappling',
      array['shop/troll-rashguard.jpg','shop/troll-tee.jpg','shop/troll-shorts.jpg','shop/troll-leggings.jpg'], 30),
   ('fightclub', 'Daugavpils Fight Club', 'Чёрно-красный, Daugavpils Top Team', 'dtt',
