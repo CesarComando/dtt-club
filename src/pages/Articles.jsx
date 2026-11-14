@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
-import { CATEGORIES, articleDate, coverUrl, loadArticles } from '../lib/articles.js'
+import { CATEGORIES, TOPICS, articleDate, coverUrl, loadArticles } from '../lib/articles.js'
 import { t } from '../lib/i18n.jsx'
 
 // «Статьи»: новости клуба, переводы речей и интервью тренеров. Читают все
@@ -23,7 +23,12 @@ export default function Articles() {
       })
   }, [loading, user])
 
-  const list = (items ?? []).filter((a) => cat === 'all' || a.category === cat)
+  const [topic, setTopic] = useState('all')
+  const list = (items ?? []).filter(
+    (a) => (cat === 'all' || a.category === cat) && (cat !== 'article' || topic === 'all' || a.topic === topic),
+  )
+  const chip = (active) =>
+    `rounded-full border px-3 py-1 text-sm ${active ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-400'}`
 
   return (
     <div className="space-y-5">
@@ -39,13 +44,26 @@ export default function Articles() {
           <button
             key={id}
             type="button"
-            onClick={() => setCat(id)}
-            className={`rounded-full border px-3 py-1 text-sm ${cat === id ? 'border-accent bg-accent/15 text-white' : 'border-line text-neutral-400'}`}
+            onClick={() => {
+              setCat(id)
+              setTopic('all')
+            }}
+            className={chip(cat === id)}
           >
             {label}
           </button>
         ))}
       </div>
+
+      {cat === 'article' && (
+        <div className="-mt-2 flex flex-wrap gap-2">
+          {[['all', t('Все темы')], ...Object.entries(TOPICS)].map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setTopic(id)} className={chip(topic === id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent">{error}</p>}
 
@@ -65,7 +83,7 @@ export default function Articles() {
                 )}
                 <div className="space-y-1.5 p-4">
                   <p className="text-[11px] uppercase tracking-wider text-neutral-500">
-                    {CATEGORIES[a.category]} · {articleDate(a)}
+                    {(a.category === 'article' && TOPICS[a.topic]) || CATEGORIES[a.category]} · {articleDate(a)}
                     {!a.published && <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-black">{t('черновик')}</span>}
                     {a.published && a.members_only && isAdmin && <span className="ml-2 text-neutral-400">· {t('только ученикам')}</span>}
                   </p>

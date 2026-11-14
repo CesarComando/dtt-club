@@ -166,6 +166,12 @@ export default {
   'Переводы': 'Tulkojumi',
   'Интервью': 'Intervijas',
   'Обложка — только картинка': 'Vāka attēlam jābūt attēla failam',
+  'Болевые на ноги': 'Kāju sāpju paņēmieni',
+  'Болевые на руки': 'Roku sāpju paņēmieni',
+  'Контроль и позиции': 'Kontrole un pozīcijas',
+  'Тренировки и восстановление': 'Treniņi un atjaunošanās',
+  'Все темы': 'Visas tēmas',
+  'Тема': 'Tēma',
 
   // Галерея
   'Галерея': 'Galerija',
