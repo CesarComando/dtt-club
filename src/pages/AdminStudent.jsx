@@ -31,7 +31,7 @@ async function loadStudent(kind, id) {
   let member = null
   let profileId = kind === 'athlete' ? id : null
 
-  const memberQuery = supabase.from('club_members').select('*, member_payments(id, paid_on, amount_cents, kind, method, description)')
+  const memberQuery = supabase.from('club_members').select('*, member_payments(id, paid_on, amount_cents, kind, method, description, ledger)')
   if (kind === 'member') {
     const { data, error } = await memberQuery.eq('id', id).maybeSingle()
     if (error) throw error
@@ -481,7 +481,7 @@ function MemberPayments({ member }) {
             <li key={p.id} className="flex justify-between gap-3 py-1.5">
               <span className="min-w-0 truncate">
                 {shortDay(p.paid_on)} · {KIND[p.kind] ?? p.kind}
-                <span className="text-neutral-500"> · {p.method === 'cash' ? t('наличные') : t('перевод')}</span>
+                <span className="text-neutral-500"> · {p.method === 'cash' ? t('наличные') : t('перевод')}{p.ledger === 'coach' && ` · ${t('касса тренера')}`}</span>
               </span>
               <span>{formatPrice(p.amount_cents)}</span>
             </li>
