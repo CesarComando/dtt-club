@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { checkIn, selfCheckIn } from '../lib/club-ops.js'
 import { t, tData } from '../lib/i18n.jsx'
+import NextTraining from '../components/NextTraining.jsx'
 
 // Ученик сканирует QR на экране тренера обычной камерой телефона →
 // открывается эта страница → посещение засчитывается само.
@@ -70,6 +71,9 @@ function CheckinFor({ token, group }) {
       <p className="mt-2 text-neutral-400">{tData(state.session_title)}</p>
       <p className="mt-6 font-display text-5xl">{state.trainings}</p>
       <p className="text-xs uppercase tracking-wider text-neutral-500">{t('тренировок всего')}</p>
+      <div className="mt-8">
+        <NextTraining />
+      </div>
       <Link to="/dashboard" className="btn-outline mt-8 inline-block">{t('В кабинет')}</Link>
     </div>
   )

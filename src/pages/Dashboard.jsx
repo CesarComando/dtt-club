@@ -7,6 +7,7 @@ import BillingSection, { CustomAmount, liveSubscription, useBilling } from '../c
 import { formatDay, formatPrice } from '../lib/payments.js'
 import { checkedInToday, deleteMyAccount, loadMyFamily, selfCheckIn } from '../lib/club-ops.js'
 import Booking from '../components/Booking.jsx'
+import NextTraining from '../components/NextTraining.jsx'
 import BodyStats from '../components/BodyStats.jsx'
 import CrossTraining from '../components/CrossTraining.jsx'
 import MyChildren from '../components/MyChildren.jsx'
@@ -42,10 +43,11 @@ function ScanButton() {
 }
 
 // Отметиться самому, без QR — не чаще раза в день (слой 42). Тренер видит «сам» и может отменить.
-function SelfCheckIn({ userId, onDone }) {
+function SelfCheckIn({ userId, onDone, onBooked }) {
   const [state, setState] = useState('loading') // loading | ready | busy | done
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
+  const [fresh, setFresh] = useState(false) // только что отметился — спросить про следующую тренировку
   useEffect(() => {
     checkedInToday(userId)
       .then((yes) => setState(yes ? 'done' : 'ready'))
@@ -63,7 +65,10 @@ function SelfCheckIn({ userId, onDone }) {
           : t('Отмечено! Тренировок: {n}', { n: r?.trainings ?? '' }) + (r?.session_title ? ` · ${r.session_title}` : ''),
       )
       setState('done')
-      if (!r?.already) onDone?.()
+      if (!r?.already) {
+        setFresh(true)
+        onDone?.()
+      }
     } catch (e) {
       setError(e.message)
       setState('ready')
@@ -83,6 +88,11 @@ function SelfCheckIn({ userId, onDone }) {
       </button>
       {msg && <p className="text-center text-sm text-emerald-400">{msg}</p>}
       {error && <p className="text-center text-sm text-accent">{error}</p>}
+      {fresh && (
+        <div className="pt-2">
+          <NextTraining onBooked={onBooked} />
+        </div>
+      )}
       {state === 'ready' && !error && (
         <p className="text-center text-xs text-neutral-500">{t('Без QR — раз в день, во время тренировки и до 3 часов после. Тренер видит, что вы отметились сами.')}</p>
       )}
@@ -372,7 +382,14 @@ export default function Dashboard() {
       </section>
 
       {profile.role === 'athlete' && <ScanButton />}
-      {profile.role === 'athlete' && <SelfCheckIn userId={profile.id} onDone={refreshProfile} />}
+      {profile.role === 'athlete' && (
+        <SelfCheckIn userId={profile.id} onDone={refreshProfile} onBooked={() => setBookingKey((k) => k + 1)} />
+      )}
+
+      {/* Запись на тренировки (слой 8) — сразу под отметкой, без прокрутки: лимит мест проверяет сервер.
+          key: после переключателя направления список перечитывается. */}
+      {!parentOnly && <CrossTraining profile={profile} onChange={() => refreshProfile()} />}
+      <Booking key={`${profile.cross_training}-${bookingKey}-${parentOnly}`} kidsOnly={parentOnly} />
 
       {/* Статистика */}
       <section className="grid grid-cols-3 gap-3">
@@ -450,10 +467,6 @@ export default function Dashboard() {
       {/* Рост, вес, дата рождения + ИМТ (слой 13, закрытая таблица profile_body) */}
       <BodyStats userId={user.id} />
 
-      {/* Запись на тренировки (слой 8): лимит мест проверяет сервер.
-          key: после переключателя направления список перечитывается. */}
-      {!parentOnly && <CrossTraining profile={profile} onChange={() => refreshProfile()} />}
-      <Booking key={`${profile.cross_training}-${bookingKey}-${parentOnly}`} kidsOnly={parentOnly} />
       <HideProfile profile={profile} onChange={() => refreshProfile()} />
       <MyChildren profile={profile} />
 
