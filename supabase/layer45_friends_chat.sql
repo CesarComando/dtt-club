@@ -209,7 +209,7 @@ returns void language sql security definer set search_path = '' as $$
    where recipient = auth.uid() and sender = p_other and read_at is null;
 $$;
 
-revoke execute on function public.can_chat(uuid), public.are_friends(uuid, uuid) from anon, public;
+revoke execute on function public.can_chat(uuid), public.are_friends(uuid, uuid) from anon, authenticated, public;
 revoke execute on function public.chat_people(), public.my_friends(), public.chat_unread(),
   public.send_friend_request(uuid), public.respond_friend_request(uuid, boolean),
   public.remove_friend(uuid), public.send_message(uuid, text), public.mark_chat_read(uuid) from anon, public;
