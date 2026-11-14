@@ -56,6 +56,7 @@ function BodyRu() {
           <li><b>Дневник тренировок и освоенные приёмы</b> — ваши записи после тренировок. Видите только вы и тренер.</li>
           <li><b>Оценки партнёров</b> (техника, скорость, сила и т.д., 1–10) — анонимно: ученик видит свои средние баллы, когда оценок 3 и больше; кто какую оценку поставил, видит только тренер. В рейтинге клуба (отдельно MMA и грэпплинг) участники клуба видят имя и общий средний балл тех, у кого 3+ оценок; гигиена в рейтинг не входит. Кто скрыл профиль, в рейтинг не попадает.</li>
           <li><b>Фото и видео в галерее</b> — то, что вы сами загрузили. Видно только вошедшим участникам клуба и только после одобрения тренером.</li>
+          <li><b>Друзья и личные сообщения</b> — список ваших друзей и переписка с ними. Сообщения видят только двое участников переписки; тренер чужие сообщения не читает. Детские аккаунты в друзья не добавляются.</li>
           <li><b>Приглашения</b> — кто кого позвал на тренировку (тренер видит, что пришёл гость). Приглашённый по ссылке видит только имя пригласившего.</li>
           <li><b>Платежи</b> — статус абонемента, суммы и даты оплат: картой в приложении, переводом на счёт клуба и наличными тренеру. Оплату картой проводит Stripe: номер карты в приложение не попадает, его обрабатывает только Stripe.</li>
           <li><b>Список учеников клуба</b> — тренер ведёт учёт учеников и их оплат (имя, направление, телефон, если вы его давали, оплаты переводом по банковской выписке). Если вы зарегистрируетесь в приложении, тренер связывает эту запись с вашим аккаунтом.</li>
@@ -93,7 +94,7 @@ function BodyRu() {
       <Section title="5. Сколько храним">
         <p>
           Пока у вас есть аккаунт. После удаления аккаунта сразу удаляются профиль, телефон, селфи, посещения,
-          записи на тренировки, параметры тела, дневник, приёмы, оценки (поставленные вами и вам), фото и видео
+          записи на тренировки, параметры тела, дневник, приёмы, оценки (поставленные вами и вам), друзья и переписка, фото и видео
           в галерее. Сведения о платежах хранятся в Stripe, в учёте клуба и у бухгалтера столько, сколько требует
           закон Латвии о бухгалтерском учёте. Заявки на пробную тренировку удаляются автоматически через
           180 дней (или раньше — по вашей просьбе).
@@ -132,6 +133,7 @@ function BodyLv() {
           <li><b>Treniņu dienasgrāmata un apgūtās tehnikas</b> — jūsu ieraksti pēc treniņiem. Tos redzat tikai jūs un treneris.</li>
           <li><b>Partneru vērtējumi</b> (tehnika, ātrums, spēks u. c., 1–10) — anonīmi: audzēknis redz savus vidējos vērtējumus, ja vērtējumu ir 3 vai vairāk; kurš kādu vērtējumu ir devis, redz tikai treneris. Kluba reitingā (atsevišķi MMA un grapplings) kluba dalībnieki redz vārdu un kopējo vidējo vērtējumu tiem, kam ir 3+ vērtējumi; higiēna reitingā netiek ieskaitīta. Kas paslēpis profilu, reitingā neparādās.</li>
           <li><b>Foto un video galerijā</b> — tas, ko esat augšupielādējuši paši. Redzams tikai pieslēgušies kluba dalībniekiem un tikai pēc trenera apstiprinājuma.</li>
+          <li><b>Draugi un privātās ziņas</b> — jūsu draugu saraksts un sarakste ar viņiem. Ziņas redz tikai abi sarakstes dalībnieki; treneris svešas ziņas nelasa. Bērnu kontus draugos pievienot nevar.</li>
           <li><b>Ielūgumi</b> — kurš kuru uzaicinājis uz treniņu (treneris redz, ka ieradies viesis). Ar saiti uzaicinātais redz tikai uzaicinātāja vārdu.</li>
           <li><b>Maksājumi</b> — abonementa statuss, maksājumu summas un datumi: ar karti lietotnē, ar pārskaitījumu uz kluba kontu un skaidrā naudā trenerim. Maksājumus ar karti apstrādā Stripe: kartes numurs lietotnē nenonāk, to apstrādā tikai Stripe.</li>
           <li><b>Kluba audzēkņu saraksts</b> — treneris uzskaita audzēkņus un viņu maksājumus (vārds, virziens, tālrunis, ja esat to norādījuši, pārskaitījumi pēc bankas izraksta). Ja reģistrējaties lietotnē, treneris sasaista šo ierakstu ar jūsu kontu.</li>
@@ -169,7 +171,7 @@ function BodyLv() {
       <Section title="5. Cik ilgi glabājam">
         <p>
           Kamēr jums ir konts. Pēc konta dzēšanas nekavējoties tiek dzēsti profils, tālrunis, pašbilde, apmeklējumi,
-          pieteikumi treniņiem, ķermeņa parametri, dienasgrāmata, tehnikas, vērtējumi (jūsu dotie un jums dotie), foto
+          pieteikumi treniņiem, ķermeņa parametri, dienasgrāmata, tehnikas, vērtējumi (jūsu dotie un jums dotie), draugi un sarakste, foto
           un video galerijā. Informācija par maksājumiem tiek glabāta Stripe, kluba uzskaitē un pie grāmatveža tik
           ilgi, cik to prasa Latvijas grāmatvedības likums. Pieteikumi izmēģinājuma treniņam tiek automātiski dzēsti
           pēc 180 dienām (vai agrāk — pēc jūsu lūguma).
