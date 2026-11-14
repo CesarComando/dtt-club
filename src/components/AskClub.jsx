@@ -32,7 +32,7 @@ export default function AskClub() {
   }, [open])
 
   // Только для вошедших; в панели тренера и на экране отметки кнопка не нужна.
-  if (!user || pathname.startsWith('/admin') || pathname.startsWith('/checkin')) return null
+  if (!user || pathname.startsWith('/admin') || pathname.startsWith('/checkin') || pathname.startsWith('/chat/')) return null
 
   const send = async (q) => {
     const question = (q ?? text).trim()

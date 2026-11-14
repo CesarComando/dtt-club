@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { LangSwitch, lang, t } from '../lib/i18n.jsx'
+import { useChatUnread } from '../lib/chat.js'
 
 // Сканер с камерой грузится только по нажатию кнопки QR в таб-баре.
 const QrScanner = lazy(() => import('./QrScanner.jsx'))
@@ -22,6 +23,7 @@ const ICONS = {
   articles: 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7M9 8h3',
   login: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
   coach: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+  chat: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12zM8.5 12h.01M12 12h.01M15.5 12h.01',
   logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
 }
 
@@ -32,6 +34,24 @@ const LINKS = [
   { to: '/dashboard', label: t('Кабинет'), icon: 'profile' },
   { to: '/login', label: t('Вход'), icon: 'login' },
 ]
+
+// Друзья и чат: иконка с числом непрочитанных (и входящих заявок).
+function ChatLink({ unread, className = '' }) {
+  return (
+    <NavLink
+      to="/friends"
+      aria-label={t('Друзья и чат')}
+      className={({ isActive }) => `relative flex items-center ${isActive ? 'text-accent' : 'text-neutral-300 hover:text-white'} ${className}`}
+    >
+      <Icon d={ICONS.chat} />
+      {unread > 0 && (
+        <span className="absolute -right-2 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-white ring-2 ring-ink">
+          {unread > 99 ? '99+' : unread}
+        </span>
+      )}
+    </NavLink>
+  )
+}
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
@@ -45,6 +65,7 @@ export default function Navbar() {
   if (staff) links.push({ to: '/admin', label: t('Тренер'), icon: 'coach' })
   // Ученик отмечается по QR: круглая кнопка в середине нижнего меню (тренер код показывает, а не сканирует).
   const canScan = Boolean(user && profile && !staff)
+  const unread = useChatUnread(user && profile ? user.id : null)
   const [scanning, setScanning] = useState(false)
   const closeScanner = useCallback(() => setScanning(false), [])
   const scanAt = canScan ? Math.min(2, links.length) : -1
@@ -69,6 +90,7 @@ export default function Navbar() {
           </Link>
           <nav className="flex items-center gap-6">
             <LangSwitch />
+            {user && <ChatLink unread={unread} />}
             {links.map((l) => (
               <NavLink
                 key={l.to}
@@ -103,6 +125,7 @@ export default function Navbar() {
           DTT <span className="text-accent">&</span> Grappling
         </span>
         <LangSwitch className="ml-auto" />
+        {user && <ChatLink unread={unread} className="ml-3 p-1" />}
       </header>
 
       {/* Mobile: нижний таб-бар */}
