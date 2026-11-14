@@ -488,7 +488,7 @@ export default function AdminMembers({ profiles, onProfileChange }) {
       const { data, contacts: c } = await cached('admin-members', async () => {
         const { data, error: e } = await supabase
           .from('club_members')
-          .select('*, member_payments(id, paid_on, amount_cents, kind, method, payer_name, description)')
+          .select('*, member_payments(id, paid_on, amount_cents, kind, method, payer_name, description, ledger)')
           .order('last_name')
           .order('paid_on', { referencedTable: 'member_payments', ascending: false })
         if (e) throw e
@@ -540,7 +540,8 @@ export default function AdminMembers({ profiles, onProfileChange }) {
   if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Ученики клуба: {error}', { error })}</p>
   if (!members) return null
 
-  const total = members.reduce((s, m) => s + (m.member_payments ?? []).reduce((a, p) => a + p.amount_cents, 0), 0)
+  // Касса тренера (слой 47) в бюджет клуба не входит.
+  const total = members.reduce((s, m) => s + (m.member_payments ?? []).filter((p) => p.ledger !== 'coach').reduce((a, p) => a + p.amount_cents, 0), 0)
 
   return (
     <section className="card space-y-3">

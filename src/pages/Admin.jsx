@@ -13,6 +13,7 @@ import AdminAssistant from '../components/AdminAssistant.jsx'
 import AdminStats from '../components/AdminStats.jsx'
 import AdminTrials from '../components/AdminTrials.jsx'
 import MembershipReminders from '../components/MembershipReminders.jsx'
+import CoachCash from '../components/CoachCash.jsx'
 import { ApprovedMark, ApproveButton } from '../components/Approved.jsx'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
@@ -26,6 +27,7 @@ const TABS = [
   ['memberships', t('Абонементы')],
   ['debtors', t('Должники')],
   ['budget', t('Бюджет')],
+  ['cash', t('Касса')],
   ['assistant', t('Помощник')],
   ['shop', t('Магазин')],
   ['stats', t('Статистика')],
@@ -76,7 +78,7 @@ export default function Admin() {
   // и «Абонементы» — только ученики MMA / K1 (фильтрует сервер, слой 30).
   const { profile: me } = useAuth()
   const isAdmin = me?.role === 'admin'
-  const tabs = isAdmin ? TABS : TABS.filter(([t]) => t === 'gym' || t === 'memberships')
+  const tabs = isAdmin ? TABS : TABS.filter(([t]) => t === 'gym' || t === 'memberships' || t === 'cash')
   const [athletes, setAthletes] = useState([])
   const [today, setToday] = useState({}) // athlete_id → сколько отметок сегодня
   const [billing, setBilling] = useState({}) // athlete_id → { membership, singles, sponsor }
@@ -328,7 +330,7 @@ export default function Admin() {
       </div>
 
       {tabs.length > 1 && (
-      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5 lg:grid-cols-9' : 'grid-cols-2'}`} role="tablist">
+      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5 lg:grid-cols-10' : 'grid-cols-3'}`} role="tablist">
         {tabs.map(([id, label]) => (
           <button
             key={id}
@@ -354,6 +356,7 @@ export default function Admin() {
       {tab === 'memberships' && isAdmin && <MembershipReminders />}
       {tab === 'memberships' && <AdminMemberships full={isAdmin} />}
       {tab === 'budget' && isAdmin && <AdminBudget />}
+      {tab === 'cash' && <CoachCash isAdmin={isAdmin} />}
       {tab === 'assistant' && isAdmin && <AdminAssistant />}
       {tab === 'shop' && isAdmin && <AdminShop />}
       {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} userId={me?.id} discipline={me?.discipline} />}
