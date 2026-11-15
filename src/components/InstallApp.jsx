@@ -43,7 +43,9 @@ const readDismissed = () => {
 export default function InstallApp() {
   const [prompt, setPrompt] = useState(deferredPrompt)
   const [hidden, setHidden] = useState(() => standalone() || readDismissed())
-  const [help, setHelp] = useState(false)
+  // Внутри Instagram / WhatsApp установка не работает — подсказку показываем сразу, без нажатия.
+  const [help, setHelp] = useState(inApp)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     listeners.add(setPrompt)
@@ -63,6 +65,16 @@ export default function InstallApp() {
   }
 
   const install = async () => {
+    if (inApp) {
+      // ссылку удобно вставить в Safari / Chrome
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        setCopied(true)
+      } catch {
+        /* буфер недоступен — остаётся подсказка «Открыть в браузере» */
+      }
+      return
+    }
     if (prompt) {
       prompt.prompt()
       const { outcome } = await prompt.userChoice
@@ -88,7 +100,7 @@ export default function InstallApp() {
       </div>
 
       <button type="button" onClick={install} className="btn-primary mt-3 w-full">
-        {t('Установить приложение')}
+        {inApp ? (copied ? `✓ ${t('Ссылка скопирована')}` : t('Скопировать ссылку')) : t('Установить приложение')}
       </button>
 
       {help && (
