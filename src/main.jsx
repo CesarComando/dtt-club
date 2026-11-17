@@ -5,8 +5,15 @@ import App from './App.jsx'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import './index.css'
 import { startPwaUpdates } from './lib/pwa.js'
+import { reloadOnce } from './lib/reloadOnce.js'
 
 startPwaUpdates()
+
+// Vite сообщает, что не смог загрузить файл страницы (устаревшая версия после выкладки):
+// перезагружаемся на новую вместо чёрного экрана.
+window.addEventListener('vite:preloadError', (e) => {
+  if (reloadOnce()) e.preventDefault()
+})
 
 // Нет меню «Сохранить картинку / видео» (правая кнопка, долгое нажатие) и перетаскивания
 // фото на рабочий стол — для всех фото в приложении, в том числе детских.

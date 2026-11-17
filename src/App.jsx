@@ -1,10 +1,11 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate, Link } from 'react-router-dom'
+import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
 import OfflineBanner from './components/OfflineBanner.jsx'
 import Navbar from './components/Navbar.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 import Home from './pages/Home.jsx'
 import InstallApp from './components/InstallApp.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { t } from './lib/i18n.jsx'
 // Страницы грузятся отдельно — первое открытие быстрее (главная не тянет код кабинета и CRM).
 const Login = lazy(() => import('./pages/Login.jsx'))
@@ -34,17 +35,24 @@ const Chat = lazy(() => import('./pages/Chat.jsx'))
 const Games = lazy(() => import('./pages/Games.jsx'))
 
 export default function App() {
+  const { pathname } = useLocation()
   return (
     <div className="min-h-dvh">
-      <Navbar />
-      <Suspense fallback={null}>
-        <AskClub />
-        <Tour />
-      </Suspense>
+      <ErrorBoundary silent>
+        <Navbar />
+      </ErrorBoundary>
+      <ErrorBoundary silent>
+        <Suspense fallback={null}>
+          <AskClub />
+          <Tour />
+        </Suspense>
+      </ErrorBoundary>
       {/* pb-40 — место под нижний таб-бар и кнопку «Спросить» на мобильных */}
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-40 md:pt-24 md:pb-12">
         <OfflineBanner />
         <InstallApp />
+        {/* key={pathname}: после ошибки переход на другую страницу снова работает */}
+        <ErrorBoundary key={pathname}>
         <Suspense
           fallback={
             <div className="py-16 text-center">
@@ -83,6 +91,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
         <footer className="mt-12 flex flex-wrap justify-center gap-x-4 gap-y-2 border-t border-line pt-4 text-center text-xs text-neutral-500">
           {/* Сайт клуба (3 языка, для Google) — в том же стиле; оттуда ведёт кнопка «Войти» сюда. */}
           <a href="https://daugavpilstopteam.lv" target="_blank" rel="noopener" className="hover:text-white">
