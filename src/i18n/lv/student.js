@@ -414,4 +414,7 @@ export default {
   'Отмечаю…': 'Atzīmēju…',
   'Я на тренировке — отметиться': 'Esmu treniņā — atzīmēties',
   'Без QR — раз в день, во время тренировки и до 3 часов после. Тренер видит, что вы отметились сами.': 'Bez QR — reizi dienā, treniņa laikā un līdz 3 stundām pēc tā. Treneris redz, ka atzīmējāties paši.',
+  // Игры для ума (GRAPPLING WORLD)
+  'Игры для ума': 'Prāta spēles',
+  'Шахматы, шашки, судоку и игры на реакцию': 'Šahs, dambrete, sudoku un reakcijas spēles',
 }

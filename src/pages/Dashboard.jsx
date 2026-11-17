@@ -492,6 +492,25 @@ export default function Dashboard() {
         </div>
       </Link>
 
+      {/* Игры для ума из GRAPPLING WORLD */}
+      <Link
+        to="/games"
+        className="relative block overflow-hidden rounded-lg border border-line bg-panel p-5 transition hover:border-accent"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-accent/15 text-accent">
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16v16H4zM4 12h16M12 4v16M7.5 7.5h.01M16.5 16.5h.01" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-display uppercase tracking-wide">{t('Игры для ума')}</p>
+            <p className="text-sm text-neutral-400">{t('Шахматы, шашки, судоку и игры на реакцию')}</p>
+          </div>
+          <span className="text-accent">→</span>
+        </div>
+      </Link>
+
       {/* Награды и соревнования (слой 41): турниры, место, бои с разбором */}
       <Competitions userId={profile.id} discipline={profile.discipline} onStats={setCompStats} />
 
