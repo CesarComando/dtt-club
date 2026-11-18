@@ -160,8 +160,14 @@ export default function AdminStudent({ kind }) {
               }))
             }
           />
-          <p className="text-sm text-neutral-400">
-            {[discipline && DISCIPLINES[discipline], member && STATUS[member.status]].filter(Boolean).join(' · ')}
+          <p className="flex flex-wrap items-center gap-2 text-sm text-neutral-400">
+            {discipline && <span>{DISCIPLINES[discipline]}</span>}
+            {member && (
+              <StatusField
+                member={member}
+                onSaved={(status) => setData((d) => ({ ...d, member: { ...d.member, status } }))}
+              />
+            )}
           </p>
           {member && (
             <ParentField
@@ -532,6 +538,36 @@ function NameField({ first, last, memberId, profileId, approved, onSaved }) {
       <button type="button" onClick={() => setEdit(false)} className="text-sm text-neutral-400 hover:text-white">{t('Отмена')}</button>
       {err && <span className="w-full text-xs text-accent">{err}</span>}
     </div>
+  )
+}
+
+// Статус ученика в списке клуба: Постоянный / Иногда / Был раз / Ушёл — меняется сразу.
+function StatusField({ member, onSaved }) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const change = async (status) => {
+    setBusy(true)
+    setErr('')
+    const { error } = await supabase.from('club_members').update({ status }).eq('id', member.id)
+    setBusy(false)
+    if (error) return setErr(error.message)
+    onSaved(status)
+  }
+  return (
+    <>
+      <select
+        aria-label={t('Статус')}
+        value={member.status}
+        disabled={busy}
+        onChange={(e) => change(e.target.value)}
+        className={`rounded-md border bg-ink px-2 py-1 text-sm ${member.status === 'left' ? 'border-neutral-600 text-neutral-400' : 'border-line text-white'}`}
+      >
+        {Object.entries(STATUS).map(([v, label]) => (
+          <option key={v} value={v}>{label}</option>
+        ))}
+      </select>
+      {err && <span className="text-xs text-accent">{err}</span>}
+    </>
   )
 }
 

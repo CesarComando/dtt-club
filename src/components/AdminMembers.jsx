@@ -345,6 +345,37 @@ function MemberRow({ m, profiles, linkedIds, membership, onChanged, onProfileCha
             </p>
           )}
 
+          {/* Статус ученика: «Ушёл» убирает его из активных списков, подсказок и напоминаний */}
+          <div>
+            <span className="label">{t('Статус')}</span>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Статус')}>
+              {Object.entries(STATUS).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={m.status === v}
+                  disabled={busy || m.status === v}
+                  onClick={() =>
+                    run(async () => {
+                      const { error: e } = await supabase.from('club_members').update({ status: v }).eq('id', m.id)
+                      if (e) throw e
+                    })
+                  }
+                  className={`min-h-10 rounded-md border px-3 py-1.5 ${
+                    m.status === v
+                      ? v === 'left'
+                        ? 'border-neutral-500 bg-white/5 text-white'
+                        : 'border-accent bg-accent/10 text-white'
+                      : 'border-line text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="block">
             <span className="label">{t('Аккаунт в приложении')}</span>
             <select className="input" value={m.profile_id ?? ''} disabled={busy} onChange={(e) => link(e.target.value)}>
