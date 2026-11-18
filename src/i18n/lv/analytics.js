@@ -1,0 +1,71 @@
+// Слой 50: Бюджет → «Аналитика».
+export default {
+  'Деньги': 'Nauda',
+  'Аналитика': 'Analītika',
+  'Бюджет или аналитика': 'Budžets vai analītika',
+  'Аналитика: {error}': 'Analītika: {error}',
+  'Выводы': 'Secinājumi',
+  'Оплаты по месяцам — с {from}, отметки посещений — с {att}. Чем дольше учёт, тем точнее выводы.':
+    'Maksājumi pa mēnešiem — no {from}, apmeklējumu atzīmes — no {att}. Jo ilgāka uzskaite, jo precīzāki secinājumi.',
+  'Доход в месяц, в среднем': 'Vidējie ienākumi mēnesī',
+  'Платящих в месяц': 'Maksātāji mēnesī',
+  'Остаются на след. месяц': 'Paliek nākamajā mēnesī',
+  'Средний чек ученика за месяц': 'Vidējais audzēkņa maksājums mēnesī',
+  'Доходы и расходы по месяцам': 'Ienākumi un izdevumi pa mēnešiem',
+  'доход': 'ienākumi',
+  'расходы': 'izdevumi',
+  'Платящие ученики по месяцам': 'Maksājošie audzēkņi pa mēnešiem',
+  'Под столбиком: + новые / − не заплатили после прошлого месяца': 'Zem stabiņa: + jaunie / − nesamaksāja pēc iepriekšējā mēneša',
+  'платили {n}, новых {new}, пропало {lost}': 'maksāja {n}, jauni {new}, pazuduši {lost}',
+  'Посещения по дням недели': 'Apmeklējumi pa nedēļas dienām',
+  'Сколько человек в среднем приходит на одну тренировку': 'Cik cilvēku vidēji atnāk uz vienu treniņu',
+  '{v} посещений за {s} трен.': '{v} apmeklējumi {s} treniņos',
+  'Заполненность групп': 'Grupu piepildījums',
+  'Пришло от вместимости зала на проведённых тренировках': 'Atnākušo daļa no zāles ietilpības notikušajos treniņos',
+  '{v} чел. / {s} трен.': '{v} cilv. / {s} tren.',
+  'Когда приходят: день и час': 'Kad nāk: diena un stunda',
+  'Темнее — больше людей': 'Tumšāks — vairāk cilvēku',
+  'Из чего доход': 'No kā veidojas ienākumi',
+  'Доход по направлениям': 'Ienākumi pa virzieniem',
+  'С {from}': 'No {from}',
+  'Разовые тренировки': 'Vienreizējie treniņi',
+  'Индивидуальные': 'Individuālie',
+  'Прочее (донаты, форма, наличные от тренера)': 'Cits (ziedojumi, forma, skaidrā nauda no trenera)',
+  'Направление не указано': 'Virziens nav norādīts',
+  'Пропали': 'Pazuduši',
+  'Платили хотя бы 2 месяца, но больше 35 дней ни оплаты, ни посещения. Стоит написать им.':
+    'Maksāja vismaz 2 mēnešus, bet vairāk nekā 35 dienas nav ne maksājuma, ne apmeklējuma. Vērts viņiem uzrakstīt.',
+  'Никто не пропал 👍': 'Neviens nav pazudis 👍',
+  'был {date}': 'bija {date}',
+  'Бледный столбик — текущий месяц, он ещё не закончился.': 'Bālais stabiņš — šis mēnesis, tas vēl nav beidzies.',
+  'Пока мало отметок посещений — график появится, когда ученики начнут отмечаться на тренировках.':
+    'Pagaidām maz apmeklējumu atzīmju — grafiks parādīsies, kad audzēkņi sāks atzīmēties treniņos.',
+  'Пока мало данных для выводов. Они появятся через пару месяцев учёта.': 'Pagaidām maz datu secinājumiem. Tie parādīsies pēc pāris mēnešu uzskaites.',
+  'Сезонность: лучший месяц — {best} ({bi}), самый слабый — {worst} ({wi}).':
+    'Sezonalitāte: labākais mēnesis — {best} ({bi}), vājākais — {worst} ({wi}).',
+  'Последние 3 месяца доход {dir} на {p} по сравнению с тремя до них ({a} против {b} в месяц).':
+    'Pēdējos 3 mēnešos ienākumi {dir} par {p}, salīdzinot ar trim iepriekšējiem ({a} pret {b} mēnesī).',
+  'вырос': 'pieauguši',
+  'упал': 'kritušies',
+  'В минусе было {n} мес. из {all}: {list}.': 'Mīnusā bija {n} mēn. no {all}: {list}.',
+  'Все {all} мес. доход покрывал расходы.': 'Visus {all} mēn. ienākumi sedza izdevumus.',
+  'В среднем {p} платящих учеников платят и в следующем месяце. Каждый месяц теряется около {n} чел.':
+    'Vidēji {p} maksājošo audzēkņu maksā arī nākamajā mēnesī. Katru mēnesi pazūd ap {n} cilv.',
+  'Разовые тренировки приносят больше, чем абонементы ({s} против {m}). Тех, кто ходит часто, выгодно перевести на абонемент — доход станет стабильнее.':
+    'Vienreizējie treniņi ienes vairāk nekā abonementi ({s} pret {m}). Tos, kas nāk bieži, izdevīgi pārcelt uz abonementu — ienākumi kļūs stabilāki.',
+  'Больше всего людей на тренировке — {top} (в среднем {a}), меньше всего — {low} ({b}).':
+    'Visvairāk cilvēku treniņā — {top} (vidēji {a}), vismazāk — {low} ({b}).',
+  'Самая заполненная группа — {a} ({p}), самая пустая — {b} ({q}).': 'Pilnākā grupa — {a} ({p}), tukšākā — {b} ({q}).',
+  'В группе «{g}» пока ни одной отметки в приложении — просите учеников отмечаться по QR, иначе аналитика посещений неполная.':
+    'Grupā «{g}» lietotnē vēl nav nevienas atzīmes — lūdziet audzēkņus atzīmēties ar QR, citādi apmeklējumu analītika ir nepilnīga.',
+  'Постоянных учеников, которые пропали больше месяца назад: {n}. Список внизу.':
+    'Pastāvīgie audzēkņi, kas pazuduši vairāk nekā pirms mēneša: {n}. Saraksts lejā.',
+  'понедельник': 'pirmdiena',
+  'вторник': 'otrdiena',
+  'среда': 'trešdiena',
+  'четверг': 'ceturtdiena',
+  'пятница': 'piektdiena',
+  'суббота': 'sestdiena',
+  'воскресенье': 'svētdiena',
+  'Аналитику видит только главный тренер': 'Analītiku redz tikai galvenais treneris',
+}

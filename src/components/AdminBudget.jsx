@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { t, locale } from '../lib/i18n.jsx'
@@ -6,6 +6,9 @@ import { t, locale } from '../lib/i18n.jsx'
 // CRM → «Бюджет» (слой 22). Видит и редактирует только главный тренер (role = 'admin'):
 // вкладка показывается только ему, данные защищены RLS (is_admin) в club_expenses / budget_overview.
 // Доходы считаются сами (оплаты учеников: переводы на оба счёта + приложение), расходы вносит тренер.
+
+// Аналитика (слой 50) — отдельным файлом, грузится только по нажатию.
+const AdminAnalytics = lazy(() => import('./AdminAnalytics.jsx'))
 
 export const CATEGORIES = {
   rent: t('Аренда'),
@@ -29,6 +32,37 @@ const dayText = (d) => new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { 
 const EMPTY = { spent_on: today(), category: 'rent', amount: '', note: '' }
 
 export default function AdminBudget() {
+  const [view, setView] = useState('budget') // 'budget' | 'analytics'
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2" role="tablist" aria-label={t('Бюджет или аналитика')}>
+        {[['budget', t('Деньги')], ['analytics', t('Аналитика')]].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            onClick={() => setView(id)}
+            className={`rounded-md border px-3 py-2 font-display text-sm uppercase tracking-wider ${
+              view === id ? 'border-accent bg-accent/10 text-white' : 'border-line text-neutral-400 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {view === 'budget' ? (
+        <Budget />
+      ) : (
+        <Suspense fallback={<p className="card text-neutral-400">{t('Загружаем…')}</p>}>
+          <AdminAnalytics />
+        </Suspense>
+      )}
+    </div>
+  )
+}
+
+function Budget() {
   const [months, setMonths] = useState(null)
   const [expenses, setExpenses] = useState([])
   const [month, setMonth] = useState(null) // 'YYYY-MM' или 'all'
