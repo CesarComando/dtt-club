@@ -118,7 +118,8 @@ function LinkSuggestions({ members, profiles, linkedIds, contacts, onChanged }) 
         // номер при регистрации не проверяется, поэтому подтверждает тренер (слой 33).
         const cands = free
           .map((m) => ({ m, s: p.phone && m.phone === p.phone ? 2 : matchScore(p, m) }))
-          .filter((x) => x.s >= 0.5)
+          // Совпало только имя (Maris ≈ Марис Курышов) — не подсказываем, если у ученика есть фамилия.
+          .filter((x) => x.s > 0.5 || (x.s === 0.5 && !x.m.last_name?.trim()))
           .sort((a, b) => b.s - a.s)
           .slice(0, 3)
         return (

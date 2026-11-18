@@ -198,7 +198,8 @@ function ChildrenStatus({ children }) {
   )
 }
 
-export default function BillingSection({ billing, discipline, family }) {
+// child — аккаунт ребёнка (profiles.parent_id): видит, до какого числа абонемент, но сам не платит.
+export default function BillingSection({ billing, discipline, family, child = false }) {
   const parentOnly = Boolean(family?.parent_only)
   if (parentOnly) discipline = 'mma' // родитель платит только за детское MMA
   const { catalog, subscriptions, payments, offline = [], overview, loading, busy, error, notice, checkout, custom, portal } = billing
@@ -266,7 +267,13 @@ export default function BillingSection({ billing, discipline, family }) {
       {notice && <p className="rounded-md border border-accent/60 bg-accent/10 p-3 text-sm" role="status">{notice}</p>}
       {error && <p className="rounded-md border border-accent p-3 text-sm text-accent" role="alert">{error}</p>}
 
-      {!membership && !kidsPaid && memberships.length > 0 && (
+      {child && (
+        <p className="rounded-md border border-line p-3 text-sm text-neutral-300">
+          {t('За тебя платит родитель — переводом, наличными тренеру или из своего аккаунта. Здесь видно, до какого числа оплачено.')}
+        </p>
+      )}
+
+      {!child && !membership && !kidsPaid && memberships.length > 0 && (
         <div className="grid gap-2 sm:grid-cols-2">
           {memberships.map((p) => (
             <button
@@ -283,7 +290,7 @@ export default function BillingSection({ billing, discipline, family }) {
         </div>
       )}
 
-      {singles.length > 0 && (
+      {!child && singles.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {singles.map((p) => (
             <button
@@ -299,7 +306,7 @@ export default function BillingSection({ billing, discipline, family }) {
         </div>
       )}
 
-      <CustomAmount onPay={custom} busy={busy} />
+      {!child && <CustomAmount onPay={custom} busy={busy} />}
 
       {hasHistory && (
         <>
@@ -318,7 +325,7 @@ export default function BillingSection({ billing, discipline, family }) {
               ))}
             </ul>
           )}
-          {hasCard && <button
+          {hasCard && !child && <button
             type="button"
             onClick={portal}
             disabled={Boolean(busy)}
@@ -345,7 +352,7 @@ export default function BillingSection({ billing, discipline, family }) {
         </details>
       )}
 
-      <p className="text-xs text-neutral-500">{t('Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.')}</p>
+      {!child && <p className="text-xs text-neutral-500">{t('Оплата картой через Stripe. Цены указаны с НДС. Первая тренировка — бесплатно.')}</p>}
     </section>
   )
 }

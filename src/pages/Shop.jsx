@@ -36,7 +36,8 @@ export function itemLine(it) {
 }
 
 export default function Shop() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
+  const child = Boolean(profile?.parent_id) // ребёнок сам не платит — заказывает родитель
   const [params, setParams] = useSearchParams()
   const [shop, setShop] = useState(null)
   const [orders, setOrders] = useState([])
@@ -248,9 +249,13 @@ export default function Shop() {
               ))}
             </ul>
             <input className="input !py-1.5 text-sm" maxLength={300} placeholder={t('Комментарий к заказу (необязательно): имя на форме, рост…')} value={note} onChange={(e) => setNote(e.target.value)} />
-            <button type="button" disabled={busy} onClick={checkout} className="btn-primary w-full disabled:opacity-60">
-              {busy ? t('Переход к оплате…') : t('Оплатить {amount}', { amount: money(total) })}
-            </button>
+            {child ? (
+              <p className="text-sm text-neutral-400">{t('Покажи корзину родителю — оплатить заказ может он из своего аккаунта.')}</p>
+            ) : (
+              <button type="button" disabled={busy} onClick={checkout} className="btn-primary w-full disabled:opacity-60">
+                {busy ? t('Переход к оплате…') : t('Оплатить {amount}', { amount: money(total) })}
+              </button>
+            )}
           </div>
         </div>
       )}
