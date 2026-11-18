@@ -15,7 +15,8 @@ export default {
   'доход': 'ienākumi',
   'расходы': 'izdevumi',
   'Платящие ученики по месяцам': 'Maksājošie audzēkņi pa mēnešiem',
-  'Под столбиком: + новые / − не заплатили после прошлого месяца': 'Zem stabiņa: + jaunie / − nesamaksāja pēc iepriekšējā mēneša',
+  'Под столбиком: + новые / − не заплатили после прошлого месяца. Нажмите на месяц — покажем имена.': 'Zem stabiņa: + jaunie / − nesamaksāja pēc iepriekšējā mēneša. Nospiediet uz mēnesi — parādīsim vārdus.',
+  'Не заплатили после прошлого месяца': 'Nesamaksāja pēc iepriekšējā mēneša',
   'платили {n}, новых {new}, пропало {lost}': 'maksāja {n}, jauni {new}, pazuduši {lost}',
   'Посещения по дням недели': 'Apmeklējumi pa nedēļas dienām',
   'Сколько человек в среднем приходит на одну тренировку': 'Cik cilvēku vidēji atnāk uz vienu treniņu',
@@ -58,8 +59,7 @@ export default {
   'Самая заполненная группа — {a} ({p}), самая пустая — {b} ({q}).': 'Pilnākā grupa — {a} ({p}), tukšākā — {b} ({q}).',
   'В группе «{g}» пока ни одной отметки в приложении — просите учеников отмечаться по QR, иначе аналитика посещений неполная.':
     'Grupā «{g}» lietotnē vēl nav nevienas atzīmes — lūdziet audzēkņus atzīmēties ar QR, citādi apmeklējumu analītika ir nepilnīga.',
-  'Постоянных учеников, которые пропали больше месяца назад: {n}. Список внизу.':
-    'Pastāvīgie audzēkņi, kas pazuduši vairāk nekā pirms mēneša: {n}. Saraksts lejā.',
+  'Пропали больше месяца назад ({n}): {names}. Стоит написать им.': 'Pazuduši vairāk nekā pirms mēneša ({n}): {names}. Vērts viņiem uzrakstīt.',
   'понедельник': 'pirmdiena',
   'вторник': 'otrdiena',
   'среда': 'trešdiena',

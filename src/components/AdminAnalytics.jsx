@@ -16,6 +16,10 @@ const DISCIPLINE = { grappling: 'Grappling', mma: 'MMA / K1', both: 'Grappling +
 
 const monthShort = (m) => new Date(`${m.slice(0, 7)}-15T12:00:00`).toLocaleDateString(locale(), { month: 'short' }).replace('.', '')
 const monthLong = (m) => new Date(`${m.slice(0, 7)}-15T12:00:00`).toLocaleDateString(locale(), { month: 'long' })
+const monthYearTitle = (m) => {
+  const s = new Date(`${m.slice(0, 7)}-15T12:00:00`).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).replace(' г.', '')
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
 // «1 марта 2026» — с числом месяц стоит в нужном падеже («с 1 марта»)
 const monthYear = (m) => new Date(`${m.slice(0, 7)}-01T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' }).replace(' г.', '')
 const euro = (c) => formatPrice(Math.round(c / 100) * 100)
@@ -25,6 +29,7 @@ const avg = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0)
 export default function AdminAnalytics() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
+  const [pick, setPick] = useState(null) // выбранный месяц в «Платящие ученики» (по умолчанию — последний)
 
   useEffect(() => {
     supabase.rpc('club_analytics').then(({ data: d, error: e }) => (e ? setError(e.message) : setData(d)))
@@ -74,8 +79,10 @@ export default function AdminAnalytics() {
         />
       </Chart>
 
-      <Chart title={t('Платящие ученики по месяцам')} note={t('Под столбиком: + новые / − не заплатили после прошлого месяца')}>
+      <Chart title={t('Платящие ученики по месяцам')} note={t('Под столбиком: + новые / − не заплатили после прошлого месяца. Нажмите на месяц — покажем имена.')}>
         <Bars
+          selected={pick}
+          onSelect={setPick}
           rows={a.months.map((m) => ({
             label: monthShort(m.m),
             sub: `+${m.new_payers} −${m.lost}`,
@@ -86,6 +93,7 @@ export default function AdminAnalytics() {
           colors={[BAR]}
           format={(v) => v}
         />
+        <MonthPeople m={a.months[pick ?? a.months.length - 1]} />
       </Chart>
 
       <Chart title={t('Посещения по дням недели')} note={t('Сколько человек в среднем приходит на одну тренировку')}>
@@ -249,7 +257,7 @@ function analyse(d) {
     insights.push({ icon: '👥', text: t('Самая заполненная группа — {a} ({p}), самая пустая — {b} ({q}).', { a: g0.title, p: pct(g0.fill), b: gl.title, q: pct(gl.fill) }) })
     if (gl.visits === 0) insights.push({ icon: '📲', text: t('В группе «{g}» пока ни одной отметки в приложении — просите учеников отмечаться по QR, иначе аналитика посещений неполная.', { g: gl.title }) })
   }
-  if (d.lost.length) insights.push({ icon: '📞', text: t('Постоянных учеников, которые пропали больше месяца назад: {n}. Список внизу.', { n: d.lost.length }) })
+  if (d.lost.length) insights.push({ icon: '📞', text: t('Пропали больше месяца назад ({n}): {names}. Стоит написать им.', { n: d.lost.length, names: d.lost.map((l) => l.name).join(', ') }) })
   if (!insights.length) insights.push({ icon: 'ℹ️', text: t('Пока мало данных для выводов. Они появятся через пару месяцев учёта.') })
 
   const since = t('С {from}', { from: monthYear(months[0]?.m ?? d.today) })
@@ -294,13 +302,14 @@ function Empty() {
 }
 
 // Вертикальные столбики: один или несколько рядов в каждой колонке. Наведение/нажатие — подсказка.
-function Bars({ rows, colors, format }) {
+function Bars({ rows, colors, format, selected, onSelect }) {
   const [active, setActive] = useState(null)
+  const shown = active ?? selected
   const max = Math.max(1, ...rows.flatMap((r) => r.values))
   const H = 140
   return (
     <div>
-      <p className="mb-1 h-4 truncate text-xs text-neutral-300">{active != null ? rows[active].tip : ' '}</p>
+      <p className="mb-1 h-4 truncate text-xs text-neutral-300">{shown != null ? rows[shown].tip : ' '}</p>
       <div className="flex items-end gap-1 overflow-x-auto pb-1" style={{ height: H + 34 }} onMouseLeave={() => setActive(null)}>
         {rows.map((r, i) => (
           <button
@@ -309,8 +318,8 @@ function Bars({ rows, colors, format }) {
             title={r.tip}
             onMouseEnter={() => setActive(i)}
             onFocus={() => setActive(i)}
-            onClick={() => setActive(i)}
-            className={`flex min-w-[28px] flex-1 flex-col items-center justify-end rounded ${active === i ? 'bg-white/5' : ''}`}
+            onClick={() => (onSelect ? onSelect(i) : setActive(i))}
+            className={`flex min-w-[28px] flex-1 flex-col items-center justify-end rounded ${active === i ? 'bg-white/5' : selected === i ? 'bg-white/10 ring-1 ring-line' : ''}`}
             style={{ height: H + 34 }}
           >
             <div className="flex items-end gap-[2px]" style={{ height: H }}>
@@ -328,6 +337,24 @@ function Bars({ rows, colors, format }) {
         ))}
       </div>
       {rows.some((r) => r.partial) && <p className="text-[11px] text-neutral-500">{t('Бледный столбик — текущий месяц, он ещё не закончился.')}</p>}
+    </div>
+  )
+}
+
+// Имена под графиком платящих: кто пришёл и кто не заплатил после прошлого месяца.
+function MonthPeople({ m }) {
+  if (!m) return null
+  const Line = ({ title, names }) => (
+    <p>
+      <span className="text-neutral-400">{title} ({names.length}): </span>
+      {names.length ? names.join(', ') : '—'}
+    </p>
+  )
+  return (
+    <div className="space-y-1 rounded-md border border-line p-3 text-sm">
+      <p className="font-semibold">{monthYearTitle(m.m)}</p>
+      <Line title={t('Не заплатили после прошлого месяца')} names={m.lost_names ?? []} />
+      <Line title={t('Новые')} names={m.new_names ?? []} />
     </div>
   )
 }
