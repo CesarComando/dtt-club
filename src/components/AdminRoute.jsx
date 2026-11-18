@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom'
+import LoginRedirect from './LoginRedirect.jsx'
 import { useAuth } from '../lib/AuthContext.jsx'
 
 // Пускает на страницу только тренера (profiles.role = 'admin').
@@ -14,7 +15,7 @@ export default function AdminRoute({ children, adminOnly = false }) {
       </div>
     )
   }
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <LoginRedirect />
   const allowed = adminOnly ? profile.role === 'admin' : ['admin', 'coach'].includes(profile.role)
   if (!allowed) return <Navigate to={profile.role === 'coach' ? '/admin' : '/dashboard'} replace />
   return children

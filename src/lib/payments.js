@@ -33,7 +33,7 @@ async function fetchMyBilling(userId) {
     supabase.from('subscriptions').select('*, product:payment_products(kind, title, discipline)').eq('user_id', userId),
     supabase
       .from('payments')
-      .select('id, product_id, amount_cents, currency, status, method, period_end, created_at')
+      .select('id, product_id, amount_cents, refunded_cents, currency, status, method, period_end, created_at, note')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10),

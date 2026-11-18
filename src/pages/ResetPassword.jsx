@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { t } from '../lib/i18n.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
-import { COACH_WHATSAPP, confirmReset, requestResetCode } from '../lib/password.js'
+import { COACH_WHATSAPP, confirmReset, requestResetCode, smsEnabled } from '../lib/password.js'
 
 // «Забыли пароль?»: номер → SMS-код → новый пароль (слой 44).
 // Пока SMS не подключены (sms_off) — предлагаем написать тренеру, он сбросит пароль.
@@ -15,6 +15,15 @@ export default function ResetPassword() {
   const [pw2, setPw2] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  // SMS выключены — сразу говорим, как сбросить пароль через тренера.
+  useEffect(() => {
+    let alive = true
+    smsEnabled().then((on) => alive && !on && setStep((s) => (s === 'phone' ? 'off' : s)))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const send = async (e) => {
     e.preventDefault()

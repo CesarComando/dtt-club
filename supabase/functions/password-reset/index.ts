@@ -55,6 +55,8 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
+    // Приложение заранее спрашивает, включены ли SMS (номер не нужен).
+    if (body.action === 'status') return json(req, { sms: SMS_ON })
     const phone = normalizePhone(body.phone)
     if (phone.length < 10 || phone.length > 15) return json(req, { error: 'Проверьте номер телефона' }, 400)
     const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CLUB } from '../data/club.js'
 import { lang, t } from '../lib/i18n.jsx'
+import { useAuth } from '../lib/AuthContext.jsx'
 
 // Политика конфиденциальности (APP_PASSPORT §5: обязательна до публикации в сторах).
 // Текст — по GDPR (Регламент ЕС 2016/679). Реквизиты клуба и контакт — в CONTACT.
@@ -18,6 +19,7 @@ function Section({ title, children }) {
 }
 
 export default function Privacy() {
+  const { user } = useAuth()
   return (
     <article className="mx-auto max-w-2xl space-y-6">
       <header className="border-l-4 border-accent pl-4">
@@ -29,7 +31,11 @@ export default function Privacy() {
       {lang === 'lv' ? <BodyLv /> : <BodyRu />}
 
       <p className="text-sm text-neutral-500">
-        <Link to="/dashboard" className="text-accent hover:underline">← {t('В кабинет')}</Link>
+        {user ? (
+          <Link to="/dashboard" className="text-accent hover:underline">← {t('В кабинет')}</Link>
+        ) : (
+          <Link to="/" className="text-accent hover:underline">← {t('На главную')}</Link>
+        )}
       </p>
     </article>
   )

@@ -131,8 +131,13 @@ async function handle(event: Stripe.Event) {
     case 'charge.refunded': {
       const charge = event.data.object
       const pi = idOf(charge.payment_intent)
-      if (pi && charge.refunded) {
-        await admin.from('payments').update({ status: 'refunded' }).eq('stripe_payment_intent', pi)
+      if (pi) {
+        // Полный возврат — статус «возврат»; частичный — оплата остаётся, но сумма возврата
+        // (refunded_cents, слой 51) вычитается из дохода в бюджете и аналитике.
+        await admin
+          .from('payments')
+          .update(charge.refunded ? { status: 'refunded', refunded_cents: charge.amount_refunded } : { refunded_cents: charge.amount_refunded })
+          .eq('stripe_payment_intent', pi)
       }
       break
     }

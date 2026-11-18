@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
+import LoginRedirect from '../components/LoginRedirect.jsx'
 import { cancelOrder, imageUrl, loadShop, money, myOrders, payOrder, placeAndPay } from '../lib/shop.js'
 import { t } from '../lib/i18n.jsx'
 
@@ -69,7 +70,7 @@ export default function Shop() {
   const total = cart.reduce((s, it) => s + it.price_cents * it.qty, 0)
 
   if (authLoading) return <p className="card text-neutral-400">{t('Загрузка…')}</p>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <LoginRedirect />
 
   const add = (product, variant, size, qty) => {
     const d = product.needs_design ? current : null

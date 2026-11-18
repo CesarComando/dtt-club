@@ -18,6 +18,15 @@ async function callReset(body) {
   return data
 }
 
+/** Включены ли SMS — чтобы сразу показать «напишите тренеру», а не после ввода номера. */
+export const smsEnabled = async () => {
+  try {
+    return (await callReset({ action: 'status' }))?.sms !== false
+  } catch {
+    return true // не узнали — ведём себя как раньше
+  }
+}
+
 /** Отправить SMS-код. Ошибка с code === 'sms_off' — SMS ещё не подключены. */
 export const requestResetCode = (phone) => callReset({ action: 'request', phone })
 export const confirmReset = (phone, code, password) => callReset({ action: 'confirm', phone, code, password })
