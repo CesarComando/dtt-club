@@ -224,8 +224,9 @@ function ClubPayments({ profile, family, onPaid }) {
   const billing = useBilling(profile.id, onPaid)
   return (
     <>
-      <BillingSection billing={billing} discipline={profile.discipline} family={family} />
-      <SupportClub isSponsor={profile.is_sponsor} billing={billing} />
+      <BillingSection billing={billing} discipline={profile.discipline} family={family} child={Boolean(profile.parent_id)} />
+      {/* Ребёнок (аккаунт привязан к родителю) в приложении не платит — платит родитель */}
+      {!profile.parent_id && <SupportClub isSponsor={profile.is_sponsor} billing={billing} />}
     </>
   )
 }

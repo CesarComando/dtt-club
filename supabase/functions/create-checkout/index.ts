@@ -79,6 +79,10 @@ Deno.serve(async (req) => {
     const user = await getUser(req)
     if (!user) return json(req, { error: 'Войдите в аккаунт' }, 401)
 
+    // Аккаунт ребёнка (привязан к родителю) сам не платит — оплачивает родитель.
+    const { data: me } = await admin.from('profiles').select('parent_id').eq('id', user.id).maybeSingle()
+    if (me?.parent_id) return json(req, { error: 'За ребёнка платит родитель — из своего аккаунта, переводом или наличными тренеру.' }, 403)
+
     const body = await req.json().catch(() => ({}))
     const base = appUrl(req)
 
