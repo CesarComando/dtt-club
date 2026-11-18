@@ -59,6 +59,17 @@ begin
       from ap
   ),
   first_month as (select who, min(m) m from payer_month group by who),
+  -- Имя и фамилия плательщика: из списка клуба (id) или из профиля приложения (uuid)
+  who_name as (
+    select pm.who,
+           coalesce(
+             (select trim(c.first_name || ' ' || coalesce(c.last_name, '')) from public.club_members c
+               where pm.who !~ '-' and c.id = pm.who::bigint),
+             (select trim(p.first_name || ' ' || coalesce(p.last_name, '')) from public.profiles p
+               where pm.who ~ '-' and p.id = pm.who::uuid),
+             '?') name
+      from (select distinct who from payer_month) pm
+  ),
   -- Посещения: время берём у тренировки; ручные отметки без тренировки идут только в помесячный счёт
   att as (
     select a.athlete_id, a.session_id,
@@ -93,6 +104,12 @@ begin
            (select count(*) from payer_month pm
              where pm.m = (ml.m - interval '1 month')::date
                and not exists (select 1 from payer_month x where x.who = pm.who and x.m = ml.m)) lost,
+           -- Имена: кто впервые заплатил и кто не заплатил после прошлого месяца
+           coalesce((select jsonb_agg(n.name order by n.name) from first_month f join who_name n using (who)
+                      where f.m = ml.m), '[]') new_names,
+           coalesce((select jsonb_agg(n.name order by n.name) from payer_month pm join who_name n using (who)
+                      where pm.m = (ml.m - interval '1 month')::date
+                        and not exists (select 1 from payer_month x where x.who = pm.who and x.m = ml.m)), '[]') lost_names,
            (select count(*) from mp where kind = 'training' and date_trunc('month', paid_on) = ml.m) singles,
            (select count(*) from att where date_trunc('month', at_local) = ml.m) visits
       from month_list ml
