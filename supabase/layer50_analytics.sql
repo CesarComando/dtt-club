@@ -9,7 +9,7 @@
 --   • disciplines — доход по направлениям по месяцам;
 --   • lost    — кто платил регулярно, но пропал (нет оплаты и посещений 35+ дней).
 -- Касса тренера (ledger = 'coach') и служебные записи (cashbox_of) не учитываются — как в budget_overview.
--- Выполнить после layer49. Скрипт идемпотентный, данные не меняет.
+-- Выполнить после layer51 (нужна колонка payments.refunded_cents). Скрипт идемпотентный, данные не меняет.
 -- =====================================================================
 
 create or replace function public.club_analytics()
@@ -43,7 +43,7 @@ begin
   ),
   -- Оплаты через приложение: привязываем к ученику из списка клуба, если он связан с профилем
   ap as (
-    select (p.created_at at time zone v_tz)::date paid_on, p.amount_cents,
+    select (p.created_at at time zone v_tz)::date paid_on, p.amount_cents - p.refunded_cents as amount_cents,
            coalesce(cm.id, -1) member_id, p.user_id athlete_id
       from public.payments p
       left join public.club_members cm on cm.profile_id = p.user_id

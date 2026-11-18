@@ -53,7 +53,11 @@ export default function Articles() {
         <p className="card text-neutral-400">{t('Загружаем…')}</p>
       ) : list.length === 0 ? (
         <p className="card text-neutral-400">
-          {isAdmin ? t('Пока пусто — нажмите «Новая статья».') : t('Скоро здесь появятся новости и переводы.')}
+          {isAdmin
+            ? t('Пока пусто — нажмите «Новая статья».')
+            : !user
+              ? t('Статьи клуба открыты ученикам — войдите в приложение, чтобы их читать.')
+              : t('Скоро здесь появятся новости и переводы.')}
         </p>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
@@ -78,7 +82,7 @@ export default function Articles() {
         </ul>
       )}
 
-      {!user && (
+      {!user && list?.length > 0 && (
         <p className="text-center text-sm text-neutral-500">
           {t('Часть статей — только для учеников клуба.')}{' '}
           <Link to="/login?next=%2Farticles" className="text-accent hover:underline">{t('Войдите')}</Link>{t(', чтобы видеть все.')}

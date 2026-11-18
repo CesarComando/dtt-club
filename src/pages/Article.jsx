@@ -17,6 +17,11 @@ export default function Article() {
 
   useEffect(() => {
     if (loading) return
+    // Адрес вида /articles/abc — не номер: сразу «недоступна», без запроса и без технической ошибки.
+    if (!/^[0-9]+$/.test(id ?? '')) {
+      setA(null)
+      return
+    }
     loadArticle(Number(id))
       .then(setA)
       .catch((e) => {

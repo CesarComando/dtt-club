@@ -11,6 +11,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="DTT App" />
     <title>Daugavpils Top Team</title>
+    <!-- Защита от встраивания в чужой сайт (кликджекинг): GitHub Pages не даёт заголовок
+         X-Frame-Options, поэтому в чужой рамке страница скрыта и открывается сама по себе. -->
+    <style id="anti-frame">html{display:none!important}</style>
+    <script>
+      (function () {
+        var own = false
+        try { own = window.top === window.self || window.top.location.origin === window.location.origin } catch (e) {}
+        if (own) document.getElementById('anti-frame').remove()
+        else try { window.top.location = window.location.href } catch (e) {}
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

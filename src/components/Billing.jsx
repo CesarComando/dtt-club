@@ -319,6 +319,9 @@ export default function BillingSection({ billing, discipline, family, child = fa
                   </span>
                   <span className={p.status === 'paid' ? '' : 'text-accent'}>
                     {p.status === 'failed' ? t('не прошла') : p.status === 'refunded' ? t('возврат') : formatPrice(p.amount_cents, p.currency)}
+                    {p.status === 'paid' && p.refunded_cents > 0 && (
+                      <span className="text-neutral-500"> · {t('возврат {sum}', { sum: formatPrice(p.refunded_cents, p.currency) })}</span>
+                    )}
                     {p.method === 'cash' && p.status === 'paid' && <span className="text-neutral-500"> · {t('нал.')}</span>}
                   </span>
                 </li>

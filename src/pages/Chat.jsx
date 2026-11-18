@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext.jsx'
+import LoginRedirect from '../components/LoginRedirect.jsx'
 import { fullName, loadMessages, loadMyFriends, markChatRead, removeFriend, sendMessage, subscribeChat } from '../lib/chat.js'
 import { t } from '../lib/i18n.jsx'
 import { Avatar } from './Friends.jsx'
@@ -55,7 +56,7 @@ export default function Chat() {
   }, [msgs])
 
   if (loading) return null
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <LoginRedirect />
 
   const send = async (e) => {
     e.preventDefault()

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { registerAthlete } from '../lib/auth.js'
+import { normalizePhone, registerAthlete } from '../lib/auth.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { DISCIPLINES, hasRanks } from '../lib/ranks.js'
 import { t } from '../lib/i18n.jsx'
@@ -56,6 +56,11 @@ export default function Register() {
     }
     if (form.password !== form.password2) {
       setError(t('Пароли не совпадают — введите пароль ещё раз.'))
+      return
+    }
+    // Тире, скобки и пробелы можно — считаем только цифры (как при входе).
+    if (!/^[0-9]{8,15}$/.test(normalizePhone(form.phone))) {
+      setError(t('Проверьте номер телефона: нужно 8 цифр (или с кодом страны).'))
       return
     }
     setError('')
@@ -152,7 +157,8 @@ export default function Register() {
             className="input"
             required
             autoComplete="tel"
-            pattern="\+?[0-9\s]{8,15}"
+            pattern="[+0-9\s\(\)\-]{8,22}"
+            inputMode="tel"
             placeholder="2X XXX XXX"
           />
           <p className="mt-1 text-xs text-neutral-500">{t('Код +371 можно не вводить — достаточно 8 цифр.')}</p>
