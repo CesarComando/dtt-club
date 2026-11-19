@@ -4,11 +4,19 @@ import { t } from '../lib/i18n.jsx'
 
 // Сканер QR внутри приложения: открывает заднюю камеру и ищет QR-код отметки.
 // Встроенный BarcodeDetector (Chrome/Android) — быстрее; где его нет (iPhone, Firefox) — jsQR.
-// Код тренера кодирует ссылку …#/checkin/<token> — открываем её внутри приложения.
+// Код тренера кодирует ссылку …#/checkin/<token>, плакат на стене — …#/zal/<группа>; открываем внутри приложения.
 // Обычная камера телефона тоже работает (это просто ссылка) — кнопка лишь удобнее.
 
 /** Токен из текста QR (ссылка на чекин клуба) или null. */
 export const tokenFromQr = (text) => String(text ?? '').match(/#\/checkin\/([A-Za-z0-9_-]+)/)?.[1] ?? null
+
+/** Путь внутри приложения из QR клуба: код тренера (#/checkin/…) или постоянный QR на стене зала (#/zal/…). */
+export const pathFromQr = (text) => {
+  const token = tokenFromQr(text)
+  if (token) return `/checkin/${token}`
+  const group = String(text ?? '').match(/#\/zal\/([A-Za-z0-9_-]+)/)?.[1]
+  return group ? `/zal/${group}` : null
+}
 
 export default function QrScanner({ onClose }) {
   const videoRef = useRef(null)
@@ -24,15 +32,15 @@ export default function QrScanner({ onClose }) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
     const found = (text) => {
-      const token = tokenFromQr(text)
-      if (!token) {
+      const path = pathFromQr(text)
+      if (!path) {
         setWrong(true)
         return false
       }
       stopped = true
       navigator.vibrate?.(80)
       onClose()
-      navigate(`/checkin/${token}`)
+      navigate(path)
       return true
     }
 
