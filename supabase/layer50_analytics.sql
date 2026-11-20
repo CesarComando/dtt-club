@@ -153,6 +153,29 @@ begin
       select jsonb_agg(jsonb_build_object('m', m, 'discipline', discipline, 'income', s) order by m, discipline)
         from (select date_trunc('month', paid_on)::date m, discipline, sum(amount_cents) s
                 from mp where paid_on >= v_from group by 1, 2) d), '[]'),
+    -- «От кого»: 10 учеников, принёсших больше всего (касса клуба + приложение)
+    'top_payers', coalesce((
+      select jsonb_agg(jsonb_build_object('name', name, 'total', total, 'n', n) order by total desc)
+        from (
+          select coalesce(
+                   (select trim(c.first_name || ' ' || coalesce(c.last_name, '')) from public.club_members c where c.id::text = x.who),
+                   (select trim(p.first_name || ' ' || coalesce(p.last_name, '')) from public.profiles p where p.id::text = x.who),
+                   '?') name,
+                 sum(x.cents) total, count(*) n
+            from (
+              select member_id::text who, amount_cents cents from mp where paid_on >= v_from
+              union all
+              select case when member_id > 0 then member_id::text else athlete_id::text end, amount_cents
+                from ap where paid_on >= v_from
+            ) x
+           group by x.who
+           order by total desc
+           limit 10
+        ) t), '[]'),
+    -- «Куда»: расходы по статьям за тот же период
+    'expense_cats', coalesce((
+      select jsonb_object_agg(category, s)
+        from (select category, sum(amount_cents) s from public.club_expenses where spent_on >= v_from group by 1) e), '{}'),
     -- «Пропавшие»: платили минимум в 2 разных месяцах, последняя активность (оплата или посещение) 35+ дней назад, не ушли официально
     'lost', coalesce((
       select jsonb_agg(l order by l ->> 'last' desc)
