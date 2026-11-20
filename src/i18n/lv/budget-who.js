@@ -9,4 +9,5 @@ export default {
   'без имени': 'bez vārda',
   'приложение': 'lietotne',
   '{since}: 10 учеников, принёсших больше всего': '{since}: 10 audzēkņi, kas ienesuši visvairāk',
+  'Всего': 'Kopā',
 }
