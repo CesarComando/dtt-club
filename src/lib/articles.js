@@ -9,6 +9,14 @@ export const CATEGORIES = {
   interview: t('Интервью'),
   article: t('Статьи'),
 }
+// Темы техники (слой 44) — второй ряд фильтра для категории «Статьи».
+export const TOPICS = {
+  legs: t('Болевые на ноги'),
+  arms: t('Болевые на руки'),
+  chokes: t('Удушения'),
+  control: t('Контроль и позиции'),
+  general: t('Тренировки и восстановление'),
+}
 export const ARTICLES_BUCKET = 'articles'
 
 const must = ({ data, error }) => {
@@ -16,7 +24,7 @@ const must = ({ data, error }) => {
   return data
 }
 
-const LIST_COLS = 'id, title, category, lead, cover_path, members_only, published, published_at, created_at'
+const LIST_COLS = 'id, title, category, topic, lead, cover_path, members_only, published, published_at, created_at'
 
 export const loadArticles = async () =>
   must(
@@ -38,6 +46,7 @@ export async function saveArticle(article) {
   const row = {
     title: fields.title.trim(),
     category: fields.category,
+    topic: fields.category === 'article' ? fields.topic || null : null,
     lead: fields.lead.trim(),
     body: fields.body,
     source_title: fields.source_title.trim(),
