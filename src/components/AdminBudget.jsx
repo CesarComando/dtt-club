@@ -86,7 +86,7 @@ function Budget() {
       // Доходы «от кого»: те же источники, что в budget_overview (касса клуба + оплаты в приложении)
       supabase
         .from('member_payments')
-        .select('id, paid_on, amount_cents, kind, method, payer_name, member:club_members(id, first_name, last_name)')
+        .select('id, paid_on, amount_cents, kind, method, payer_name, member:club_members(id, first_name, last_name, cashbox_of)')
         .eq('ledger', 'club'),
       supabase
         .from('payments')
@@ -102,10 +102,11 @@ function Budget() {
         ...mp.data.map((p) => ({
           id: `m${p.id}`,
           date: p.paid_on,
-          who: name(p.member),
-          whoKey: `m${p.member?.id}`,
+          // Касса тренера — не ученик: идёт в «Другое»
+          who: p.member?.cashbox_of ? t('Другое') : name(p.member),
+          whoKey: p.member?.cashbox_of ? 'other' : `m${p.member?.id}`,
           payer: p.payer_name,
-          kind: KIND[p.kind] ?? p.kind,
+          kind: p.member?.cashbox_of ? name(p.member) : KIND[p.kind] ?? p.kind,
           method: p.method === 'cash' ? t('наличные') : t('перевод'),
           cents: p.amount_cents,
         })),
@@ -161,7 +162,7 @@ function Budget() {
       e.total += p.cents
       e.items.push(p)
     })
-    return Object.values(g).sort((a, b) => b.total - a.total)
+    return Object.values(g).sort((a, b) => (a.key === 'other') - (b.key === 'other') || b.total - a.total)
   }, [incomeList])
   // «Всё»: доходы и расходы одной лентой по датам
   const ledger = useMemo(
