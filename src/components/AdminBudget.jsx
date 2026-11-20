@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
-import { t, locale } from '../lib/i18n.jsx'
+import { t, locale, tData } from '../lib/i18n.jsx'
 
 // CRM → «Бюджет» (слой 22). Видит и редактирует только главный тренер (role = 'admin'):
 // вкладка показывается только ему, данные защищены RLS (is_admin) в club_expenses / budget_overview.
@@ -19,6 +19,12 @@ export const CATEGORIES = {
   accountant: t('Бухгалтер'),
   inventory: t('Инвентарь'),
   other: t('Прочее'),
+}
+
+// Вид оплаты ученика — как в CRM
+const KIND = {
+  training: t('тренировка'), membership: t('абонемент'), pack: t('пакет'), individual: t('индивид.'),
+  uniform: t('форма'), donation: t('пожертвование'), other: t('другое'),
 }
 
 const TZ = 'Europe/Riga'
@@ -70,15 +76,50 @@ function Budget() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  const [incomes, setIncomes] = useState([])
+  const [part, setPart] = useState('income') // 'income' | 'expense' | 'all'
+
   const load = useCallback(async () => {
-    const [ov, ex] = await Promise.all([
+    const [ov, ex, mp, ap] = await Promise.all([
       supabase.rpc('budget_overview'),
       supabase.from('club_expenses').select('*').order('spent_on', { ascending: false }).order('id', { ascending: false }),
+      // Доходы «от кого»: те же источники, что в budget_overview (касса клуба + оплаты в приложении)
+      supabase
+        .from('member_payments')
+        .select('id, paid_on, amount_cents, kind, method, payer_name, member:club_members(id, first_name, last_name)')
+        .eq('ledger', 'club'),
+      supabase
+        .from('payments')
+        .select('id, created_at, amount_cents, refunded_cents, note, product:payment_products(title), user:profiles(first_name, last_name)')
+        .eq('status', 'paid'),
     ])
-    if (ov.error) throw ov.error
-    if (ex.error) throw ex.error
+    for (const r of [ov, ex, mp, ap]) if (r.error) throw r.error
     setMonths(ov.data.map((r) => ({ ...r, key: monthKey(r.month) })))
     setExpenses(ex.data)
+    const name = (p) => [p?.first_name, p?.last_name].filter(Boolean).join(' ') || t('без имени')
+    setIncomes(
+      [
+        ...mp.data.map((p) => ({
+          id: `m${p.id}`,
+          date: p.paid_on,
+          who: name(p.member),
+          whoKey: `m${p.member?.id}`,
+          payer: p.payer_name,
+          kind: KIND[p.kind] ?? p.kind,
+          method: p.method === 'cash' ? t('наличные') : t('перевод'),
+          cents: p.amount_cents,
+        })),
+        ...ap.data.map((p) => ({
+          id: `a${p.id}`,
+          date: new Date(p.created_at).toLocaleDateString('en-CA', { timeZone: TZ }),
+          who: name(p.user),
+          whoKey: `a${name(p.user)}`,
+          kind: p.note || tData(p.product?.title) || t('оплата'),
+          method: t('приложение'),
+          cents: p.amount_cents - (p.refunded_cents ?? 0),
+        })),
+      ].sort((a, b) => (a.date < b.date ? 1 : -1)),
+    )
   }, [])
 
   useEffect(() => {
@@ -107,6 +148,29 @@ function Budget() {
   const list = useMemo(
     () => (month === 'all' ? expenses : expenses.filter((e) => monthKey(e.spent_on) === month)),
     [expenses, month],
+  )
+  const incomeList = useMemo(
+    () => (month === 'all' ? incomes : incomes.filter((p) => monthKey(p.date) === month)),
+    [incomes, month],
+  )
+  // «От кого»: по ученику, кто принёс больше — сверху
+  const byWho = useMemo(() => {
+    const g = {}
+    incomeList.forEach((p) => {
+      const e = (g[p.whoKey] ??= { key: p.whoKey, who: p.who, total: 0, items: [] })
+      e.total += p.cents
+      e.items.push(p)
+    })
+    return Object.values(g).sort((a, b) => b.total - a.total)
+  }, [incomeList])
+  // «Всё»: доходы и расходы одной лентой по датам
+  const ledger = useMemo(
+    () =>
+      [
+        ...incomeList.map((p) => ({ ...p, sign: 1, title: p.who, sub: `${p.kind} · ${p.method}` })),
+        ...list.map((e) => ({ id: `e${e.id}`, date: e.spent_on, cents: e.amount_cents, sign: -1, title: CATEGORIES[e.category], sub: e.note ?? '' })),
+      ].sort((a, b) => (a.date === b.date ? b.sign - a.sign : a.date < b.date ? 1 : -1)),
+    [incomeList, list],
   )
 
   const run = async (fn) => {
@@ -181,18 +245,91 @@ function Budget() {
         </div>
       </div>
 
+      <div className="grid grid-cols-3 gap-2" role="tablist" aria-label={t('Доходы, расходы или всё')}>
+        {[['income', t('Доходы · от кого')], ['expense', t('Расходы · куда')], ['all', t('Всё')]].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={part === id}
+            onClick={() => setPart(id)}
+            className={`min-h-10 rounded-md border px-2 py-2 text-sm ${part === id ? 'border-accent bg-accent/10 text-white' : 'border-line text-neutral-400 hover:text-white'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {part === 'income' && (
+        <section className="card space-y-2 text-sm">
+          <h2 className="text-xl">{t('Доходы · от кого')}</h2>
+          <p className="flex justify-between"><span className="text-neutral-400">{t('Оплаты учеников (перевод / наличные)')}</span><span>{formatPrice(view.bank)}</span></p>
+          <p className="flex justify-between"><span className="text-neutral-400">{t('Оплаты в приложении')}</span><span>{formatPrice(view.app)}</span></p>
+          {byWho.length === 0 ? (
+            <p className="border-t border-line pt-2 text-neutral-400">{t('Доходов за этот период нет.')}</p>
+          ) : (
+            <ul className="divide-y divide-line border-t border-line">
+              {byWho.map((g) => (
+                <li key={g.key} className="py-1.5">
+                  <details>
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                      <span className="min-w-0 truncate">
+                        {g.who} <span className="text-neutral-500">· {t('{n} опл.', { n: g.items.length })}</span>
+                      </span>
+                      <span className="shrink-0 font-display text-emerald-400">+{formatPrice(g.total)}</span>
+                    </summary>
+                    <ul className="mt-1 space-y-0.5 pl-3 text-xs text-neutral-400">
+                      {g.items.map((p) => (
+                        <li key={p.id} className="flex justify-between gap-3">
+                          <span className="min-w-0 truncate">
+                            {dayText(p.date)} · {p.kind} · {p.method}
+                            {p.payer && <span className="text-neutral-500"> · {p.payer}</span>}
+                          </span>
+                          <span className="shrink-0">{formatPrice(p.cents)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {part === 'all' && (
+        <section className="card text-sm">
+          <h2 className="mb-2 text-xl">{t('Всё')}{month === 'all' ? '' : ` · ${monthTitle(month)}`}</h2>
+          {ledger.length === 0 ? (
+            <p className="text-neutral-400">{t('За этот период ничего нет.')}</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {ledger.map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 py-1.5">
+                  <div className="min-w-0">
+                    <p className="truncate">{r.title} <span className="text-neutral-500">· {dayText(r.date)}</span></p>
+                    {r.sub && <p className="truncate text-xs text-neutral-500">{r.sub}</p>}
+                  </div>
+                  <span className={`shrink-0 font-display ${r.sign > 0 ? 'text-emerald-400' : 'text-accent'}`}>
+                    {r.sign > 0 ? '+' : '−'}{formatPrice(r.cents)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {part === 'expense' && (
+      <>
       <section className="card space-y-2 text-sm">
-        <h2 className="text-xl">{t('Откуда и куда')}</h2>
-        <p className="flex justify-between"><span className="text-neutral-400">{t('Оплаты учеников (перевод / наличные)')}</span><span>{formatPrice(view.bank)}</span></p>
-        <p className="flex justify-between"><span className="text-neutral-400">{t('Оплаты в приложении')}</span><span>{formatPrice(view.app)}</span></p>
-        <div className="border-t border-line pt-2">
-          {Object.entries(CATEGORIES).map(([k, label]) => (
-            <p key={k} className="flex justify-between">
-              <span className="text-neutral-400">{label}</span>
-              <span className={view.byCat[k] ? '' : 'text-neutral-600'}>{view.byCat[k] ? `−${formatPrice(view.byCat[k])}` : '—'}</span>
-            </p>
-          ))}
-        </div>
+        <h2 className="text-xl">{t('Расходы · куда')}</h2>
+        {Object.entries(CATEGORIES).map(([k, label]) => (
+          <p key={k} className="flex justify-between">
+            <span className="text-neutral-400">{label}</span>
+            <span className={view.byCat[k] ? '' : 'text-neutral-600'}>{view.byCat[k] ? `−${formatPrice(view.byCat[k])}` : '—'}</span>
+          </p>
+        ))}
       </section>
 
       <form onSubmit={add} className="card space-y-3">
@@ -247,6 +384,8 @@ function Budget() {
           </ul>
         )}
       </section>
+      </>
+      )}
     </div>
   )
 }

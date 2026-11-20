@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 import { formatPrice } from '../lib/payments.js'
 import { t, locale } from '../lib/i18n.jsx'
+import { CATEGORIES } from './AdminBudget.jsx'
 
 // Бюджет → «Аналитика» (слой 50): встроенный бизнес-аналитик для главного тренера.
 // Все цифры считает функция club_analytics() в базе (только is_admin). Здесь — графики и выводы простыми словами.
@@ -144,6 +145,30 @@ export default function AdminAnalytics() {
         </div>
       </Chart>
 
+      <Chart title={t('Доходы · от кого')} note={t('{since}: 10 учеников, принёсших больше всего', { since: a.since })}>
+        {(data.top_payers ?? []).length === 0 ? (
+          <p className="text-sm text-neutral-400">—</p>
+        ) : (
+          <div className="space-y-2">
+            {data.top_payers.map((p) => (
+              <HBar key={p.name} label={p.name} share={p.total / data.top_payers[0].total} text={`${euro(p.total)} · ${t('{n} опл.', { n: p.n })}`} />
+            ))}
+          </div>
+        )}
+      </Chart>
+
+      <Chart title={t('Расходы · куда')} note={a.since}>
+        {a.expenses.length === 0 ? (
+          <p className="text-sm text-neutral-400">—</p>
+        ) : (
+          <div className="space-y-2">
+            {a.expenses.map((x) => (
+              <HBar key={x.key} label={x.label} share={x.share} text={`${euro(x.sum)} · ${pct(x.share)}`} />
+            ))}
+          </div>
+        )}
+      </Chart>
+
       <section className="card space-y-2">
         <h2 className="text-xl">{t('Пропали')}</h2>
         <p className="text-xs text-neutral-500">{t('Платили хотя бы 2 месяца, но больше 35 дней ни оплаты, ни посещения. Стоит написать им.')}</p>
@@ -261,7 +286,11 @@ function analyse(d) {
   if (!insights.length) insights.push({ icon: 'ℹ️', text: t('Пока мало данных для выводов. Они появятся через пару месяцев учёта.') })
 
   const since = t('С {from}', { from: monthYear(months[0]?.m ?? d.today) })
-  return { since, months, avgIncome, avgPayers, perPayer, retention, weekday, sessionsTotal, groups, heat, mix, disciplines, insights }
+  const exTotal = Object.values(d.expense_cats ?? {}).reduce((s, x) => s + x, 0) || 1
+  const expenses = Object.entries(d.expense_cats ?? {})
+    .map(([k, sum]) => ({ key: k, label: CATEGORIES[k] ?? k, sum, share: sum / exTotal }))
+    .sort((x, y) => y.sum - x.sum)
+  return { since, expenses, months, avgIncome, avgPayers, perPayer, retention, weekday, sessionsTotal, groups, heat, mix, disciplines, insights }
 }
 
 /* ---------- графики (простые, без библиотек) ---------- */
