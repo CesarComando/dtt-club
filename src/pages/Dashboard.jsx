@@ -274,7 +274,7 @@ function DeleteAccount({ isAdmin }) {
               type="button"
               onClick={remove}
               // Слово подтверждения — на языке интерфейса; на сервер всегда уходит 'УДАЛИТЬ' (club-ops.js).
-              disabled={busy || text.trim().toUpperCase() !== (lang === 'lv' ? 'DZĒST' : 'УДАЛИТЬ')}
+              disabled={busy || text.trim().toUpperCase() !== ({ lv: 'DZĒST', en: 'DELETE' }[lang] ?? 'УДАЛИТЬ')}
               className="btn-primary disabled:opacity-40"
             >
               {busy ? t('Удаляем…') : t('Удалить навсегда')}

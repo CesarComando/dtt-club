@@ -28,7 +28,7 @@ export default function Privacy() {
         <p className="mt-1 text-sm text-neutral-500">{t('Обновлено:')} {UPDATED}</p>
       </header>
 
-      {lang === 'lv' ? <BodyLv /> : <BodyRu />}
+      {lang === 'lv' ? <BodyLv /> : lang === 'en' ? <BodyEn /> : <BodyRu />}
 
       <p className="text-sm text-neutral-500">
         {user ? (
@@ -189,6 +189,83 @@ function BodyLv() {
           Jūs varat pieprasīt savu datu kopiju, labot tos, ierobežot apstrādi vai atsaukt piekrišanu.
           <b> Kontu varat dzēst paši</b>: Profils → apakšā «Dzēst kontu». Sūdzību var iesniegt Datu valsts
           inspekcijā (dvi.gov.lv).
+        </p>
+      </Section>
+    </>
+  )
+}
+
+// English text (translation of the Russian text).
+function BodyEn() {
+  return (
+    <>
+      <Section title="1. Who processes the data">
+        <p>
+          The app of the sports clubs <b>{CLUB.name}</b> and <b>{CLUB.grapplingName}</b>, {CLUB.address}, Latvia.
+          The data controller is the club coach {CLUB.coach}. Contact for data questions:{' '}
+          <a href={`mailto:${CONTACT}`} className="text-accent hover:underline">{CONTACT}</a>.
+        </p>
+      </Section>
+
+      <Section title="2. What data we collect and why">
+        <ul className="list-disc space-y-1 pl-5">
+          <li><b>First name, last name, phone number</b> — signing in to the app and contacting you about training.</li>
+          <li><b>Selfie</b> — so the coach can recognise students at the gym. The photo is kept in private storage and is visible only to signed-in club members.</li>
+          <li><b>Discipline, visits, rank, session bookings</b> — training records, experience and the club rank system.</li>
+          <li><b>Height, weight, date of birth</b> (if you enter them) — calculating body mass index and age. Only you and the coach can see them.</li>
+          <li><b>Training diary and mastered techniques</b> — your notes after training. Only you and the coach can see them.</li>
+          <li><b>Partner ratings</b> (technique, speed, strength etc., 1–10) — anonymous: a student sees their own averages once there are 3 or more ratings; only the coach sees who gave which rating. In the club ranking (MMA and grappling separately) club members see the name and overall average of those with 3+ ratings; hygiene is not included in the ranking. People who hid their profile do not appear in the ranking.</li>
+          <li><b>Photos and videos in the gallery</b> — what you uploaded yourself. Visible only to signed-in club members and only after coach approval.</li>
+          <li><b>Friends and private messages</b> — your friends list and your conversations with them. Messages are seen only by the two people in the conversation; the coach does not read other people's messages. Child accounts cannot be added as friends.</li>
+          <li><b>Invitations</b> — who invited whom to training (the coach sees that a guest came). A person invited by link sees only the inviter's name.</li>
+          <li><b>Payments</b> — membership status, payment amounts and dates: by card in the app, by bank transfer to the club account and in cash to the coach. Card payments are processed by Stripe: the card number never reaches the app, only Stripe handles it.</li>
+          <li><b>Club student list</b> — the coach keeps a record of students and their payments (name, discipline, phone if you gave it, bank transfers from the bank statement). If you register in the app, the coach links this record to your account.</li>
+          <li><b>Notifications</b> — about cancellation, rescheduling or a change of gym for a session that you (or your child) booked.</li>
+          <li><b>Trial session request</b> (without registration) — name, phone, discipline, age and preferred time, if you entered them. Used only so the coach can contact you; only the coach sees it.</li>
+        </ul>
+        <p>
+          Legal basis: performance of the sports services contract, the club's legitimate interest (recording attendance
+          and payments) and your consent (selfie, body stats, diary, ratings, gallery photos).
+        </p>
+        <p>
+          Access: the club coach sees everything listed. An assistant coach sees only attendance and session
+          bookings — no phone numbers, payments, diaries or body stats.
+        </p>
+      </Section>
+
+      <Section title="3. Children">
+        <p>
+          The club has kids groups. An account for a child under 13 is registered by a parent or legal
+          guardian, who also gives consent to processing the child's data. Children's data is used only for
+          training records and is not passed to third parties for advertising.
+        </p>
+      </Section>
+
+      <Section title="4. Who receives the data">
+        <ul className="list-disc space-y-1 pl-5">
+          <li><b>Supabase</b> — storage of the database, photos and videos (servers in the EU, Frankfurt).</li>
+          <li><b>Stripe</b> — card payments and invoices.</li>
+          <li><b>GitHub Pages</b> — hosting of the app itself (without your data).</li>
+          <li>The club's accountant — payment information for tax accounting.</li>
+        </ul>
+        <p>We do not sell data and do not use it for advertising.</p>
+      </Section>
+
+      <Section title="5. How long we keep it">
+        <p>
+          For as long as you have an account. When the account is deleted, the profile, phone, selfie, visits,
+          session bookings, body stats, diary, techniques, ratings (given by you and to you), friends and messages, photos and videos
+          in the gallery are deleted immediately. Payment information is kept in Stripe, in the club records and by the accountant for
+          as long as the Latvian accounting law requires. Trial session requests are deleted automatically after
+          180 days (or earlier at your request).
+        </p>
+      </Section>
+
+      <Section title="6. Your rights">
+        <p>
+          You can request a copy of your data, correct it, restrict processing or withdraw consent.
+          <b> You can delete your account yourself</b>: My account → «Delete account» at the bottom. You can file a complaint
+          with the Latvian Data State Inspectorate (Datu valsts inspekcija, dvi.gov.lv).
         </p>
       </Section>
     </>
