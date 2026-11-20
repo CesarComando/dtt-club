@@ -8,7 +8,7 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // а формы показывают понятную ошибку (см. isSupabaseConfigured).
 export const isSupabaseConfigured = Boolean(url && anonKey)
 
-// Латышский интерфейс: ошибки базы и Edge Functions приходят по-русски
+// Латышский и английский интерфейс: ошибки базы и Edge Functions приходят по-русски
 // (raise exception … / { error: '…' }) — переводим их по словарю прямо в ответе.
 // Английские ошибки входа не трогаем: их переводит translateAuthError.
 const CYR = /[А-Яа-яЁё]/
@@ -35,7 +35,7 @@ async function translatingFetch(input, init) {
 }
 
 export const supabase = isSupabaseConfigured
-  ? createClient(url, anonKey, lang === 'lv' ? { global: { fetch: translatingFetch } } : undefined)
+  ? createClient(url, anonKey, lang !== 'ru' ? { global: { fetch: translatingFetch } } : undefined)
   : null
 
 if (!isSupabaseConfigured) {
