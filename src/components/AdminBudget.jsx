@@ -331,6 +331,10 @@ function Budget() {
             <span className={view.byCat[k] ? '' : 'text-neutral-600'}>{view.byCat[k] ? `−${formatPrice(view.byCat[k])}` : '—'}</span>
           </p>
         ))}
+        <p className="flex justify-between border-t border-line pt-2 font-medium">
+          <span>{t('Всего')}</span>
+          <span className="font-display text-accent">−{formatPrice(view.spent)}</span>
+        </p>
       </section>
 
       <form onSubmit={add} className="card space-y-3">
@@ -382,6 +386,10 @@ function Budget() {
                 </div>
               </li>
             ))}
+            <li className="flex items-center justify-between gap-3 pt-2 text-sm font-medium">
+              <span>{t('Всего')}</span>
+              <span className="mr-7 font-display text-accent">−{formatPrice(list.reduce((s, r) => s + r.amount_cents, 0))}</span>
+            </li>
           </ul>
         )}
       </section>
