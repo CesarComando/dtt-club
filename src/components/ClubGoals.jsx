@@ -1,89 +1,143 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { loadCoachStats } from '../lib/coach.js'
 import { t, locale } from '../lib/i18n.jsx'
-import { horizons, nextSteps, weeklyBaseline } from '../lib/clubGoals.js'
+import { MONTH_AIM, loadGoal, monthKey, nextStep, saveGoal, weeklyBaseline } from '../lib/clubGoals.js'
 
-function GoalPeriod({ userId, horizon, metrics }) {
-  const key = 'dtt-goal-v1:' + userId + ':' + horizon.id
-  const [plan, setPlan] = useState(() => {
+// Цели клуба: пока только один месяц и один показатель —
+// среднее число разных участников в неделю за 4 полные недели.
+// Цель хранится в базе (видна на телефоне и на компьютере), копия — на устройстве на случай без сети.
+const day = (iso) => (iso ? new Date(iso + 'T00:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'long' }) : '—')
+const num = (x) => (x == null ? '—' : Number(x).toLocaleString(locale(), { maximumFractionDigits: 1 }))
+const fill = (s, v) => t(s, Object.fromEntries(Object.entries(v ?? {}).map(([k, x]) => [k, k === 'week' ? day(x) : num(x)])))
+
+export default function ClubGoals({ userId }) {
+  const month = monthKey()
+  const [metrics, setMetrics] = useState(null)
+  const [stats, setStats] = useState('loading') // loading | ready | short | error
+  const [goal, setGoal] = useState(null)
+  const [where, setWhere] = useState('none')
+  const [note, setNote] = useState('')
+  const [draft, setDraft] = useState('')
+  const [title, setTitle] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const refresh = useCallback(async () => {
+    setStats('loading')
+    const [st, g] = await Promise.allSettled([loadCoachStats(9), loadGoal(userId, month)])
+    if (st.status === 'fulfilled') {
+      const m = weeklyBaseline(st.value)
+      setMetrics(m)
+      setStats(m ? 'ready' : 'short')
+    } else {
+      setMetrics(null)
+      setStats('error')
+    }
+    if (g.status === 'fulfilled') {
+      setGoal(g.value.goal)
+      setWhere(g.value.where)
+      setNote(g.value.note)
+      setDraft(g.value.goal?.target ?? '')
+      setTitle(g.value.goal?.title ?? '')
+    }
+  }, [userId, month])
+
+  useEffect(() => {
+    refresh()
+    const again = () => !document.hidden && refresh()
+    document.addEventListener('visibilitychange', again)
+    window.addEventListener('online', again)
+    return () => {
+      document.removeEventListener('visibilitychange', again)
+      window.removeEventListener('online', again)
+    }
+  }, [refresh])
+
+  const store = async (next) => {
+    setBusy(true)
+    setMsg('')
     try {
-      const saved = JSON.parse(localStorage.getItem(key))
-      if (Number.isInteger(saved?.target) && saved.target > 0) return saved
-    } catch { /* An incomplete local plan can be entered again. */ }
-    return null
-  })
-  const [draft, setDraft] = useState(plan?.target ?? '')
-  const [title, setTitle] = useState(plan?.title ?? '')
-  const [notice, setNotice] = useState('')
-  const steps = nextSteps(metrics, plan?.target, horizon)
-  function persist(value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value))
-      setPlan(value)
-      setNotice(t('Сохранено на этом устройстве'))
-    } catch { setNotice(t('Не удалось сохранить на устройстве. Повторите попытку.')) }
+      const r = await saveGoal(userId, next, month)
+      setGoal(r.goal)
+      setWhere(r.where)
+      setNote(r.note)
+      setMsg(r.where === 'server' ? t('Сохранено — цель видна и на телефоне, и на компьютере.') : t('Сохранено только на этом устройстве — отправлю в базу, когда будет связь.'))
+    } catch (e) {
+      setMsg(t(e.message))
+    } finally {
+      setBusy(false)
+    }
   }
-  function submit(e) {
+
+  const submit = (e) => {
     e.preventDefault()
     const target = Number(draft)
-    if (!metrics || !Number.isInteger(target) || target < 1 || target > 10000) return
-    const changed = target !== plan?.target || title.trim() !== plan?.title
-    persist({target, title:title.trim(), start:changed ? metrics.current : plan.start, done:changed ? [] : plan.done})
+    if (!Number.isInteger(target) || target < 1 || target > 10000) return setMsg(t('Цель — целое число участников в неделю, от 1.'))
+    const changed = target !== goal?.target || title.trim() !== (goal?.title ?? '')
+    if (!changed) return
+    store({ title: title.trim(), target, start: goal?.start ?? metrics?.current ?? null, done: goal?.done ?? [] })
   }
-  const done = plan?.done ?? []
-  const next = steps.find(([id]) => !done.includes(id))
-  return <div className="card space-y-4">
-    <h3 className="font-display text-xl">{t(horizon.aim)}</h3>
-    <p>{t('Точка А сейчас')} · <b>{metrics?.current.toLocaleString(locale()) ?? '—'}</b> {t('участников в неделю')}</p>
-    <p className="text-sm text-neutral-400">{t('Среднее за четыре полные недели. Предыдущие четыре недели')} · {metrics?.previous.toLocaleString(locale()) ?? '—'}</p>
-    {!plan && <p className="text-sm">{t('Первое действие')} · {t(horizon.step)}</p>}
-    <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-      <label className="grow">{t('Моя цель')}<input className="input w-full" value={title} maxLength={140} placeholder={t(horizon.aim)} onChange={e=>setTitle(e.target.value)} /></label>
-      <label>{t('Точка Б, участников в неделю')}<input className="input w-full" type="number" min="1" max="10000" step="1" required value={draft} onChange={e=>setDraft(e.target.value)} /></label>
-      <button disabled={!metrics} className="btn-primary">{t('Сохранить цель')}</button>
-    </form>
-    <p className="text-xs text-neutral-400" role="status">{notice || t('План хранится на этом устройстве для вашего аккаунта.')}</p>
-    {plan && metrics && <section className="space-y-3">
-      <p>{plan.title || t(horizon.aim)} · {t('На старте')} {plan.start} → {plan.target} · {t('Осталось')} {Math.max(0, plan.target - metrics.current).toLocaleString(locale())}</p>
-      <p className="font-semibold text-white">{next ? t('Сейчас') + ' · ' + t(next[1]) : t('Цикл завершён. Сверьте результат и начните следующий цикл.')}</p>
-      <ol className="space-y-2">{steps.map(([id,task],i)=><li key={id}><label className="flex items-start gap-2">
-        <input type="checkbox" className="mt-1" checked={done.includes(id)} onChange={e=>persist({...plan,done:e.target.checked?[...done,id]:done.filter(x=>x!==id)})}/>
-        <span>{i+1}. {t(task)}</span>
-      </label></li>)}</ol>
-      {done.length>0 && <button className="btn-outline" onClick={()=>persist({...plan,done:[]})}>{t('Начать новый цикл')}</button>}
-    </section>}
-  </div>
-}
 
-export default function ClubGoals({userId}) {
-  const [id,setId]=useState('month')
-  const [metrics,setMetrics]=useState(null)
-  const [status,setStatus]=useState('loading')
-  const [reload,setReload]=useState(0)
-  useEffect(()=>{
-    let active=true, sequence=0
-    async function refresh() {
-      const seq=++sequence
-      try {
-        const result=weeklyBaseline(await loadCoachStats(9))
-        if(active && seq===sequence){setMetrics(result);setStatus(result?'ready':'empty')}
-      } catch { if(active && seq===sequence){setMetrics(null);setStatus('error')} }
-    }
-    refresh()
-    const visible=()=>{if(!document.hidden) refresh()}
-    document.addEventListener('visibilitychange',visible)
-    window.addEventListener('online',visible)
-    const timer=setInterval(visible, 15*60*1000)
-    return ()=>{active=false;clearInterval(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible)}
-  },[reload])
-  const horizon=horizons.find(h=>h.id===id)
-  return <section className="space-y-4">
-    <h2 className="font-display text-2xl">{t('План развития клуба')}</h2>
-    <div className="flex flex-wrap gap-2">{horizons.map(h=><button key={h.id} aria-pressed={h.id===id} onClick={()=>setId(h.id)} className={h.id===id?'btn-primary':'btn-outline'}>{t(h.title)}</button>)}</div>
-    <div className="flex flex-wrap items-center gap-3 text-sm" role="status">
-      {status==='loading'?t('Загружаем…'):metrics?t('Учтена неделя с')+' '+metrics.lastWeek:t('Статистика пока недоступна. Проверьте связь и обновите.')}
-      <button className="underline" onClick={()=>setReload(n=>n+1)}>{t('Обновить данные')}</button>
-    </div>
-    <GoalPeriod key={id} userId={userId} horizon={horizon} metrics={metrics}/>
-  </section>
+  const step = nextStep(metrics, goal)
+
+  return (
+    <section className="space-y-4">
+      <h2 className="font-display text-2xl">{t('Цель клуба на месяц')}</h2>
+
+      <div className="card space-y-1">
+        <p>
+          {t('Сейчас')}: <b className="text-xl">{num(metrics?.current)}</b> {t('разных участников в неделю')}
+        </p>
+        <p className="text-sm text-neutral-400">
+          {stats === 'loading' && t('Загружаем…')}
+          {stats === 'ready' && t('Среднее за 4 полные недели: с {from} по {to}. Четыре недели до этого: {prev}.', { from: day(metrics.from), to: day(metrics.to), prev: num(metrics.previous) })}
+          {stats === 'short' && t('Пока мало данных: нужно 8 полных недель отметок.')}
+          {stats === 'error' && t('Статистика недоступна. Проверьте связь и обновите.')}{' '}
+          <button type="button" className="underline" onClick={refresh}>{t('Обновить данные')}</button>
+        </p>
+      </div>
+
+      <div className="card space-y-2 border-accent/60">
+        <p className="text-xs uppercase tracking-wider text-neutral-400">{t('Следующий шаг')}</p>
+        <p className="font-semibold text-white">{fill(step.text, step.vars)}</p>
+        <p className="text-sm text-neutral-300">{t('Почему')}: {fill(step.why, step.vars)}</p>
+        {goal && !['nodata', 'set'].includes(step.id) && !(goal.done ?? []).includes(step.id) && (
+          <button type="button" disabled={busy} className="btn-outline disabled:opacity-60" onClick={() => store({ ...goal, done: [...(goal.done ?? []), step.id] })}>
+            {t('Сделано')}
+          </button>
+        )}
+        {goal && (goal.done ?? []).length > 0 && (
+          <button type="button" disabled={busy} className="ml-3 text-xs underline" onClick={() => store({ ...goal, done: [] })}>{t('Начать шаги заново')}</button>
+        )}
+      </div>
+
+      <form onSubmit={submit} className="card space-y-3">
+        <label className="block text-sm">
+          {t('Цель')}
+          <input className="input mt-1 w-full" value={title} maxLength={140} placeholder={t(MONTH_AIM)} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label className="block text-sm">
+          {t('Сколько разных участников в неделю к концу месяца')}
+          <input className="input mt-1 w-40" type="number" inputMode="numeric" min="1" max="10000" step="1" required value={draft} onChange={(e) => setDraft(e.target.value)} />
+        </label>
+        <button disabled={busy} className="btn-primary disabled:opacity-60">{t('Сохранить цель')}</button>
+        {goal && (
+          <p className="text-sm">
+            {goal.title || t(MONTH_AIM)} · {t('на старте')} {num(goal.start)} → {num(goal.target)}
+            {metrics ? ` · ${t('осталось')} ${num(Math.max(0, Math.round((goal.target - metrics.current) * 10) / 10))}` : ''}
+          </p>
+        )}
+        <p className="text-xs text-neutral-400" role="status">
+          {msg ||
+            (where === 'server'
+              ? t('Цель хранится в базе клуба — видна на всех ваших устройствах.')
+              : where === 'device'
+                ? note === 'nolayer'
+                  ? t('Цель пока сохранена только на этом устройстве: в базе ещё нет таблицы целей (слой 54).')
+                  : t('Нет связи — показана копия с этого устройства.')
+                : t('Цель на этот месяц ещё не поставлена.'))}
+        </p>
+      </form>
+    </section>
+  )
 }
