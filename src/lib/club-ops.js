@@ -39,6 +39,8 @@ export const checkinUrl = (token) => {
 export const recordCashPayment = (athleteId, productId) =>
   rpc('record_cash_payment', { p_athlete: athleteId, p_product: productId })
 export const loadDebtors = () => rpc('payment_debtors')
+// Должники без аккаунта (посещения из member_visits, layer50).
+export const loadMemberDebtors = () => rpc('member_debtors')
 
 // Удаление аккаунта (Edge Function delete-account): своего или — тренером — ученика.
 async function callDelete(body) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { formatDay, formatPrice, loadCatalog } from '../lib/payments.js'
-import { deleteAthleteAccount, loadDebtors, recordCashPayment } from '../lib/club-ops.js'
+import { deleteAthleteAccount, loadDebtors, loadMemberDebtors, recordCashPayment } from '../lib/club-ops.js'
 import { t, tData } from '../lib/i18n.jsx'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { isNetworkError } from '../lib/offline.js'
@@ -74,6 +74,7 @@ export function CashPayment({ athlete, onDone }) {
 /** Список должников в CRM тренера. */
 export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
   const [list, setList] = useState(null)
+  const [members, setMembers] = useState([])
   const [error, setError] = useState('')
   const [open, setOpen] = useState(null)
 
@@ -84,6 +85,9 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
         setError('')
       })
       .catch((e) => setError(e.message))
+    loadMemberDebtors()
+      .then((d) => setMembers(d ?? []))
+      .catch(() => setMembers([]))
   }, [])
 
   useEffect(() => {
@@ -97,9 +101,9 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
     <section className="card space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-xl">{t('Должники')}</h2>
-        <span className={`font-display text-2xl ${list.length ? 'text-accent' : 'text-neutral-500'}`}>{list.length}</span>
+        <span className={`font-display text-2xl ${list.length + members.length ? 'text-accent' : 'text-neutral-500'}`}>{list.length + members.length}</span>
       </div>
-      {list.length === 0 ? (
+      {list.length + members.length === 0 ? (
         <p className="text-sm text-neutral-400">{t('Все оплатили — долгов нет.')}</p>
       ) : (
         <ul className="divide-y divide-line">
@@ -136,6 +140,22 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
             )
           })}
         </ul>
+      )}
+      {members.length > 0 && (
+        <div className="space-y-1 border-t border-line pt-3">
+          <span className="label">{t('Без аккаунта в приложении')}</span>
+          <ul className="divide-y divide-line">
+            {members.map((m) => (
+              <li key={m.member_id} className="flex items-center justify-between gap-3 py-2">
+                <p className="min-w-0 truncate font-semibold">{m.first_name} {m.last_name}</p>
+                <p className="shrink-0 text-sm text-accent">
+                  {t('{n} трен.', { n: m.unpaid })} · {formatPrice(m.amount_cents)}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-neutral-500">{t('Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.')}</p>
+        </div>
       )}
       <p className="text-xs text-neutral-500">
         {t('Должник — не прошло списание по карте или за 30 дней тренировок больше, чем оплачено (первая тренировка бесплатно).')}
