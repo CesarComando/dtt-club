@@ -49,8 +49,7 @@ jobs:
           if [ -z "$BACKUP_PASSPHRASE" ]; then
             echo "::error::Нет секрета BACKUP_PASSPHRASE — без него копию не зашифровать. См. BACKUP.md"; exit 1
           fi
-          if [ -n "$DB_PASSWORD" ]; then DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${DB_REF}.supabase.co:5432/postgres"; echo "::add-mask::$DB_URL"; echo "DB_URL=$DB_URL" >> "$GITHUB_ENV"; fi
-          if [ -z "$DB_URL" ]; then
+          if [ -z "$DB_URL" ] && [ -z "$DB_PASSWORD" ]; then
             if [ "${{ matrix.required }}" = "true" ]; then
               echo "::error::Нет секрета ${{ matrix.pw_secret }} (пароль базы) или ${{ matrix.url_secret }}. См. BACKUP.md"; exit 1
             fi
@@ -68,6 +67,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dump
+          if [ -n "$DB_PASSWORD" ]; then DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${DB_REF}.supabase.co:5432/postgres"; fi
+          export DB_URL
           # С серверов GitHub прямой адрес db.<проект>.supabase.co недоступен (он только IPv6).
           # Если в секрете прямой адрес — сами переделываем его в адрес Session pooler (IPv4).
           candidates=$(python3 - <<'PY'
