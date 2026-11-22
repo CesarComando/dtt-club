@@ -53,7 +53,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.check.outputs.skip != 'true'
         with:
-          version: latest
+          version: 3.0.0 # точная версия: «latest» упирается в лимит запросов GitHub
 
       - name: Выгрузить базу
         if: steps.check.outputs.skip != 'true'
