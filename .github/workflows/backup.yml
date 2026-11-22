@@ -67,12 +67,22 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dump
-          if [ -n "$DB_PASSWORD" ]; then DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${DB_REF}.supabase.co:5432/postgres"; fi
-          export DB_URL
+          export DB_URL DB_PASSWORD DB_REF
           # С серверов GitHub прямой адрес db.<проект>.supabase.co недоступен (он только IPv6).
           # Если в секрете прямой адрес — сами переделываем его в адрес Session pooler (IPv4).
           candidates=$(python3 - <<'PY'
           import os, re
+          from urllib.parse import quote
+          # Пароль кладём в адрес закодированным: в сгенерированных паролях бывают @ / # ? и т. п.
+          enc = lambda p: p if re.search(r'%[0-9A-Fa-f]{2}', p) else quote(p, safe='')
+          def pooler(ref, pws):
+              for p in pws:
+                  for n in (0, 1):
+                      for region in ('eu-west-1', 'eu-north-1', 'eu-central-1'):
+                          print(f"postgresql://postgres.{ref}:{enc(p)}@aws-{n}-{region}.pooler.supabase.com:5432/postgres")
+          if os.environ.get('DB_PASSWORD'):
+              pooler(os.environ['DB_REF'], [os.environ['DB_PASSWORD'].strip()])
+              raise SystemExit
           url = os.environ['DB_URL'].strip()
           # Разбираем вручную: в пароле бывают «[ ]» и другие знаки, на которых стандартный разбор падает.
           m = re.fullmatch(r'postgres(?:ql)?://([^:/@]+):(.*)@([^@/:]+)(?::(\d+))?(/.*)?', url)
@@ -83,11 +93,7 @@ jobs:
           else:
               ref, pw = d.group(1), m.group(2)
               # В Supabase образец выглядит как [YOUR-PASSWORD]; скобки часто остаются — пробуем и без них.
-              pws = [pw[1:-1], pw] if pw.startswith('[') and pw.endswith(']') else [pw]
-              for p in pws:
-                  for n in (0, 1):
-                      for region in ('eu-west-1', 'eu-north-1', 'eu-central-1'):
-                          print(f"postgresql://postgres.{ref}:{p}@aws-{n}-{region}.pooler.supabase.com:5432/postgres")
+              pooler(ref, [pw[1:-1], pw] if pw.startswith('[') and pw.endswith(']') else [pw])
           PY
           )
           ok=""
