@@ -1,6 +1,6 @@
 import { useAuth } from '../lib/AuthContext.jsx'
 import { useOffline } from '../lib/offline.js'
-import { clearFailed, flush, useOutbox } from '../lib/outbox.js'
+import { clearFailed, failedFor, flush, useOutbox } from '../lib/outbox.js'
 import { locale, t } from '../lib/i18n.jsx'
 
 const time = (ms) =>
@@ -10,8 +10,9 @@ const time = (ms) =>
 export default function OfflineBanner() {
   const { user } = useAuth()
   const { online, staleSince } = useOffline()
-  const { items, failed, flushing } = useOutbox()
+  const { items, failed: allFailed, flushing } = useOutbox()
   const mine = items.filter((i) => !i.uid || i.uid === user?.id)
+  const failed = user ? failedFor(allFailed, user.id) : []
   if (online && !staleSince && !mine.length && !failed.length) return null
 
   return (
@@ -50,7 +51,7 @@ export default function OfflineBanner() {
           <p>
             <b>{t('Сервер не принял: {n}', { n: failed.length })}</b> — {failed.map((f) => `${f.label} (${f.error})`).join(' · ')}
           </p>
-          <button type="button" onClick={clearFailed} className="text-xs underline">{t('Понятно, скрыть')}</button>
+          <button type="button" onClick={() => clearFailed(user?.id)} className="text-xs underline">{t('Понятно, скрыть')}</button>
         </div>
       )}
     </div>

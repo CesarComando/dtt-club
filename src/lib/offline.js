@@ -14,6 +14,9 @@ export const setCacheUser = (id) => {
   currentUser = id ?? null
 }
 
+/** Чей аккаунт сейчас открыт (id или null). */
+export const getCacheUser = () => currentUser
+
 /** Ошибка сети: нет интернета, сервер не отвечает (iPhone пишет «Load failed», Chrome — «Failed to fetch»). */
 export function isNetworkError(e) {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
@@ -49,15 +52,26 @@ function markStale(at) {
   }
 }
 
-/** Загрузить и сохранить; без сети — отдать сохранённое (и показать плашку «офлайн»). */
+// Ответ, который пришёл уже после смены аккаунта, никуда не отдаём: ни в память
+// телефона, ни на экран. Промис просто не завершается — экран прежнего аккаунта
+// к этому моменту уже закрыт, а новый аккаунт загружает свои данные сам.
+const discard = () => new Promise(() => {})
+
+/** Загрузить и сохранить; без сети — отдать сохранённое (и показать плашку «офлайн»).
+ *  Владелец запоминается при запуске запроса: если пока ждали ответ, на телефоне
+ *  вошёл другой человек, запоздалый ответ отбрасывается. */
 export async function cached(key, fn) {
+  const owner = currentUser
+  // Аккаунт сменился (был A — стал B или вышли). Если владельца не было (данные ещё
+  // не привязаны к аккаунту), ответ можно показать, но в память он всё равно не попадёт.
+  const changed = () => owner !== null && currentUser !== owner
+  let data
   try {
-    const data = await fn()
-    saveCache(key, data)
-    return data
+    data = await fn()
   } catch (e) {
+    if (changed()) return discard()
     if (isNetworkError(e)) {
-      const c = readCache(key)
+      const c = readCache(key, owner)
       if (c) {
         markStale(c.at)
         return c.data
@@ -65,6 +79,9 @@ export async function cached(key, fn) {
     }
     throw e
   }
+  if (changed()) return discard()
+  saveCache(key, data, owner)
+  return data
 }
 
 /** Выход из аккаунта: стираем всё сохранённое на телефоне. */

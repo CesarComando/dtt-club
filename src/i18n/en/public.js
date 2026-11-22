@@ -263,4 +263,12 @@ export default {
   'Отправить сейчас': 'Send now',
   'Сервер не принял: {n}': 'Rejected by server: {n}',
   'Понятно, скрыть': 'Got it, hide',
+  // Сканер QR и галерея (исправления 22.11)
+  "На снимке не нашёлся QR-код. Снимите код крупнее и ровнее — или откройте приложение «Камера» и наведите его на QR: ссылка откроется сама.": "No QR code found in the photo. Take it closer and straighter — or open the Camera app and point it at the QR: the link opens by itself.",
+  "Не получилось прочитать снимок. Откройте приложение «Камера» и наведите его на QR — ссылка откроется сама.": "Could not read the photo. Open the Camera app and point it at the QR — the link opens by itself.",
+  "Сканер не запустился. Нажмите «Повторить» или откройте обычную камеру.": "The scanner did not start. Tap “Try again” or open the regular camera.",
+  "Читаем снимок…": "Reading the photo…",
+  "Открыть обычной камерой": "Open regular camera",
+  "Не удалось удалить файл: {error}. Карточка осталась — попробуйте ещё раз.": "Could not delete the file: {error}. The card is still here — try again.",
+  "Файл удалён, но карточка осталась: {error}. Нажмите «Удалить» ещё раз.": "The file is deleted, but the card remains: {error}. Tap “Delete” again.",
 }

@@ -216,6 +216,8 @@ function Upload({ userId, isAdmin, onDone }) {
       setProgress(isAdmin ? t('Добавлено в галерею') : t('Отправлено тренеру на проверку'))
       onDone()
     } catch (e) {
+      // Уже загруженные убираем из списка: «Отправить» ещё раз догрузит только оставшиеся, без дублей.
+      setFiles(files.slice(done))
       setError(`${done ? t('Загружено {n}, дальше ошибка: ', { n: done }) : ''}${e.message}`)
       setProgress('')
       if (done) onDone()

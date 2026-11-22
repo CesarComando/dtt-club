@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { supabase, isSupabaseConfigured } from './supabaseClient.js'
 import { getAvatarUrl } from './auth.js'
 import { t } from './i18n.jsx'
@@ -37,17 +37,23 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState('')
   const [offlineUser, setOfflineUser] = useState(null) // без сети: последний вошедший, данные из памяти телефона
 
+  const profileRequest = useRef(0) // номер последней загрузки профиля: запоздалые ответы отбрасываем
+
   const loadProfile = useCallback(async (userId) => {
+    const req = ++profileRequest.current
     if (!userId) {
       setProfile(null)
       return
     }
     setError('')
+    // Владелец данных ставится сразу, до ответа сервера: запросы, начатые уже под этим
+    // аккаунтом, будут сохраняться под ним, а запоздалые ответы прежнего — отбрасываться.
+    setCacheUser(userId)
     const [{ data: p, error: pErr }, { data: c }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('profile_contacts').select('phone').eq('id', userId).maybeSingle(),
     ])
-    setCacheUser(userId)
+    if (req !== profileRequest.current) return // пока ждали, вошёл другой аккаунт или вышли
     if (pErr) {
       // Нет сети — показываем сохранённый профиль
       const saved = isNetworkError(pErr) ? readCache('profile', userId) : null
@@ -57,6 +63,7 @@ export function AuthProvider({ children }) {
       return
     }
     const avatarSignedUrl = p?.avatar_url ? await getAvatarUrl(p.avatar_url) : null
+    if (req !== profileRequest.current) return
     const next = p ? { ...p, phone: c?.phone ?? null, avatarSignedUrl } : null
     if (next) saveCache('profile', { ...next, avatarSignedUrl: null }, userId) // ссылка на фото всё равно истечёт
     setProfile(next)
@@ -121,6 +128,7 @@ export function AuthProvider({ children }) {
     writeLastUser(null)
     setOfflineUser(null)
     setCacheUser(null)
+    profileRequest.current++ // ответ на запрос профиля, начатый до выхода, не покажем
     if (supabase) await supabase.auth.signOut().catch(() => {})
     setProfile(null)
   }
