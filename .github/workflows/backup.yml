@@ -1,0 +1,88 @@
+# Резервная копия базы Supabase — каждую ночь, бесплатно (на тарифе Free своих копий у Supabase нет).
+# Копия шифруется паролем BACKUP_PASSPHRASE и хранится 30 дней во вкладке Actions → этот запуск → Artifacts.
+# Репозиторий публичный, поэтому без шифрования выкладывать копию нельзя: в базе личные данные учеников.
+# Как настроить и как восстановить — BACKUP.md.
+name: Резервная копия базы
+
+on:
+  schedule:
+    - cron: '30 1 * * *' # каждый день в 01:30 UTC (03:30 по Риге зимой)
+  workflow_dispatch: # кнопка «Run workflow» — сделать копию прямо сейчас
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Общая база клуба и крепости (проект dtt-club). Обязательна.
+          - name: club
+            url_secret: SUPABASE_DB_URL
+            required: true
+          # База подворья (проект podvorye). Если секрет не заведён — пропускаем.
+          - name: podvorye
+            url_secret: PODVORYE_DB_URL
+            required: false
+    env:
+      DB_URL: ${{ secrets[matrix.url_secret] }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Проверить настройки
+        id: check
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Нет секрета BACKUP_PASSPHRASE — без него копию не зашифровать. См. BACKUP.md"; exit 1
+          fi
+          if [ -z "$DB_URL" ]; then
+            if [ "${{ matrix.required }}" = "true" ]; then
+              echo "::error::Нет секрета ${{ matrix.url_secret }} — адрес базы для копии. См. BACKUP.md"; exit 1
+            fi
+            echo "Секрета ${{ matrix.url_secret }} нет — копию «${{ matrix.name }}» пропускаем."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: supabase/setup-cli@v1
+        if: steps.check.outputs.skip != 'true'
+        with:
+          version: latest
+
+      - name: Выгрузить базу
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p dump
+          supabase db dump --db-url "$DB_URL" -f dump/roles.sql --role-only
+          supabase db dump --db-url "$DB_URL" -f dump/schema.sql
+          supabase db dump --db-url "$DB_URL" -f dump/data.sql --data-only --use-copy
+          # Пустая выгрузка — тоже ошибка: иначе «копия» была бы без данных.
+          test -s dump/schema.sql && test -s dump/data.sql
+          ls -la dump
+
+      - name: Зашифровать
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          name="${{ matrix.name }}-$(date -u +%Y-%m-%d)"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+          tar czf "$name.tar.gz" -C dump .
+          gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+            --passphrase "$BACKUP_PASSPHRASE" -o "$name.tar.gz.gpg" "$name.tar.gz"
+          rm -rf dump "$name.tar.gz" # незашифрованное не оставляем
+          ls -la "$name.tar.gz.gpg"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.skip != 'true'
+        with:
+          name: ${{ env.NAME }}
+          path: ${{ env.NAME }}.tar.gz.gpg
+          retention-days: 30
+          if-no-files-found: error
