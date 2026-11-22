@@ -60,7 +60,35 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dump
-          supabase db dump --db-url "$DB_URL" -f dump/roles.sql --role-only
+          # С серверов GitHub прямой адрес db.<проект>.supabase.co недоступен (он только IPv6).
+          # Если в секрете прямой адрес — сами переделываем его в адрес Session pooler (IPv4).
+          candidates=$(python3 - <<'PY'
+          import os, re, urllib.parse as u
+          url = os.environ['DB_URL'].strip()
+          p = u.urlsplit(url)
+          m = re.fullmatch(r'db\.([a-z0-9]+)\.supabase\.co', p.hostname or '')
+          if not m:
+              print(url)
+          else:
+              ref = m.group(1)
+              pw = p.password or ''
+              for n in (0, 1):
+                  for region in ('eu-west-1', 'eu-north-1', 'eu-central-1'):
+                      print(f"postgresql://postgres.{ref}:{pw}@aws-{n}-{region}.pooler.supabase.com:5432/postgres")
+          PY
+          )
+          ok=""
+          while IFS= read -r c; do
+            [ -n "$c" ] || continue
+            echo "::add-mask::$c"
+            if supabase db dump --db-url "$c" -f dump/roles.sql --role-only >/dev/null 2>dump/err.txt; then ok="$c"; break; fi
+          done <<< "$candidates"
+          if [ -z "$ok" ]; then
+            echo "::error::Не удалось подключиться к базе. Проверьте секрет ${{ matrix.url_secret }} (адрес Session pooler и пароль)."
+            grep -v -i "postgres" dump/err.txt | tail -5 || true
+            exit 1
+          fi
+          DB_URL="$ok"; rm -f dump/err.txt
           supabase db dump --db-url "$DB_URL" -f dump/schema.sql
           supabase db dump --db-url "$DB_URL" -f dump/data.sql --data-only --use-copy
           # Пустая выгрузка — тоже ошибка: иначе «копия» была бы без данных.
