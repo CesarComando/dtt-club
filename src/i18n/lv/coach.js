@@ -205,6 +205,9 @@ export default {
   'Удаляем…': 'Dzēš…',
   'Да, удалить': 'Jā, dzēst',
 
+  'Без аккаунта в приложении': 'Bez konta lietotnē',
+  'Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.': 'Maksājumu reģistrē cilnē «Audzēkņi» — nospiediet uz summas pa labi no vārda.',
+
   // AdminBudget.jsx
   'Аренда': 'Īre',
   'Электричество': 'Elektrība',
