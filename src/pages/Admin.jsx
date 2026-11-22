@@ -11,6 +11,7 @@ import AdminBudget from '../components/AdminBudget.jsx'
 import AdminShop from '../components/AdminShop.jsx'
 import AdminAssistant from '../components/AdminAssistant.jsx'
 import AdminStats from '../components/AdminStats.jsx'
+import ClubGoals from '../components/ClubGoals.jsx'
 import AdminTrials from '../components/AdminTrials.jsx'
 import MembershipReminders from '../components/MembershipReminders.jsx'
 import CoachCash from '../components/CoachCash.jsx'
@@ -31,6 +32,7 @@ const TABS = [
   ['assistant', t('Помощник')],
   ['shop', t('Магазин')],
   ['stats', t('Статистика')],
+  ['goals', t('Цели клуба')],
   ['trials', t('Пробные')],
 ]
 
@@ -360,6 +362,7 @@ export default function Admin() {
       {tab === 'assistant' && isAdmin && <AdminAssistant />}
       {tab === 'shop' && isAdmin && <AdminShop />}
       {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} userId={me?.id} discipline={me?.discipline} />}
+      {tab === 'goals' && isAdmin && me?.id && <ClubGoals key={me.id} userId={me.id} />}
       {tab === 'trials' && isAdmin && <AdminTrials />}
       {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
 
