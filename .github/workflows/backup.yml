@@ -63,18 +63,22 @@ jobs:
           # С серверов GitHub прямой адрес db.<проект>.supabase.co недоступен (он только IPv6).
           # Если в секрете прямой адрес — сами переделываем его в адрес Session pooler (IPv4).
           candidates=$(python3 - <<'PY'
-          import os, re, urllib.parse as u
+          import os, re
           url = os.environ['DB_URL'].strip()
-          p = u.urlsplit(url)
-          m = re.fullmatch(r'db\.([a-z0-9]+)\.supabase\.co', p.hostname or '')
-          if not m:
+          # Разбираем вручную: в пароле бывают «[ ]» и другие знаки, на которых стандартный разбор падает.
+          m = re.fullmatch(r'postgres(?:ql)?://([^:/@]+):(.*)@([^@/:]+)(?::(\d+))?(/.*)?', url)
+          host = m.group(3) if m else ''
+          d = re.fullmatch(r'db\.([a-z0-9]+)\.supabase\.co', host)
+          if not d:
               print(url)
           else:
-              ref = m.group(1)
-              pw = p.password or ''
-              for n in (0, 1):
-                  for region in ('eu-west-1', 'eu-north-1', 'eu-central-1'):
-                      print(f"postgresql://postgres.{ref}:{pw}@aws-{n}-{region}.pooler.supabase.com:5432/postgres")
+              ref, pw = d.group(1), m.group(2)
+              # В Supabase образец выглядит как [YOUR-PASSWORD]; скобки часто остаются — пробуем и без них.
+              pws = [pw[1:-1], pw] if pw.startswith('[') and pw.endswith(']') else [pw]
+              for p in pws:
+                  for n in (0, 1):
+                      for region in ('eu-west-1', 'eu-north-1', 'eu-central-1'):
+                          print(f"postgresql://postgres.{ref}:{p}@aws-{n}-{region}.pooler.supabase.com:5432/postgres")
           PY
           )
           ok=""
