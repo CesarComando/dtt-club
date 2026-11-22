@@ -276,4 +276,12 @@ export default {
   'Отправить сейчас': 'Nosūtīt tagad',
   'Сервер не принял: {n}': 'Serveris nepieņēma: {n}',
   'Понятно, скрыть': 'Skaidrs, paslēpt',
+  // Сканер QR и галерея (исправления 22.11)
+  "На снимке не нашёлся QR-код. Снимите код крупнее и ровнее — или откройте приложение «Камера» и наведите его на QR: ссылка откроется сама.": "Fotoattēlā QR kods netika atrasts. Nofotografējiet to tuvāk un taisnāk — vai atveriet lietotni “Kamera” un pavērsiet to pret QR: saite atvērsies pati.",
+  "Не получилось прочитать снимок. Откройте приложение «Камера» и наведите его на QR — ссылка откроется сама.": "Neizdevās nolasīt fotoattēlu. Atveriet lietotni “Kamera” un pavērsiet to pret QR — saite atvērsies pati.",
+  "Сканер не запустился. Нажмите «Повторить» или откройте обычную камеру.": "Skeneris neieslēdzās. Nospiediet “Mēģināt vēlreiz” vai atveriet parasto kameru.",
+  "Читаем снимок…": "Nolasām fotoattēlu…",
+  "Открыть обычной камерой": "Atvērt ar parasto kameru",
+  "Не удалось удалить файл: {error}. Карточка осталась — попробуйте ещё раз.": "Neizdevās izdzēst failu: {error}. Kartīte palika — mēģiniet vēlreiz.",
+  "Файл удалён, но карточка осталась: {error}. Нажмите «Удалить» ещё раз.": "Fails izdzēsts, bet kartīte palika: {error}. Nospiediet “Dzēst” vēlreiz.",
 }

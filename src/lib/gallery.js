@@ -80,7 +80,12 @@ export async function approveItem(id) {
   must(await supabase.from('gallery_items').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', id))
 }
 
+// Сначала файл, потом карточка. Если файл удалить не вышло — карточка остаётся,
+// и «Удалить» можно нажать ещё раз. Если не удалилась карточка — повтор дочистит её
+// (удаление уже стёртого файла сервер считает успехом).
 export async function deleteItem(item) {
-  must(await supabase.from('gallery_items').delete().eq('id', item.id))
-  await supabase.storage.from(GALLERY_BUCKET).remove([item.path])
+  const { error: fileErr } = await supabase.storage.from(GALLERY_BUCKET).remove([item.path])
+  if (fileErr) throw new Error(t('Не удалось удалить файл: {error}. Карточка осталась — попробуйте ещё раз.', { error: fileErr.message }))
+  const { error: rowErr } = await supabase.from('gallery_items').delete().eq('id', item.id)
+  if (rowErr) throw new Error(t('Файл удалён, но карточка осталась: {error}. Нажмите «Удалить» ещё раз.', { error: rowErr.message }))
 }

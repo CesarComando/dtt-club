@@ -6,14 +6,19 @@ import { supabase } from './supabaseClient.js'
 import { isNetworkError } from './offline.js'
 
 const KEY = 'dtt-outbox'
+// Не принятые сервером действия (например, нет прав) тоже хранятся на телефоне:
+// тренер увидит их и после перезагрузки, пока не нажмёт «Понятно, скрыть».
+// У каждого действия есть uid — плашка показывает только свои.
+const FAILED_KEY = 'dtt-outbox-failed'
 const listeners = new Set()
-let items = load()
-let failed = [] // не принятые сервером (например, нет прав) — показываем тренеру
+let items = load(KEY)
+let failed = load(FAILED_KEY)
 let flushing = false
 
-function load() {
+function load(key) {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) ?? []
+    const v = JSON.parse(localStorage.getItem(key))
+    return Array.isArray(v) ? v : []
   } catch {
     return []
   }
@@ -21,6 +26,8 @@ function load() {
 function persist() {
   try {
     localStorage.setItem(KEY, JSON.stringify(items))
+    if (failed.length) localStorage.setItem(FAILED_KEY, JSON.stringify(failed))
+    else localStorage.removeItem(FAILED_KEY)
   } catch {
     /* нет памяти — очередь живёт до закрытия вкладки */
   }
@@ -97,7 +104,7 @@ export async function flush(uid) {
       }
       if (error && isNetworkError(error)) break // сеть снова пропала — попробуем позже
       items = items.filter((i) => i.id !== item.id)
-      if (error) failed = [...failed, { ...item, error: error.message ?? String(error) }]
+      if (error) failed = [...failed, { ...item, uid: item.uid ?? uid ?? null, error: error.message ?? String(error), failedAt: new Date().toISOString() }]
       persist()
     }
   } finally {
@@ -106,8 +113,12 @@ export async function flush(uid) {
   }
 }
 
-export const clearFailed = () => {
-  failed = []
+/** Отклонённые действия этого аккаунта (и старые записи без владельца). */
+export const failedFor = (list, uid) => list.filter((f) => !f.uid || f.uid === uid)
+
+/** «Понятно, скрыть»: убрать сообщения только своего аккаунта; чужие останутся владельцу. */
+export const clearFailed = (uid) => {
+  failed = failed.filter((f) => f.uid && f.uid !== uid)
   persist()
 }
 
