@@ -12,9 +12,9 @@
 
 GitHub → репозиторий dtt-club → **Settings → Secrets and variables → Actions → New repository secret**:
 
-1. `SUPABASE_DB_URL` — адрес базы с паролем. Supabase → проект dtt-club → кнопка **Connect** →
-   **Session pooler** → строка вида `postgresql://postgres.latnwksisoziluhdadgy:[ПАРОЛЬ]@aws-…pooler.supabase.com:5432/postgres` (скопируйте как есть),
-   вместо `[ПАРОЛЬ]` — пароль базы (Settings → Database; если не помните — там же «Reset database password»).
+1. `SUPABASE_DB_PASSWORD` — только пароль базы (проще всего). Или вместо него `SUPABASE_DB_URL` — адрес базы с паролем. Supabase → проект dtt-club → кнопка **Connect** →
+   **Session pooler** → строка вида `postgresql://postgres.latnwksisoziluhdadgy:ПАРОЛЬ@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`,
+   вместо `ПАРОЛЬ` — пароль базы, без квадратных скобок (Settings → Database; если не помните — там же «Reset database password»).
    Нужен именно Session pooler: прямой адрес `db.…supabase.co` с серверов GitHub недоступен.
 2. `BACKUP_PASSPHRASE` — длинная фраза для шифрования (например, 5–6 случайных слов).
    **Запишите её туда, где не потеряете** (менеджер паролей, бумага в сейфе). Без неё копию не открыть.
