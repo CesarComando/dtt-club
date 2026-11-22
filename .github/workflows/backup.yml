@@ -27,13 +27,20 @@ jobs:
           # Общая база клуба и крепости (проект dtt-club). Обязательна.
           - name: club
             url_secret: SUPABASE_DB_URL
+            pw_secret: SUPABASE_DB_PASSWORD
+            ref: latnwksisoziluhdadgy
             required: true
           # База подворья (проект podvorye). Если секрет не заведён — пропускаем.
           - name: podvorye
             url_secret: PODVORYE_DB_URL
+            pw_secret: PODVORYE_DB_PASSWORD
+            ref: zluiwncfigibykwyxhcj
             required: false
     env:
       DB_URL: ${{ secrets[matrix.url_secret] }}
+      # Проще всего: секрет с одним паролем базы — адрес составим сами.
+      DB_PASSWORD: ${{ secrets[matrix.pw_secret] }}
+      DB_REF: ${{ matrix.ref }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
     steps:
       - name: Проверить настройки
@@ -42,9 +49,10 @@ jobs:
           if [ -z "$BACKUP_PASSPHRASE" ]; then
             echo "::error::Нет секрета BACKUP_PASSPHRASE — без него копию не зашифровать. См. BACKUP.md"; exit 1
           fi
+          if [ -n "$DB_PASSWORD" ]; then DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${DB_REF}.supabase.co:5432/postgres"; echo "::add-mask::$DB_URL"; echo "DB_URL=$DB_URL" >> "$GITHUB_ENV"; fi
           if [ -z "$DB_URL" ]; then
             if [ "${{ matrix.required }}" = "true" ]; then
-              echo "::error::Нет секрета ${{ matrix.url_secret }} — адрес базы для копии. См. BACKUP.md"; exit 1
+              echo "::error::Нет секрета ${{ matrix.pw_secret }} (пароль базы) или ${{ matrix.url_secret }}. См. BACKUP.md"; exit 1
             fi
             echo "Секрета ${{ matrix.url_secret }} нет — копию «${{ matrix.name }}» пропускаем."
             echo "skip=true" >> "$GITHUB_OUTPUT"
