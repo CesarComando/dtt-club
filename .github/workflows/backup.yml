@@ -86,10 +86,10 @@ jobs:
             [ -n "$c" ] || continue
             echo "::add-mask::$c"
             if supabase db dump --db-url "$c" -f dump/roles.sql --role-only >/dev/null 2>dump/err.txt; then ok="$c"; break; fi
+            grep -E "FATAL|failed|error:" dump/err.txt | sed -E 's#postgres(ql)?://[^ ]*#<адрес>#g' | head -2 || true
           done <<< "$candidates"
           if [ -z "$ok" ]; then
             echo "::error::Не удалось подключиться к базе. Проверьте секрет ${{ matrix.url_secret }} (адрес Session pooler и пароль)."
-            grep -v -i "postgres" dump/err.txt | tail -5 || true
             exit 1
           fi
           DB_URL="$ok"; rm -f dump/err.txt
