@@ -207,6 +207,7 @@ export default {
 
   'MMA · должники Андрея': 'MMA · Andreja parādnieki',
   'Должники MMA': 'MMA parādnieki',
+  'Ученик заплатил вам — запишите во вкладке «Касса», долг уменьшится.': 'Audzēknis samaksāja jums — ierakstiet cilnē «Kase», parāds samazināsies.',
   'Без аккаунта в приложении': 'Bez konta lietotnē',
   'Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.': 'Maksājumu reģistrē cilnē «Audzēkņi» — nospiediet uz summas pa labi no vārda.',
 

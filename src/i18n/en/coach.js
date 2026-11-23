@@ -200,6 +200,7 @@ export default {
 
   'MMA · должники Андрея': "MMA · Andrey's debtors",
   'Должники MMA': 'MMA debtors',
+  'Ученик заплатил вам — запишите во вкладке «Касса», долг уменьшится.': 'A student paid you — record it in the «Cash box» tab and the debt will go down.',
   'Без аккаунта в приложении': 'No app account',
   'Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.': 'To record a payment, go to the «Students» tab and tap the amount to the right of the name.',
   'Аренда': 'Rent',

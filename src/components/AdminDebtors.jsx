@@ -177,6 +177,7 @@ function DebtorGroup({ title, list, members, athletes, canRecord, onPaid }) {
           {canRecord && <p className="text-xs text-neutral-500">{t('Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.')}</p>}
         </div>
       )}
+      {!canRecord && total > 0 && <p className="text-xs text-neutral-500">{t('Ученик заплатил вам — запишите во вкладке «Касса», долг уменьшится.')}</p>}
     </section>
   )
 }
