@@ -80,7 +80,7 @@ export default function Admin() {
   // и «Абонементы» — только ученики MMA / K1 (фильтрует сервер, слой 30).
   const { profile: me } = useAuth()
   const isAdmin = me?.role === 'admin'
-  const tabs = isAdmin ? TABS : TABS.filter(([t]) => t === 'gym' || t === 'memberships' || t === 'cash')
+  const tabs = isAdmin ? TABS : TABS.filter(([t]) => t === 'gym' || t === 'memberships' || t === 'cash' || t === 'debtors')
   const [athletes, setAthletes] = useState([])
   const [today, setToday] = useState({}) // athlete_id → сколько отметок сегодня
   const [billing, setBilling] = useState({}) // athlete_id → { membership, singles, sponsor }
@@ -332,7 +332,7 @@ export default function Admin() {
       </div>
 
       {tabs.length > 1 && (
-      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5 lg:grid-cols-10' : 'grid-cols-3'}`} role="tablist">
+      <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3 sm:grid-cols-5 lg:grid-cols-10' : 'grid-cols-4'}`} role="tablist">
         {tabs.map(([id, label]) => (
           <button
             key={id}
@@ -364,7 +364,7 @@ export default function Admin() {
       {tab === 'stats' && isAdmin && <AdminStats athletes={athletes} userId={me?.id} discipline={me?.discipline} />}
       {tab === 'goals' && isAdmin && me?.id && <ClubGoals key={me.id} userId={me.id} />}
       {tab === 'trials' && isAdmin && <AdminTrials />}
-      {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} />}
+      {tab === 'debtors' && <AdminDebtors athletes={athletes} reloadKey={reloadKey} onPaid={() => load()} isAdmin={isAdmin} />}
 
       {tab === 'gym' && (
       <>

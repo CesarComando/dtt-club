@@ -198,6 +198,8 @@ export default {
   'Удаляем…': 'Deleting…',
   'Да, удалить': 'Yes, delete',
 
+  'MMA · должники Андрея': "MMA · Andrey's debtors",
+  'Должники MMA': 'MMA debtors',
   'Без аккаунта в приложении': 'No app account',
   'Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.': 'To record a payment, go to the «Students» tab and tap the amount to the right of the name.',
   'Аренда': 'Rent',

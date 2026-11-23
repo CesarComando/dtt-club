@@ -71,12 +71,13 @@ export function CashPayment({ athlete, onDone }) {
   )
 }
 
-/** Список должников в CRM тренера. */
-export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
+/** Список должников в CRM тренера. Главный тренер видит два блока: свои и MMA (Андрей); тренер MMA — только MMA. */
+const isMma = (d) => d.discipline === 'mma' || d.discipline === 'both'
+
+export default function AdminDebtors({ athletes, reloadKey, onPaid, isAdmin = true }) {
   const [list, setList] = useState(null)
   const [members, setMembers] = useState([])
   const [error, setError] = useState('')
-  const [open, setOpen] = useState(null)
 
   const load = useCallback(() => {
     loadDebtors()
@@ -97,15 +98,40 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
   if (error) return <p className="rounded-md border border-accent p-3 text-sm text-accent">{t('Должники: {error}', { error })}</p>
   if (!list) return null
 
+  const paid = () => {
+    load()
+    onPaid?.()
+  }
+  const groups = isAdmin
+    ? [
+        [t('Должники'), list.filter((d) => !isMma(d)), members.filter((m) => !isMma(m))],
+        [t('MMA · должники Андрея'), list.filter(isMma), members.filter(isMma)],
+      ]
+    : [[t('Должники MMA'), list, members]]
+
+  return (
+    <div className="space-y-4">
+      {groups.map(([title, acc, noAcc]) => (
+        <DebtorGroup key={title} title={title} list={acc} members={noAcc} athletes={athletes} canRecord={isAdmin} onPaid={paid} />
+      ))}
+      <p className="text-xs text-neutral-500">
+        {t('Должник — не прошло списание по карте или за 30 дней тренировок больше, чем оплачено (первая тренировка бесплатно).')}
+      </p>
+    </div>
+  )
+}
+
+function DebtorGroup({ title, list, members, athletes, canRecord, onPaid }) {
+  const [open, setOpen] = useState(null)
+  const total = list.length + members.length
   return (
     <section className="card space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xl">{t('Должники')}</h2>
-        <span className={`font-display text-2xl ${list.length + members.length ? 'text-accent' : 'text-neutral-500'}`}>{list.length + members.length}</span>
+        <h2 className="text-xl">{title}</h2>
+        <span className={`font-display text-2xl ${total ? 'text-accent' : 'text-neutral-500'}`}>{total}</span>
       </div>
-      {list.length + members.length === 0 ? (
-        <p className="text-sm text-neutral-400">{t('Все оплатили — долгов нет.')}</p>
-      ) : (
+      {total === 0 && <p className="text-sm text-neutral-400">{t('Все оплатили — долгов нет.')}</p>}
+      {list.length > 0 && (
         <ul className="divide-y divide-line">
           {list.map((d) => {
             const athlete = athletes.find((a) => a.id === d.athlete_id) ?? { id: d.athlete_id, discipline: 'both' }
@@ -119,23 +145,17 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
                       {d.unpaid ? ` · ${t('{n} трен.', { n: d.unpaid })}` : ''}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setOpen(open === d.athlete_id ? null : d.athlete_id)}
-                    className="text-xs text-neutral-400 hover:text-white"
-                  >
-                    {open === d.athlete_id ? t('Скрыть') : t('Оплатил наличными')}
-                  </button>
+                  {canRecord && (
+                    <button
+                      type="button"
+                      onClick={() => setOpen(open === d.athlete_id ? null : d.athlete_id)}
+                      className="text-xs text-neutral-400 hover:text-white"
+                    >
+                      {open === d.athlete_id ? t('Скрыть') : t('Оплатил наличными')}
+                    </button>
+                  )}
                 </div>
-                {open === d.athlete_id && (
-                  <CashPayment
-                    athlete={athlete}
-                    onDone={() => {
-                      load()
-                      onPaid?.()
-                    }}
-                  />
-                )}
+                {open === d.athlete_id && <CashPayment athlete={athlete} onDone={onPaid} />}
               </li>
             )
           })}
@@ -154,12 +174,9 @@ export default function AdminDebtors({ athletes, reloadKey, onPaid }) {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-neutral-500">{t('Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.')}</p>
+          {canRecord && <p className="text-xs text-neutral-500">{t('Оплату записать — во вкладке «Ученики», нажмите на сумму справа от имени.')}</p>}
         </div>
       )}
-      <p className="text-xs text-neutral-500">
-        {t('Должник — не прошло списание по карте или за 30 дней тренировок больше, чем оплачено (первая тренировка бесплатно).')}
-      </p>
     </section>
   )
 }
