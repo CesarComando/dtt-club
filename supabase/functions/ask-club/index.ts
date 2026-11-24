@@ -78,6 +78,10 @@ Deno.serve(async (req) => {
   try {
     const user = await getUser(req)
     if (!user) return json(req, { error: 'Войдите в аккаунт' }, 401)
+    // Помощник — только для своих: есть профиль клуба и тренер его подтвердил.
+    // Входы «Крепости» (общая база) и неподтверждённые аккаунты сюда не проходят.
+    const { data: me } = await admin.from('profiles').select('approved_at').eq('id', user.id).maybeSingle()
+    if (!me?.approved_at) return json(req, { error: 'Помощник доступен ученикам клуба после подтверждения тренером.' }, 403)
     const key = Deno.env.get('ANTHROPIC_API_KEY')?.trim()
     if (!key) return json(req, { error: 'Помощник ещё не настроен' }, 503)
 
