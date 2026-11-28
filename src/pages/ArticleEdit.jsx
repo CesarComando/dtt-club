@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CATEGORIES, coverUrl, loadArticle, saveArticle, uploadCover } from '../lib/articles.js'
+import { CATEGORIES, TOPICS, coverUrl, loadArticle, saveArticle, uploadCover } from '../lib/articles.js'
 import { ArticleBody } from './Article.jsx'
 import { t } from '../lib/i18n.jsx'
 
 const EMPTY = {
   title: '',
   category: 'news',
+  topic: '',
   lead: '',
   body: '',
   source_title: '',
@@ -28,7 +29,7 @@ export default function ArticleEdit() {
   useEffect(() => {
     if (!id) return
     loadArticle(Number(id))
-      .then((a) => setForm(a ? { ...EMPTY, ...a, source_url: a.source_url ?? '', cover_path: a.cover_path ?? '' } : EMPTY))
+      .then((a) => setForm(a ? { ...EMPTY, ...a, source_url: a.source_url ?? '', topic: a.topic ?? '', cover_path: a.cover_path ?? '' } : EMPTY))
       .catch((e) => setError(e.message))
   }, [id])
 
@@ -87,6 +88,22 @@ export default function ArticleEdit() {
             </button>
           ))}
         </div>
+
+        {form.category === 'article' && (
+          <div className="flex flex-wrap gap-2">
+            <span className="label w-full">{t('Тема')}</span>
+            {Object.entries(TOPICS).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, topic: f.topic === k ? '' : k }))}
+                className={`rounded-full border px-3 py-1 text-sm ${form.topic === k ? 'border-accent bg-accent/15' : 'border-line text-neutral-400'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div>
           <label className="label" htmlFor="a-lead">{t('Коротко (видно в списке)')}</label>
