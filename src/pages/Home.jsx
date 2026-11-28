@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CLUB, TEAMS, FIRST_TRAINING_FREE } from '../data/club.js'
 import TeamCard from '../components/TeamCard.jsx'
+import HomeEvents from '../components/HomeEvents.jsx'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { t } from '../lib/i18n.jsx'
 
@@ -33,6 +34,8 @@ export default function Home() {
           <a href="#schedule" className="btn-outline">{t('Расписание')}</a>
         </div>
       </section>
+
+      <HomeEvents />
 
       {/* Команды: расписание + цены */}
       <section id="schedule" className="scroll-mt-24 space-y-4">
