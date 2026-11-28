@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { loadNotifications, markNotificationsRead } from '../lib/coach.js'
 import { t, tData } from '../lib/i18n.jsx'
 
-const ICON = { cancelled: '⛔', restored: '✅', moved: '🕒', venue: '📍' }
+const ICON = { cancelled: '⛔', restored: '✅', moved: '🕒', venue: '📍', event: '📅' }
 
 // Кабинет: непрочитанные уведомления (отмена / перенос / другой зал). «Понятно» — скрыть.
 export default function Notifications() {

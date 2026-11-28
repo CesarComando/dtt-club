@@ -33,6 +33,7 @@ const Friends = lazy(() => import('./pages/Friends.jsx'))
 const Chat = lazy(() => import('./pages/Chat.jsx'))
 // Игры для ума из GRAPPLING WORLD (шахматы, шашки, судоку, реакция) — открыты всем, без входа.
 const Games = lazy(() => import('./pages/Games.jsx'))
+const Events = lazy(() => import('./pages/Events.jsx'))
 
 export default function App() {
   const { pathname } = useLocation()
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="/friends" element={<Friends />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/games" element={<Games />} />
+          <Route path="/events" element={<Events />} />
           <Route path="/privacy" element={<Privacy />} />
           {/* Заявка на бесплатную пробную тренировку — без входа (кнопка на сайте клуба) */}
           <Route path="/trial" element={<Trial />} />
